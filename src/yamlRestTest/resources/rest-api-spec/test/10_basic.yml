@@ -1,0 +1,8 @@
+"Test that geospatial plugin is loaded in OpenSearch":
+  - do:
+      cat.plugins:
+        local: true
+        h: component
+
+  - match:
+      $body: /^opensearch-geospatial\n$/
