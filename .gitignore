@@ -1,4 +1,10 @@
+.gradle/
+build
 .idea/*
 !.idea/codeStyles/codeStyleConfig.xml
 !.idea/copyright
-/geospatial.iml
+.DS_Store
+*.log
+out/
+oss/*
+*.iml

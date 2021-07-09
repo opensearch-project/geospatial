@@ -1,0 +1,87 @@
+import org.opensearch.gradle.test.RestIntegTestTask
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'opensearch.opensearchplugin'
+apply plugin: 'opensearch.yaml-rest-test'
+
+def pluginName = 'opensearch-geospatial'
+def pluginDescription = 'OpenSearch Geospatial plugin to host geospatial features'
+def projectPath = 'org.opensearch'
+def pathToPlugin = 'geospatial.plugin'
+def pluginClassName = 'GeospatialPlugin'
+
+tasks.register("preparePluginPathDirs") {
+    mustRunAfter clean
+    doLast {
+        def newPath = pathToPlugin.replace(".", "/")
+        mkdir "src/main/java/org/opensearch/$newPath"
+        mkdir "src/test/java/org/opensearch/$newPath"
+        mkdir "src/yamlRestTest/java/org/opensearch/$newPath"
+    }
+}
+
+opensearchplugin {
+    name pluginName
+    description pluginDescription
+    classname "${projectPath}.${pathToPlugin}.${pluginClassName}"
+    licenseFile rootProject.file('LICENSE')
+    noticeFile rootProject.file('NOTICE')
+}
+
+// This requires an additional Jar not published as part of build-tools
+loggerUsageCheck.enabled = false
+
+// No need to validate pom, as we do not upload to maven/sonatype
+validateNebulaPom.enabled = false
+
+buildscript {
+    ext {
+        opensearch_version = System.getProperty("opensearch.version", "1.0.0")
+        opensearch_group = "org.opensearch"
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+        jcenter()
+        mavenLocal()
+    }
+
+    dependencies {
+        classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
+    }
+}
+
+repositories {
+    mavenLocal()
+}
+
+test {
+    include '**/*Tests.class'
+}
+
+task integTest(type: RestIntegTestTask) {
+    description = "Run tests against a cluster"
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+}
+tasks.named("check").configure { dependsOn(integTest) }
+
+integTest {
+    // The --debug-jvm command-line option makes the cluster debuggable; this makes the tests debuggable
+    if (System.getProperty("test.debug") != null) {
+        jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
+    }
+}
+
+testClusters.integTest {
+    testDistribution = "INTEG_TEST"
+
+    // This installs our plugin into the testClusters
+    plugin(project.tasks.bundlePlugin.archiveFile)
+}
+
+run {
+    useCluster testClusters.integTest
+}
