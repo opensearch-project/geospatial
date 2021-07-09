@@ -1,2 +1,4 @@
-/.idea/
+.idea/*
+!.idea/codeStyles/codeStyleConfig.xml
+!.idea/copyright
 /geospatial.iml
