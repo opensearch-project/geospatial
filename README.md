@@ -1,17 +1,35 @@
-## My Project
+<img src="https://opensearch.org/assets/brand/SVG/Logo/opensearch_logo_default.svg" height="64px"/>
 
-TODO: Fill this README out!
+- [OpenSearch Geospatial](#opensearch-geospatial)
+- [Project Resources](#project-resources)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
+- [Copyright](#copyright)
 
-Be sure to:
+## OpenSearch Geospatial
+**OpenSearch geospatial** is an OpenSearch plugin that contains geospatial specific features. 
 
-* Change the title in this README
-* Edit your repository description on GitHub
+## Project Resources
 
-## Security
+* [Project Website](https://opensearch.org/)
+* [Downloads](https://opensearch.org/downloads.html).
+* [Documentation](https://docs-beta.opensearch.org/)
+* Need help? Try [Forums](https://discuss.opendistrocommunity.dev/)
+* [Project Principles](https://opensearch.org/#principles)
+* [Contributing to OpenSearch](CONTRIBUTING.md)
+* [Maintainer Responsibilities](MAINTAINERS.md)
+* [Release Management](RELEASING.md)
+* [Admin Responsibilities](ADMINS.md)
+* [Security](SECURITY.md)
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+## Code of Conduct
+
+This project has adopted the [Amazon Open Source Code of Conduct](CODE_OF_CONDUCT.md). For more information see the [Code of Conduct FAQ](https://aws.github.io/code-of-conduct-faq), or contact [opensource-codeofconduct@amazon.com](mailto:opensource-codeofconduct@amazon.com) with any additional questions or comments.
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is licensed under the [Apache v2.0 License](LICENSE.txt).
 
+## Copyright
+
+Copyright 2020-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
