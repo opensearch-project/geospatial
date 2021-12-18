@@ -37,15 +37,16 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch.version", "1.0.0")
+        opensearch_version = System.getProperty("opensearch.version", "1.3.0-SNAPSHOT")
         opensearch_group = "org.opensearch"
     }
 
     repositories {
+        mavenLocal()
+        maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
         mavenCentral()
         maven { url "https://plugins.gradle.org/m2/" }
         jcenter()
-        mavenLocal()
     }
 
     dependencies {
@@ -55,10 +56,18 @@ buildscript {
 
 repositories {
     mavenLocal()
+    maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
+    mavenCentral()
+    maven { url "https://plugins.gradle.org/m2/" }
+    jcenter()
 }
 
 test {
     include '**/*Tests.class'
+}
+
+dependencies {
+    runtimeClasspath "org.apache.logging.log4j:log4j-core:${versions.log4j}"
 }
 
 task integTest(type: RestIntegTestTask) {
@@ -84,4 +93,8 @@ testClusters.integTest {
 
 run {
     useCluster testClusters.integTest
+}
+
+tasks.withType(RestIntegTestTask)*.configure {
+    classpath += files(project.configurations.runtimeClasspath.findAll { it.name.contains("log4j-core") })
 }
