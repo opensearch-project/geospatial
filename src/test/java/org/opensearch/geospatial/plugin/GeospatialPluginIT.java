@@ -7,33 +7,26 @@
  */
 package org.opensearch.geospatial.plugin;
 
-import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import org.apache.http.util.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
-import org.opensearch.plugins.Plugin;
-import org.opensearch.test.OpenSearchIntegTestCase;
+import org.opensearch.rest.RestStatus;
+import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 
-import static org.hamcrest.Matchers.containsString;
 
-@ThreadLeakScope(ThreadLeakScope.Scope.NONE)
-@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
-public class GeospatialPluginIT extends OpenSearchIntegTestCase {
-
-    @Override
-    protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Collections.singletonList(GeospatialPlugin.class);
-    }
+public class GeospatialPluginIT extends OpenSearchRestTestCase {
 
     public void testPluginInstalled() throws IOException {
-        Response response = createRestClient().performRequest(new Request("GET", "/_cat/plugins"));
-        String body = EntityUtils.toString(response.getEntity());
+        String restURI = String.join("/", "_cat", "plugins");
 
-        logger.info("response body: {}", body);
-        assertThat(body, containsString("opensearch-geospatial"));
+        Request request = new Request("GET", restURI);
+        Response response = client().performRequest(request);
+        assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        String responseBody = EntityUtils.toString(response.getEntity());
+        assertNotNull(responseBody);
+        assertTrue(responseBody.contains("opensearch-geospatial"));
     }
 }
