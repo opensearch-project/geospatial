@@ -15,9 +15,13 @@ import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import java.io.IOException;
 
-
 public class GeospatialPluginIT extends OpenSearchRestTestCase {
 
+    /**
+     * Tests whether plugin is installed or not
+     *
+     * @throws IOException
+     */
     public void testPluginInstalled() throws IOException {
         String restURI = String.join("/", "_cat", "plugins");
 
