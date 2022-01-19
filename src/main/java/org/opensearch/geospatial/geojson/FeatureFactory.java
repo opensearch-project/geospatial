@@ -51,7 +51,7 @@ public class FeatureFactory {
             throw new IllegalArgumentException("key: " + Feature.GEOMETRY_KEY + " cannot be null");
         }
         if (!(geometry instanceof Map)) {
-            throw new IllegalArgumentException("key: " + Feature.GEOMETRY_KEY + "is not an instance of type Map");
+            throw new IllegalArgumentException("key: " + Feature.GEOMETRY_KEY + " is not an instance of type Map");
         }
         Map<String, Object> geometryMap = toStringObjectMap(geometry);
         FeatureBuilder featureBuilder = new FeatureBuilder(geometryMap);
@@ -60,7 +60,7 @@ public class FeatureFactory {
             return featureBuilder;
         }
         if (!(properties instanceof Map)) {
-            throw new IllegalArgumentException("key: " + Feature.PROPERTIES_KEY + "is not an instance of type Map");
+            throw new IllegalArgumentException("key: " + Feature.PROPERTIES_KEY + " is not an instance of type Map");
         }
         return featureBuilder.properties(toStringObjectMap(properties));
     }
