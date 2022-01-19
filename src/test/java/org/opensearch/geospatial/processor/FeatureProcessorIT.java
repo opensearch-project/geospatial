@@ -5,13 +5,7 @@
 
 package org.opensearch.geospatial.processor;
 
-import org.apache.http.util.EntityUtils;
-import org.opensearch.client.Request;
-import org.opensearch.client.Response;
-import org.opensearch.common.geo.GeoShapeType;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.geospatial.GeospatialRestTestCase;
-import org.opensearch.rest.RestStatus;
+import static org.opensearch.ingest.RandomDocumentPicks.randomString;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,7 +15,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.opensearch.ingest.RandomDocumentPicks.randomString;
+import org.apache.http.util.EntityUtils;
+import org.opensearch.client.Request;
+import org.opensearch.client.Response;
+import org.opensearch.common.geo.GeoShapeType;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.geospatial.GeospatialRestTestCase;
+import org.opensearch.rest.RestStatus;
 
 public class FeatureProcessorIT extends GeospatialRestTestCase {
 

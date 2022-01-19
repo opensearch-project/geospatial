@@ -6,10 +6,10 @@
 package org.opensearch.geospatial.geojson;
 
 
-import org.opensearch.geospatial.geojson.Feature.FeatureBuilder;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.opensearch.geospatial.geojson.Feature.FeatureBuilder;
 
 /**
  * FeatureFactory helps to create {@link Feature} instance based on user input

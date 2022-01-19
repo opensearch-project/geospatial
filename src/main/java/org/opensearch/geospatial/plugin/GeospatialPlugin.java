@@ -5,13 +5,13 @@
 
 package org.opensearch.geospatial.plugin;
 
+import java.util.Map;
+
 import org.opensearch.common.collect.MapBuilder;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.ingest.Processor;
 import org.opensearch.plugins.IngestPlugin;
 import org.opensearch.plugins.Plugin;
-
-import java.util.Map;
 
 /*
 

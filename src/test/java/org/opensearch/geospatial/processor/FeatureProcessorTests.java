@@ -5,17 +5,17 @@
 
 package org.opensearch.geospatial.processor;
 
+import static org.opensearch.geospatial.GeospatialRestTestCase.GEOMETRY_COORDINATES_KEY;
+import static org.opensearch.geospatial.GeospatialRestTestCase.GEOMETRY_TYPE_KEY;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.opensearch.common.geo.GeoShapeType;
 import org.opensearch.geospatial.geojson.Feature;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.RandomDocumentPicks;
 import org.opensearch.test.OpenSearchTestCase;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.opensearch.geospatial.GeospatialRestTestCase.GEOMETRY_COORDINATES_KEY;
-import static org.opensearch.geospatial.GeospatialRestTestCase.GEOMETRY_TYPE_KEY;
 
 public class FeatureProcessorTests extends OpenSearchTestCase {
 

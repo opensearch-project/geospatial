@@ -5,6 +5,14 @@
 
 package org.opensearch.geospatial;
 
+import static java.util.stream.Collectors.joining;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.apache.http.util.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
@@ -17,14 +25,6 @@ import org.opensearch.geospatial.geojson.Feature;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.ingest.Pipeline;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static java.util.stream.Collectors.joining;
 
 public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
 
