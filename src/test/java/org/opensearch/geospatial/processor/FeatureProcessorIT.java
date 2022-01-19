@@ -59,7 +59,6 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
         Map<String, String> geoFields = new HashMap<>();
         geoFields.put(geoShapeField, "geo_shape");
 
-
         Map<String, String> processorProperties = new HashMap<>();
         processorProperties.put(FeatureProcessor.FIELD_KEY, geoShapeField);
         Map<String, Object> geoJSONProcessorConfig = buildGeoJSONProcessorConfig(processorProperties);
@@ -74,10 +73,11 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
         properties.put(randomString(random()), randomString(random()));
         properties.put(randomString(random()), randomString(random()));
 
-
         String body = buildGeoJSONFeatureAsString(
             GeoShapeType.LINESTRING.shapeName(),
-            randomDoubleArray(LINESTRING_TOTAL_POINTS, LINESTRING_POINT_DIMENSION), properties);
+            randomDoubleArray(LINESTRING_TOTAL_POINTS, LINESTRING_POINT_DIMENSION),
+            properties
+        );
         Map<String, String> params = new HashMap<>();
         params.put("pipeline", pipelineName);
 

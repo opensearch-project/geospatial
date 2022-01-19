@@ -134,6 +134,8 @@ spotless {
     java {
         removeUnusedImports()
         importOrder 'java', 'javax', 'org', 'com'
+        eclipse().configFile rootProject.file('formatterConfig.xml')
+        trimTrailingWhitespace()
         endWithNewline()
     }
 }
