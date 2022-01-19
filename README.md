@@ -1,3 +1,7 @@
+[![Build and Test plugin](https://github.com/opensearch-project/geospatial/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/opensearch-project/geospatial/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/opensearch-project/geospatial/branch/main/graph/badge.svg?token=1eHsSeBjxh)](https://codecov.io/gh/opensearch-project/geospatial)
+![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
+
 <img src="https://opensearch.org/assets/img/opensearch-logo-themed.svg" height="64px">
 
 - [OpenSearch Geospatial](#opensearch-geospatial)
