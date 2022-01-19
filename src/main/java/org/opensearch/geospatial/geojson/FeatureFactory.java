@@ -5,7 +5,6 @@
 
 package org.opensearch.geospatial.geojson;
 
-
 import java.util.HashMap;
 import java.util.Map;
 

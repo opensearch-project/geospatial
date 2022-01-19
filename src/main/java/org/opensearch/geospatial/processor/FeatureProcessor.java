@@ -30,7 +30,6 @@ public class FeatureProcessor extends AbstractProcessor {
         this.geoShapeField = geoShapeField;
     }
 
-
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) {
         // 1. Create Feature from ingesting document
@@ -55,8 +54,12 @@ public class FeatureProcessor extends AbstractProcessor {
 
     public static final class Factory implements org.opensearch.ingest.Processor.Factory {
         @Override
-        public FeatureProcessor create(Map<String, Processor.Factory> registry, String processorTag,
-                                       String description, Map<String, Object> config) {
+        public FeatureProcessor create(
+            Map<String, Processor.Factory> registry,
+            String processorTag,
+            String description,
+            Map<String, Object> config
+        ) {
             String geoShapeField = readStringProperty(TYPE, processorTag, config, FIELD_KEY);
             return new FeatureProcessor(processorTag, description, geoShapeField);
         }

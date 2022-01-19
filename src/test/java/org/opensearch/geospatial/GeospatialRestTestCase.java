@@ -38,7 +38,8 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
     }
 
-    protected static void createPipeline(String name, Optional<String> description, List<Map<String, Object>> processorConfigs) throws IOException {
+    protected static void createPipeline(String name, Optional<String> description, List<Map<String, Object>> processorConfigs)
+        throws IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
         if (description.isPresent()) {
             builder.field(Pipeline.DESCRIPTION_KEY, description.get());
@@ -61,9 +62,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     protected static void createIndex(String name, Settings settings, Map<String, String> fieldMap) throws IOException {
         XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().startObject(Feature.PROPERTIES_KEY);
         for (Map.Entry<String, String> entry : fieldMap.entrySet()) {
-            xContentBuilder.startObject(entry.getKey())
-                .field(Feature.TYPE_KEY, entry.getValue())
-                .endObject();
+            xContentBuilder.startObject(entry.getKey()).field(Feature.TYPE_KEY, entry.getValue()).endObject();
         }
         xContentBuilder.endObject().endObject();
         String mapping = Strings.toString(xContentBuilder);
@@ -73,9 +72,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     public static void indexDocument(String indexName, String docID, String body, Map<String, String> params) throws IOException {
 
         String path = String.join(URL_DELIMITER, indexName, DOC, docID);
-        String queryParams = params.entrySet().stream()
-            .map(Object::toString)
-            .collect(joining("&"));
+        String queryParams = params.entrySet().stream().map(Object::toString).collect(joining("&"));
         StringBuilder endpoint = new StringBuilder();
         endpoint.append(path);
         endpoint.append("?");
@@ -94,7 +91,8 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
 
     public String buildGeoJSONFeatureAsString(String type, Object value, Map<String, Object> properties) throws IOException {
 
-        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+        XContentBuilder builder = XContentFactory.jsonBuilder()
+            .startObject()
             .field(Feature.TYPE_KEY, Feature.TYPE)
             .startObject(Feature.GEOMETRY_KEY)
             .field(GEOMETRY_TYPE_KEY, type)
@@ -113,8 +111,8 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         final Request request = new Request("GET", path);
         final Response response = client().performRequest(request);
 
-        final Map<String, Object> responseMap =
-            createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())).map();
+        final Map<String, Object> responseMap = createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity()))
+            .map();
         if (!responseMap.containsKey(SOURCE)) {
             return null;
         }
