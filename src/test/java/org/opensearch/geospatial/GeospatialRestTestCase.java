@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.common.Strings;
@@ -118,5 +119,16 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         }
         final Map<String, Object> docMap = (Map<String, Object>) responseMap.get(SOURCE);
         return docMap;
+    }
+
+    protected String convertToString(Map<String, Object> input) {
+        JSONObject json = new JSONObject();
+        if (input == null) {
+            return json.toString();
+        }
+        for (Map.Entry<String, Object> entry : input.entrySet()) {
+            json.put(entry.getKey(), entry.getValue());
+        }
+        return json.toString();
     }
 }

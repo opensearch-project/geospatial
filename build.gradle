@@ -90,6 +90,8 @@ test {
 //****************************************************************************/
 dependencies {
     yamlRestTestRuntimeOnly "org.apache.logging.log4j:log4j-core:${versions.log4j}"
+    testImplementation "org.hamcrest:hamcrest:${versions.hamcrest}"
+    testImplementation 'org.json:json:20211205'
 }
 
 licenseHeaders.enabled = true
