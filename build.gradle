@@ -55,8 +55,10 @@ buildscript {
 
     dependencies {
         classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:5.6.1"
     }
 }
+apply plugin: "com.diffplug.spotless"
 
 ext {
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
@@ -126,4 +128,12 @@ run {
 
 tasks.withType(RestIntegTestTask)*.configure {
     classpath += files(project.configurations.runtimeClasspath.findAll { it.name.contains("log4j-core") })
+}
+
+spotless {
+    java {
+        removeUnusedImports()
+        importOrder 'java', 'javax', 'org', 'com'
+        endWithNewline()
+    }
 }

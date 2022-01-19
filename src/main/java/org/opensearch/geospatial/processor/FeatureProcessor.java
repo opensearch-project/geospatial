@@ -5,15 +5,15 @@
 
 package org.opensearch.geospatial.processor;
 
+import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
+
+import java.util.Map;
+
 import org.opensearch.geospatial.geojson.Feature;
 import org.opensearch.geospatial.geojson.FeatureFactory;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.Processor;
-
-import java.util.Map;
-
-import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
 /**
  * {@link FeatureProcessor} converts GeoJSON Feature into a document by extracting properties as its own field,
