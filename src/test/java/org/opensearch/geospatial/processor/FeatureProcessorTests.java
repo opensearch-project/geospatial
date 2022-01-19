@@ -42,8 +42,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
         FeatureProcessor.Factory factory = new FeatureProcessor.Factory();
         Map<String, Object> processorProperties = new HashMap<>();
         processorProperties.put(FeatureProcessor.FIELD_KEY, "location");
-        Processor featureProcessor = factory.create(
-            Collections.emptyMap(), "unit-test", "description", processorProperties);
+        Processor featureProcessor = factory.create(Collections.emptyMap(), "unit-test", "description", processorProperties);
         assertNotNull(featureProcessor);
         assertEquals(featureProcessor.getType(), FeatureProcessor.TYPE);
     }
@@ -81,7 +80,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertTrue(exception.getMessage().contains(Feature.PROPERTIES_KEY+ " is not an instance of type Map"));
+        assertTrue(exception.getMessage().contains(Feature.PROPERTIES_KEY + " is not an instance of type Map"));
     }
 
     public void testFeatureProcessorUnSupportedType() {
@@ -100,20 +99,22 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
         assertTrue(exception.getMessage().contains("type cannot be null"));
     }
+
     public void testFeatureProcessorWithoutGeometry() {
         Map<String, Object> document = buildGeoJSON(Feature.TYPE);
         document.remove(Feature.GEOMETRY_KEY);
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertTrue(exception.getMessage().contains(Feature.GEOMETRY_KEY+ " cannot be null"));
+        assertTrue(exception.getMessage().contains(Feature.GEOMETRY_KEY + " cannot be null"));
     }
+
     public void testFeatureProcessorWithInvalidGeometry() {
         Map<String, Object> document = buildGeoJSON(Feature.TYPE);
         document.put(Feature.GEOMETRY_KEY, "invalid-value");
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertTrue(exception.getMessage().contains(Feature.GEOMETRY_KEY+ " is not an instance of type Map"));
+        assertTrue(exception.getMessage().contains(Feature.GEOMETRY_KEY + " is not an instance of type Map"));
     }
 }
