@@ -5,7 +5,8 @@
 
 package org.opensearch.geospatial.geojson;
 
-import java.util.HashMap;
+import static org.opensearch.geospatial.GeospatialParser.toStringObjectMap;
+
 import java.util.Map;
 
 import org.opensearch.geospatial.geojson.Feature.FeatureBuilder;
@@ -30,18 +31,6 @@ public class FeatureFactory {
             throw new IllegalArgumentException(geoJSONType + " is not supported. Only type " + Feature.TYPE + " is supported");
         }
         return extractFeature(input).build();
-    }
-
-    private static Map<String, Object> toStringObjectMap(Object input) {
-        if (!(input instanceof Map)) {
-            throw new IllegalArgumentException(input + " is not an instance of Map");
-        }
-        Map<Object, Object> inputMap = (Map<Object, Object>) input;
-        Map<String, Object> stringObjectMap = new HashMap<>();
-        for (Map.Entry<Object, Object> entry : inputMap.entrySet()) {
-            stringObjectMap.put(entry.getKey().toString(), entry.getValue());
-        }
-        return stringObjectMap;
     }
 
     private static FeatureBuilder extractFeature(Map<String, Object> input) {

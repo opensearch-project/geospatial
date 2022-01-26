@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.common.geo.GeoShapeType;
@@ -73,16 +74,16 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
         properties.put(randomString(random()), randomString(random()));
         properties.put(randomString(random()), randomString(random()));
 
-        String body = buildGeoJSONFeatureAsString(
-            GeoShapeType.LINESTRING.shapeName(),
-            randomDoubleArray(LINESTRING_TOTAL_POINTS, LINESTRING_POINT_DIMENSION),
-            properties
+        JSONObject feature = buildGeoJSONFeature(
+            buildGeometry(GeoShapeType.LINESTRING.shapeName(), randomDoubleArray(LINESTRING_TOTAL_POINTS, LINESTRING_POINT_DIMENSION)),
+            buildProperties(properties)
         );
+        String requestBody = feature.toString();
         Map<String, String> params = new HashMap<>();
         params.put("pipeline", pipelineName);
 
         String docID = randomString(random());
-        indexDocument(indexName, docID, body, params);
+        indexDocument(indexName, docID, requestBody, params);
 
         Map<String, Object> document = getDocument(docID, indexName);
         assertNotNull(document);
