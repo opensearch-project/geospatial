@@ -1,9 +1,15 @@
 /*
- * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ *
+ * Modifications Copyright OpenSearch Contributors. See
+ * GitHub history for details.
  */
 
-package org.opensearch.geospatial.rest.action.geojson.upload;
+package org.opensearch.geospatial.rest.action.upload.geojson;
 
 import static java.util.Collections.singletonList;
 import static org.opensearch.rest.RestRequest.Method.POST;
@@ -14,8 +20,8 @@ import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.geospatial.action.geojson.upload.UploadGeoJSONAction;
-import org.opensearch.geospatial.action.geojson.upload.UploadGeoJSONRequest;
+import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
+import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequest;
 import org.opensearch.geospatial.plugin.GeospatialPlugin;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
