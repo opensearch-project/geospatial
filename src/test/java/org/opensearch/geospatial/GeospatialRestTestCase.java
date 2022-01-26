@@ -90,21 +90,22 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         return geoJSONProcessor;
     }
 
-    public String buildGeoJSONFeatureAsString(String type, Object value, Map<String, Object> properties) throws IOException {
+    public String buildGeoJSONFeatureAsString(String type, Object value, Map<String, Object> properties) {
 
-        XContentBuilder builder = XContentFactory.jsonBuilder()
-            .startObject()
-            .field(Feature.TYPE_KEY, Feature.TYPE)
-            .startObject(Feature.GEOMETRY_KEY)
-            .field(GEOMETRY_TYPE_KEY, type)
-            .field(GEOMETRY_COORDINATES_KEY, value)
-            .endObject();
-        builder.startObject(Feature.PROPERTIES_KEY);
+        JSONObject geospatial = new JSONObject();
+        geospatial.put(Feature.TYPE_KEY, Feature.TYPE);
+
+        JSONObject geometry = new JSONObject();
+        geometry.put(GEOMETRY_TYPE_KEY, type);
+        geometry.put(GEOMETRY_COORDINATES_KEY, value);
+
+        JSONObject propertiesObject = new JSONObject();
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
-            builder.field(entry.getKey(), entry.getValue());
+            propertiesObject.put(entry.getKey(), entry.getValue());
         }
-        builder.endObject().endObject();
-        return Strings.toString(builder);
+        geospatial.put(Feature.PROPERTIES_KEY, propertiesObject);
+        geospatial.put(Feature.GEOMETRY_KEY, geometry);
+        return geospatial.toString();
     }
 
     public Map<String, Object> getDocument(String docID, String indexName) throws IOException {
