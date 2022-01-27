@@ -6,8 +6,11 @@
 package org.opensearch.geospatial;
 
 import java.util.Map;
+import java.util.Random;
 
 import org.json.JSONObject;
+import org.opensearch.common.Randomness;
+import org.opensearch.common.geo.GeoShapeType;
 import org.opensearch.geospatial.geojson.Feature;
 
 /**
@@ -24,6 +27,25 @@ public class GeospatialObjectBuilder {
         geometry.put(GEOMETRY_TYPE_KEY, type);
         geometry.put(GEOMETRY_COORDINATES_KEY, value);
         return geometry;
+    }
+
+    public static JSONObject getRandomGeometryPoint() {
+        Random random = Randomness.get();
+        double[] point = new double[] { random.nextDouble(), random.nextDouble() };
+        return buildGeometry(GeoShapeType.POINT.shapeName(), point);
+    }
+
+    public static JSONObject getRandomGeometryLineString(int totalPoints, int dimension) {
+        double[][] lineString = new double[totalPoints][dimension];
+        for (int i = 0; i < lineString.length; i++) {
+            lineString[i] = getRandomPoint();
+        }
+        return buildGeometry(GeoShapeType.LINESTRING.shapeName(), lineString);
+    }
+
+    private static double[] getRandomPoint() {
+        Random random = Randomness.get();
+        return new double[] { random.nextDouble(), random.nextDouble() };
     }
 
     public static JSONObject buildGeoJSONFeature(JSONObject geometry, JSONObject properties) {

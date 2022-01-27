@@ -31,8 +31,9 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.rest.RestController;
 import org.opensearch.rest.RestHandler;
 
-/*
-
+/**
+ * Entry point for Geospatial features. It provides additional Processors, Actions
+ * to interact with Cluster.
  */
 public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin {
     public static final String NAME = "geospatial";
