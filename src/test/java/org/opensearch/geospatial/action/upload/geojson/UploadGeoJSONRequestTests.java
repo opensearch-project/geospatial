@@ -13,7 +13,6 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -49,12 +48,5 @@ public class UploadGeoJSONRequestTests extends OpenSearchTestCase {
     public void testRequestValidation() {
         UploadGeoJSONRequest request = new UploadGeoJSONRequest(new BytesArray(getRequestBody(null).getBytes(StandardCharsets.UTF_8)));
         assertNull(request.validate());
-    }
-
-    public void testGetSourceAsMap() {
-        Map<String, Object> content = new HashMap<>();
-        content.put("index", "test-index");
-        UploadGeoJSONRequest request = new UploadGeoJSONRequest(new BytesArray(getRequestBody(content).getBytes(StandardCharsets.UTF_8)));
-        assertEquals(content, request.contentAsMap());
     }
 }

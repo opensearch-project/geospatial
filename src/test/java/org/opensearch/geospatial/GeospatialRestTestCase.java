@@ -6,14 +6,21 @@
 package org.opensearch.geospatial;
 
 import static java.util.stream.Collectors.joining;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeoJSONFeature;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.getRandomGeometryLineString;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.getRandomGeometryPoint;
+import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
@@ -22,11 +29,16 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.ingest.Pipeline;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
+
+    public static final int MIN_POSITIVE_VALUE = 1;
+    public static final int MAX_POINTS = 10;
+    public static final int MAX_DIMENSION = 4;
 
     public static final String SOURCE = "_source";
     public static final String DOC = "_doc";
@@ -112,5 +124,26 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
             json.put(entry.getKey(), entry.getValue());
         }
         return json.toString();
+    }
+
+    // TODO This method is copied from unit test. Refactor to common class to share across tests
+    protected JSONObject buildRequestContent(String indexName, String fieldName) {
+        JSONObject contents = new JSONObject();
+        contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), indexName);
+        contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), fieldName);
+        JSONArray values = new JSONArray();
+        values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
+        values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
+        values.put(
+            buildGeoJSONFeature(
+                getRandomGeometryLineString(
+                    randomIntBetween(MIN_POSITIVE_VALUE, MAX_POINTS),
+                    randomIntBetween(MIN_POSITIVE_VALUE, MAX_DIMENSION)
+                ),
+                buildProperties(Collections.emptyMap())
+            )
+        );
+        contents.put(FIELD_DATA.getPreferredName(), values);
+        return contents;
     }
 }

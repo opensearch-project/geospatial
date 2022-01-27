@@ -21,6 +21,9 @@ public class GeospatialObjectBuilder {
 
     public static final String GEOMETRY_TYPE_KEY = "type";
     public static final String GEOMETRY_COORDINATES_KEY = "coordinates";
+    public static final int MIN_POSITIVE_VALUE = 1;
+    public static final int MAX_POINTS = 10;
+    public static final int MAX_DIMENSION = 4;
 
     public static JSONObject buildGeometry(String type, Object value) {
         JSONObject geometry = new JSONObject();
