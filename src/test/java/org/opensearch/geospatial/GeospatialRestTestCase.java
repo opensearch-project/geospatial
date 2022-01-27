@@ -34,6 +34,8 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     public static final String URL_DELIMITER = "/";
     public static final String GEOMETRY_TYPE_KEY = "type";
     public static final String GEOMETRY_COORDINATES_KEY = "coordinates";
+    public static final String FIELD_TYPE_KEY = "type";
+    public static final String MAPPING_PROPERTIES_KEY = "properties";
 
     private static String buildPipelinePath(String name) {
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
@@ -61,9 +63,9 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     }
 
     protected static void createIndex(String name, Settings settings, Map<String, String> fieldMap) throws IOException {
-        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().startObject(Feature.PROPERTIES_KEY);
+        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().startObject(MAPPING_PROPERTIES_KEY);
         for (Map.Entry<String, String> entry : fieldMap.entrySet()) {
-            xContentBuilder.startObject(entry.getKey()).field(Feature.TYPE_KEY, entry.getValue()).endObject();
+            xContentBuilder.startObject(entry.getKey()).field(FIELD_TYPE_KEY, entry.getValue()).endObject();
         }
         xContentBuilder.endObject().endObject();
         String mapping = Strings.toString(xContentBuilder);
