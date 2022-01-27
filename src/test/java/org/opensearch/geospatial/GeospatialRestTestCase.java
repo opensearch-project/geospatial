@@ -22,7 +22,6 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.geospatial.geojson.Feature;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.ingest.Pipeline;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
@@ -32,8 +31,6 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     public static final String SOURCE = "_source";
     public static final String DOC = "_doc";
     public static final String URL_DELIMITER = "/";
-    public static final String GEOMETRY_TYPE_KEY = "type";
-    public static final String GEOMETRY_COORDINATES_KEY = "coordinates";
     public static final String FIELD_TYPE_KEY = "type";
     public static final String MAPPING_PROPERTIES_KEY = "properties";
 
@@ -86,33 +83,10 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         client().performRequest(request);
     }
 
-    protected Map<String, Object> buildGeoJSONProcessorConfig(Map<String, String> properties) {
-        Map<String, Object> geoJSONProcessor = new HashMap<>();
-        geoJSONProcessor.put(FeatureProcessor.TYPE, properties);
-        return geoJSONProcessor;
-    }
-
-    public JSONObject buildGeometry(String type, Object value) {
-        JSONObject geometry = new JSONObject();
-        geometry.put(GEOMETRY_TYPE_KEY, type);
-        geometry.put(GEOMETRY_COORDINATES_KEY, value);
-        return geometry;
-    }
-
-    public JSONObject buildGeoJSONFeature(JSONObject geometry, JSONObject properties) {
-        JSONObject feature = new JSONObject();
-        feature.put(Feature.TYPE_KEY, Feature.TYPE);
-        feature.put(Feature.GEOMETRY_KEY, geometry);
-        feature.put(Feature.PROPERTIES_KEY, properties);
-        return feature;
-    }
-
-    public JSONObject buildProperties(Map<String, Object> properties) {
-        JSONObject propertiesObject = new JSONObject();
-        for (Map.Entry<String, Object> entry : properties.entrySet()) {
-            propertiesObject.put(entry.getKey(), entry.getValue());
-        }
-        return propertiesObject;
+    protected Map<String, Object> buildGeoJSONFeatureProcessorConfig(Map<String, String> properties) {
+        Map<String, Object> featureProcessor = new HashMap<>();
+        featureProcessor.put(FeatureProcessor.TYPE, properties);
+        return featureProcessor;
     }
 
     public Map<String, Object> getDocument(String docID, String indexName) throws IOException {

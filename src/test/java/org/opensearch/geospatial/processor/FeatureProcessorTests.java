@@ -5,8 +5,9 @@
 
 package org.opensearch.geospatial.processor;
 
-import static org.opensearch.geospatial.GeospatialRestTestCase.GEOMETRY_COORDINATES_KEY;
-import static org.opensearch.geospatial.GeospatialRestTestCase.GEOMETRY_TYPE_KEY;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeoJSONFeature;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeometry;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,21 +22,10 @@ import org.opensearch.test.OpenSearchTestCase;
 
 public class FeatureProcessorTests extends OpenSearchTestCase {
 
-    private Map<String, Object> buildGeoJSON(String type) {
-        Map<String, Object> geoJSON = new HashMap<>();
-        geoJSON.put(Feature.TYPE_KEY, type);
-
+    private Map<String, Object> buildTestFeature() {
         Map<String, Object> properties = new HashMap<>();
         properties.put("name", "Dinagat Islands");
-        geoJSON.put("properties", properties);
-
-        Map<String, Object> geometry = new HashMap<>();
-        geometry.put(GEOMETRY_TYPE_KEY, GeoShapeType.POINT.shapeName());
-        geometry.put(GEOMETRY_COORDINATES_KEY, "[125.6, 10.1]");
-        geoJSON.put(Feature.GEOMETRY_KEY, geometry);
-
-        return geoJSON;
-
+        return buildGeoJSONFeature(buildGeometry(GeoShapeType.POINT.shapeName(), "[125.6, 10.1]"), buildProperties(properties)).toMap();
     }
 
     public void testCreateFeatureProcessor() {
@@ -48,7 +38,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     }
 
     public void testFeatureProcessor() {
-        Map<String, Object> document = buildGeoJSON(Feature.TYPE);
+        Map<String, Object> document = buildTestFeature();
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         processor.execute(ingestDocument);
@@ -62,7 +52,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     }
 
     public void testFeatureProcessorWithoutProperties() {
-        Map<String, Object> document = buildGeoJSON(Feature.TYPE);
+        Map<String, Object> document = buildTestFeature();
         document.remove(Feature.PROPERTIES_KEY);
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
@@ -75,7 +65,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     }
 
     public void testFeatureProcessorWithInvalidProperties() {
-        Map<String, Object> document = buildGeoJSON(Feature.TYPE);
+        Map<String, Object> document = buildTestFeature();
         document.put(Feature.PROPERTIES_KEY, "invalid-value");
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
@@ -84,7 +74,8 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     }
 
     public void testFeatureProcessorUnSupportedType() {
-        Map<String, Object> document = buildGeoJSON("FeatureCollection");
+        Map<String, Object> document = new HashMap<>();
+        document.put("type", "FeatureCollection");
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
@@ -92,7 +83,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     }
 
     public void testFeatureProcessorTypeNotFound() {
-        Map<String, Object> document = buildGeoJSON(Feature.TYPE);
+        Map<String, Object> document = buildTestFeature();
         document.remove(Feature.TYPE_KEY);
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
@@ -101,7 +92,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     }
 
     public void testFeatureProcessorWithoutGeometry() {
-        Map<String, Object> document = buildGeoJSON(Feature.TYPE);
+        Map<String, Object> document = buildTestFeature();
         document.remove(Feature.GEOMETRY_KEY);
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
@@ -110,7 +101,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     }
 
     public void testFeatureProcessorWithInvalidGeometry() {
-        Map<String, Object> document = buildGeoJSON(Feature.TYPE);
+        Map<String, Object> document = buildTestFeature();
         document.put(Feature.GEOMETRY_KEY, "invalid-value");
         IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
