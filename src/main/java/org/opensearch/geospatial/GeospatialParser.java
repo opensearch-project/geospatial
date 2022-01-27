@@ -15,11 +15,13 @@ import java.util.Map;
 public class GeospatialParser {
 
     /**
-     * Convert Object into {@link Map<String,Object>}
+     * Convert object into Map
+     * @param input Object that is also an instance of Map
+     * @return input object in Map type
      */
     public static Map<String, Object> toStringObjectMap(Object input) {
         if (!(input instanceof Map)) {
-            throw new IllegalArgumentException(input + " is not an instance of Map");
+            throw new IllegalArgumentException(input + " is not an instance of Map, but of type [ " + input.getClass().getName() + " ]");
         }
         Map<Object, Object> inputMap = (Map<Object, Object>) input;
         Map<String, Object> stringObjectMap = new HashMap<>();

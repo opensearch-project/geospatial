@@ -7,8 +7,8 @@ package org.opensearch.geospatial.processor;
 
 import static org.opensearch.geospatial.GeospatialObjectBuilder.GEOMETRY_TYPE_KEY;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeoJSONFeature;
-import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeometry;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.getRandomGeometryLineString;
 import static org.opensearch.ingest.RandomDocumentPicks.randomString;
 
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
         properties.put(randomString(random()), randomString(random()));
 
         JSONObject feature = buildGeoJSONFeature(
-            buildGeometry(GeoShapeType.LINESTRING.shapeName(), randomDoubleArray(LINESTRING_TOTAL_POINTS, LINESTRING_POINT_DIMENSION)),
+            getRandomGeometryLineString(LINESTRING_TOTAL_POINTS, LINESTRING_POINT_DIMENSION),
             buildProperties(properties)
         );
         String requestBody = feature.toString();
