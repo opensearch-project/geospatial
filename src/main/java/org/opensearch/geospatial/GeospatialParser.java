@@ -8,8 +8,15 @@ package org.opensearch.geospatial;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * GeospatialParser provides helper methods to parse/extract/transform input to
+ * desired formats.
+ */
 public class GeospatialParser {
 
+    /**
+     * Convert Object into {@link Map<String,Object>}
+     */
     public static Map<String, Object> toStringObjectMap(Object input) {
         if (!(input instanceof Map)) {
             throw new IllegalArgumentException(input + " is not an instance of Map");

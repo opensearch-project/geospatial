@@ -10,6 +10,10 @@ import java.util.Map;
 import org.json.JSONObject;
 import org.opensearch.geospatial.geojson.Feature;
 
+/**
+ * GeospatialObjectBuilder contains utility methods to generate geospatial objects
+ * for tests
+ */
 public class GeospatialObjectBuilder {
 
     public static final String GEOMETRY_TYPE_KEY = "type";
