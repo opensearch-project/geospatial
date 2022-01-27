@@ -5,6 +5,10 @@
 
 package org.opensearch.geospatial.processor;
 
+import static org.opensearch.geospatial.GeospatialObjectBuilder.GEOMETRY_TYPE_KEY;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeoJSONFeature;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeometry;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.ingest.RandomDocumentPicks.randomString;
 
 import java.io.IOException;
@@ -62,7 +66,7 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
 
         Map<String, String> processorProperties = new HashMap<>();
         processorProperties.put(FeatureProcessor.FIELD_KEY, geoShapeField);
-        Map<String, Object> geoJSONProcessorConfig = buildGeoJSONProcessorConfig(processorProperties);
+        Map<String, Object> geoJSONProcessorConfig = buildGeoJSONFeatureProcessorConfig(processorProperties);
         List<Map<String, Object>> configs = new ArrayList<>();
         configs.add(geoJSONProcessorConfig);
 
