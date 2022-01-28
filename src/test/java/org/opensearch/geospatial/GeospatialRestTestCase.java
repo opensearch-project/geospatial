@@ -36,10 +36,6 @@ import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
 
-    public static final int MIN_POSITIVE_VALUE = 1;
-    public static final int MAX_POINTS = 10;
-    public static final int MAX_DIMENSION = 4;
-
     public static final String SOURCE = "_source";
     public static final String DOC = "_doc";
     public static final String URL_DELIMITER = "/";
@@ -123,15 +119,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         JSONArray values = new JSONArray();
         values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
         values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
-        values.put(
-            buildGeoJSONFeature(
-                getRandomGeometryLineString(
-                    randomIntBetween(MIN_POSITIVE_VALUE, MAX_POINTS),
-                    randomIntBetween(MIN_POSITIVE_VALUE, MAX_DIMENSION)
-                ),
-                buildProperties(Collections.emptyMap())
-            )
-        );
+        values.put(buildGeoJSONFeature(getRandomGeometryLineString(), buildProperties(Collections.emptyMap())));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents;
     }

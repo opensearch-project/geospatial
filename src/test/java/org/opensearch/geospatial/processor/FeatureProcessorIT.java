@@ -30,19 +30,6 @@ import org.opensearch.rest.RestStatus;
 
 public class FeatureProcessorIT extends GeospatialRestTestCase {
 
-    public static final int LINESTRING_TOTAL_POINTS = 4;
-    public static final int LINESTRING_POINT_DIMENSION = 2;
-
-    private double[][] randomDoubleArray(int row, int col) {
-        double[][] randomArray = new double[row][col];
-        for (int i = 0; i < row; i++) {
-            for (int j = 0; j < col; j++) {
-                randomArray[i][j] = randomDouble();
-            }
-        }
-        return randomArray;
-    }
-
     public void testProcessorAvailable() throws IOException {
         String nodeIngestURL = String.join("/", "_nodes", "ingest");
         String endpoint = nodeIngestURL + "?filter_path=nodes.*.ingest.processors&pretty";
@@ -78,10 +65,7 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
         properties.put(randomString(random()), randomString(random()));
         properties.put(randomString(random()), randomString(random()));
 
-        JSONObject feature = buildGeoJSONFeature(
-            getRandomGeometryLineString(LINESTRING_TOTAL_POINTS, LINESTRING_POINT_DIMENSION),
-            buildProperties(properties)
-        );
+        JSONObject feature = buildGeoJSONFeature(getRandomGeometryLineString(), buildProperties(properties));
         String requestBody = feature.toString();
         Map<String, String> params = new HashMap<>();
         params.put("pipeline", pipelineName);

@@ -21,6 +21,9 @@ public class GeospatialObjectBuilder {
 
     public static final String GEOMETRY_TYPE_KEY = "type";
     public static final String GEOMETRY_COORDINATES_KEY = "coordinates";
+    public static final int MIN_POSITIVE_INTEGER_VALUE = 1;
+    public static final int MAX_POINTS = 10;
+    public static final int MAX_DIMENSION = 4;
 
     public static JSONObject buildGeometry(String type, Object value) {
         JSONObject geometry = new JSONObject();
@@ -35,8 +38,10 @@ public class GeospatialObjectBuilder {
         return buildGeometry(GeoShapeType.POINT.shapeName(), point);
     }
 
-    public static JSONObject getRandomGeometryLineString(int totalPoints, int dimension) {
-        double[][] lineString = new double[totalPoints][dimension];
+    public static JSONObject getRandomGeometryLineString() {
+        int randomTotalPoints = randomPositiveInt(MAX_POINTS);
+        int randomPointsDimension = randomPositiveInt(MAX_DIMENSION);
+        double[][] lineString = new double[randomTotalPoints][randomPointsDimension];
         for (int i = 0; i < lineString.length; i++) {
             lineString[i] = getRandomPoint();
         }
@@ -62,5 +67,9 @@ public class GeospatialObjectBuilder {
             propertiesObject.put(entry.getKey(), entry.getValue());
         }
         return propertiesObject;
+    }
+
+    public static int randomPositiveInt(int bound) {
+        return Randomness.get().ints(MIN_POSITIVE_INTEGER_VALUE, bound).findFirst().getAsInt();
     }
 }
