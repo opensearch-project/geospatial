@@ -7,15 +7,18 @@ package org.opensearch.geospatial.processor;
 
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
+import static org.opensearch.geospatial.geojson.Feature.GEOMETRY_KEY;
+import static org.opensearch.geospatial.geojson.Feature.PROPERTIES_KEY;
+import static org.opensearch.geospatial.geojson.Feature.TYPE_KEY;
+import static org.opensearch.geospatial.geojson.FeatureCollection.TYPE;
+import static org.opensearch.ingest.RandomDocumentPicks.randomIngestDocument;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.opensearch.geospatial.geojson.Feature;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.Processor;
-import org.opensearch.ingest.RandomDocumentPicks;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class FeatureProcessorTests extends OpenSearchTestCase {
@@ -37,53 +40,53 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
 
     public void testFeatureProcessor() {
         Map<String, Object> document = buildTestFeature();
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        IngestDocument ingestDocument = randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         processor.execute(ingestDocument);
         Map<String, Object> location = (Map<String, Object>) ingestDocument.getFieldValue("location", Object.class);
         assertNotNull(location);
-        assertEquals(document.get(Feature.GEOMETRY_KEY), location);
+        assertEquals(document.get(GEOMETRY_KEY), location);
         assertEquals("Dinagat Islands", ingestDocument.getSourceAndMetadata().get("name"));
-        assertNull(ingestDocument.getSourceAndMetadata().get(Feature.GEOMETRY_KEY));
-        assertNull(ingestDocument.getSourceAndMetadata().get(Feature.TYPE_KEY));
-        assertNull(ingestDocument.getSourceAndMetadata().get(Feature.PROPERTIES_KEY));
+        assertNull(ingestDocument.getSourceAndMetadata().get(GEOMETRY_KEY));
+        assertNull(ingestDocument.getSourceAndMetadata().get(TYPE_KEY));
+        assertNull(ingestDocument.getSourceAndMetadata().get(PROPERTIES_KEY));
     }
 
     public void testFeatureProcessorWithoutProperties() {
         Map<String, Object> document = buildTestFeature();
-        document.remove(Feature.PROPERTIES_KEY);
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        document.remove(PROPERTIES_KEY);
+        IngestDocument ingestDocument = randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         processor.execute(ingestDocument);
         Map<String, Object> location = (Map<String, Object>) ingestDocument.getFieldValue("location", Object.class);
         assertNotNull(location);
-        assertEquals(document.get(Feature.GEOMETRY_KEY), location);
-        assertNull(ingestDocument.getSourceAndMetadata().get(Feature.GEOMETRY_KEY));
-        assertNull(ingestDocument.getSourceAndMetadata().get(Feature.TYPE_KEY));
+        assertEquals(document.get(GEOMETRY_KEY), location);
+        assertNull(ingestDocument.getSourceAndMetadata().get(GEOMETRY_KEY));
+        assertNull(ingestDocument.getSourceAndMetadata().get(TYPE_KEY));
     }
 
     public void testFeatureProcessorWithInvalidProperties() {
         Map<String, Object> document = buildTestFeature();
-        document.put(Feature.PROPERTIES_KEY, "invalid-value");
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        document.put(PROPERTIES_KEY, "invalid-value");
+        IngestDocument ingestDocument = randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertTrue(exception.getMessage().contains(Feature.PROPERTIES_KEY + " is not an instance of type Map"));
+        assertTrue(exception.getMessage().contains(PROPERTIES_KEY + " is not an instance of type Map"));
     }
 
     public void testFeatureProcessorUnSupportedType() {
         Map<String, Object> document = new HashMap<>();
-        document.put("type", "FeatureCollection");
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        document.put(TYPE_KEY, TYPE);
+        IngestDocument ingestDocument = randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertTrue(exception.getMessage().contains("Only type Feature is supported"));
+        assertTrue(exception.getMessage().contains("expected type [ Feature ]"));
     }
 
     public void testFeatureProcessorTypeNotFound() {
         Map<String, Object> document = buildTestFeature();
-        document.remove(Feature.TYPE_KEY);
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        document.remove(TYPE_KEY);
+        IngestDocument ingestDocument = randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
         assertTrue(exception.getMessage().contains("type cannot be null"));
@@ -91,19 +94,19 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
 
     public void testFeatureProcessorWithoutGeometry() {
         Map<String, Object> document = buildTestFeature();
-        document.remove(Feature.GEOMETRY_KEY);
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        document.remove(GEOMETRY_KEY);
+        IngestDocument ingestDocument = randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertTrue(exception.getMessage().contains(Feature.GEOMETRY_KEY + " cannot be null"));
+        assertTrue(exception.getMessage().contains(GEOMETRY_KEY + " cannot be null"));
     }
 
     public void testFeatureProcessorWithInvalidGeometry() {
         Map<String, Object> document = buildTestFeature();
-        document.put(Feature.GEOMETRY_KEY, "invalid-value");
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        document.put(GEOMETRY_KEY, "invalid-value");
+        IngestDocument ingestDocument = randomIngestDocument(random(), document);
         FeatureProcessor processor = new FeatureProcessor("sample", "description", "location");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertTrue(exception.getMessage().contains(Feature.GEOMETRY_KEY + " is not an instance of type Map"));
+        assertTrue(exception.getMessage().contains(GEOMETRY_KEY + " is not an instance of type Map"));
     }
 }
