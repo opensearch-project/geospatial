@@ -6,6 +6,7 @@
 package org.opensearch.geospatial.geojson;
 
 import static org.opensearch.geospatial.GeospatialParser.toStringObjectMap;
+import static org.opensearch.geospatial.geojson.Feature.TYPE;
 
 import java.util.Map;
 
@@ -27,8 +28,8 @@ public class FeatureFactory {
         if (geoJSONType == null) {
             throw new IllegalArgumentException(Feature.TYPE_KEY + " cannot be null");
         }
-        if (!Feature.TYPE.equalsIgnoreCase(geoJSONType.toString())) {
-            throw new IllegalArgumentException(geoJSONType + " is not supported. Only type " + Feature.TYPE + " is supported");
+        if (!TYPE.equalsIgnoreCase(geoJSONType.toString())) {
+            throw new IllegalArgumentException("Unknown type [ " + geoJSONType + " ], expected type [ " + TYPE + " ]");
         }
         return extractFeature(input).build();
     }

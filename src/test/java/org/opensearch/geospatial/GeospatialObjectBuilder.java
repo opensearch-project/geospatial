@@ -8,12 +8,14 @@ package org.opensearch.geospatial;
 import java.util.Map;
 import java.util.Random;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.collect.List;
 import org.opensearch.common.geo.GeoShapeType;
 import org.opensearch.geo.GeometryTestUtils;
 import org.opensearch.geospatial.geojson.Feature;
+import org.opensearch.geospatial.geojson.FeatureCollection;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
 
@@ -70,6 +72,13 @@ public class GeospatialObjectBuilder {
             propertiesObject.put(entry.getKey(), entry.getValue());
         }
         return propertiesObject;
+    }
+
+    public static JSONObject buildGeoJSONFeatureCollection(JSONArray features) {
+        JSONObject collection = new JSONObject();
+        collection.put(FeatureCollection.TYPE_KEY, FeatureCollection.TYPE);
+        collection.put(FeatureCollection.FEATURES_KEY, features.toList().toArray());
+        return collection;
     }
 
     public static int randomPositiveInt(int bound) {
