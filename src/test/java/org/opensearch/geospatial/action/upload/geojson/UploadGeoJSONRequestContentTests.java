@@ -5,11 +5,8 @@
 
 package org.opensearch.geospatial.action.upload.geojson;
 
-import static org.junit.Assert.*;
-import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
-import static org.opensearch.geospatial.GeospatialObjectBuilder.getRandomGeometryLineString;
-import static org.opensearch.geospatial.GeospatialObjectBuilder.getRandomGeometryPoint;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 
 import java.util.Collections;
@@ -26,9 +23,9 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
         contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), indexName);
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), fieldName);
         JSONArray values = new JSONArray();
-        values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
-        values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
-        values.put(buildGeoJSONFeature(getRandomGeometryLineString(), buildProperties(Collections.emptyMap())));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents.toMap();
     }

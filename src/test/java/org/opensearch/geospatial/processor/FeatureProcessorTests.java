@@ -5,9 +5,8 @@
 
 package org.opensearch.geospatial.processor;
 
-import static org.opensearch.geospatial.GeospatialObjectBuilder.buildGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
-import static org.opensearch.geospatial.GeospatialObjectBuilder.getRandomGeometryPoint;
+import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +23,7 @@ public class FeatureProcessorTests extends OpenSearchTestCase {
     private Map<String, Object> buildTestFeature() {
         Map<String, Object> properties = new HashMap<>();
         properties.put("name", "Dinagat Islands");
-        return buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(properties)).toMap();
+        return randomGeoJSONFeature(buildProperties(properties)).toMap();
     }
 
     public void testCreateFeatureProcessor() {
