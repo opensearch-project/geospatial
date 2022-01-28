@@ -39,13 +39,13 @@ public final class GeospatialParser {
     /**
      * User inputs are usually deserialized into Map. extractValueAsString will help caller to
      * extract value from the Map and cast it to string with validation.
-     * @param input User input of type Map
-     * @param key property we would like to extract value of
+     * @param input User input of type Map, cannot be null
+     * @param key property we would like to extract value of, cannot be null
      * @return null if key doesn't exist, value as String if it exists, throw exception otherwise
      */
     public static String extractValueAsString(final Map<String, Object> input, final String key) {
-        Objects.requireNonNull(key);
-        Objects.requireNonNull(input);
+        Objects.requireNonNull(key, "parameter 'key' cannot be null");
+        Objects.requireNonNull(input, "parameter 'input' cannot be null");
         Object value = input.get(key);
         if (value == null) {
             return null;

@@ -40,4 +40,20 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
         assertEquals(indexName, content.getIndexName());
         assertEquals(contents.get(FIELD_DATA.getPreferredName()), content.getData());
     }
+
+    public void testCreateEmptyIndexName() {
+        IllegalArgumentException invalidIndexName = assertThrows(
+            IllegalArgumentException.class,
+            () -> UploadGeoJSONRequestContent.create(buildRequestContent("", "location"))
+        );
+        assertTrue(invalidIndexName.getMessage().contains("cannot be empty"));
+    }
+
+    public void testCreateEmptyGeospatialFieldName() {
+        IllegalArgumentException invalidIndexName = assertThrows(
+            IllegalArgumentException.class,
+            () -> UploadGeoJSONRequestContent.create(buildRequestContent("some-index", ""))
+        );
+        assertTrue(invalidIndexName.getMessage().contains("cannot be empty"));
+    }
 }
