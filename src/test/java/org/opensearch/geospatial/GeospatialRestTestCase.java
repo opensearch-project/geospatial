@@ -115,17 +115,6 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         return docMap;
     }
 
-    protected String convertToString(Map<String, Object> input) {
-        JSONObject json = new JSONObject();
-        if (input == null) {
-            return json.toString();
-        }
-        for (Map.Entry<String, Object> entry : input.entrySet()) {
-            json.put(entry.getKey(), entry.getValue());
-        }
-        return json.toString();
-    }
-
     // TODO This method is copied from unit test. Refactor to common class to share across tests
     protected JSONObject buildRequestContent(String indexName, String fieldName) {
         JSONObject contents = new JSONObject();
