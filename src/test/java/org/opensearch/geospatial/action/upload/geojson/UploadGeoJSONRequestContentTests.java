@@ -21,10 +21,6 @@ import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
 
-    public static final int MIN_POSITIVE_VALUE = 1;
-    public static final int MAX_POINTS = 10;
-    public static final int MAX_DIMENSION = 4;
-
     private Map<String, Object> buildRequestContent(String indexName, String fieldName) {
         JSONObject contents = new JSONObject();
         contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), indexName);
@@ -32,15 +28,7 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
         JSONArray values = new JSONArray();
         values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
         values.put(buildGeoJSONFeature(getRandomGeometryPoint(), buildProperties(Collections.emptyMap())));
-        values.put(
-            buildGeoJSONFeature(
-                getRandomGeometryLineString(
-                    randomIntBetween(MIN_POSITIVE_VALUE, MAX_POINTS),
-                    randomIntBetween(MIN_POSITIVE_VALUE, MAX_DIMENSION)
-                ),
-                buildProperties(Collections.emptyMap())
-            )
-        );
+        values.put(buildGeoJSONFeature(getRandomGeometryLineString(), buildProperties(Collections.emptyMap())));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents.toMap();
     }
