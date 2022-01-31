@@ -43,6 +43,11 @@ public class FeatureCollectionTests extends OpenSearchTestCase {
         assertTrue(ex.getMessage().contains("expected type [ FeatureCollection ]"));
     }
 
+    public void testCreateFeatureCollectionInvalidInput() {
+        NullPointerException ex = assertThrows(NullPointerException.class, () -> FeatureCollection.create(null));
+        assertTrue(ex.getMessage().equals("input cannot be null"));
+    }
+
     public void testCreateFeatureCollectionTypeMissing() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> FeatureCollection.create(new HashMap<>()));
         assertTrue(ex.getMessage().contains("type cannot be null"));

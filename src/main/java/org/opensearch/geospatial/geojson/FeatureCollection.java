@@ -43,9 +43,10 @@ public final class FeatureCollection {
     /**
      * Add Features to this collection
      * @param features List of {@link Feature}
+     * @throws NullPointerException if feature is null
      */
     public void addFeatures(List<Feature> features) {
-        Objects.requireNonNull(features);
+        Objects.requireNonNull(features, "cannot add null to features");
         this.features.addAll(features);
     }
 
@@ -54,8 +55,11 @@ public final class FeatureCollection {
      *
      * @param input the object from where {@link FeatureCollection} will be extracted
      * @return FeatureCollection Instance from given input
+     * @throws NullPointerException if input is null
+     * @throws IllegalArgumentException if input doesn't have valid arguments
      */
     public static FeatureCollection create(final Map<String, Object> input) {
+        Objects.requireNonNull(input, "input cannot be null");
         Object geoJSONType = input.get(TYPE_KEY);
         if (geoJSONType == null) {
             throw new IllegalArgumentException(TYPE_KEY + " cannot be null");
@@ -69,7 +73,7 @@ public final class FeatureCollection {
     private static FeatureCollection extract(Map<String, Object> input) {
         FeatureCollection collection = new FeatureCollection();
         Object featureObject = input.get(FEATURES_KEY);
-        if (featureObject == null) { // empty features are allowed
+        if (featureObject == null) { // empty features are valid based on definition
             return collection;
         }
         if (!(featureObject instanceof Object[])) {
