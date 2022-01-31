@@ -6,6 +6,7 @@
 package org.opensearch.geospatial;
 
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -44,9 +45,7 @@ public class GeospatialObjectBuilder {
     public static JSONObject randomGeometryLineString() {
         int randomTotalPoints = randomBoundedInt(MIN_LINE_STRING_COORDINATES_SIZE, MAX_POINTS);
         double[][] lineString = new double[randomTotalPoints][POINTS_SIZE];
-        for (int i = 0; i < lineString.length; i++) {
-            lineString[i] = getRandomPoint();
-        }
+        IntStream.range(0, lineString.length).forEach(index -> lineString[index] = getRandomPoint());
         return buildGeometry(GeoShapeType.LINESTRING.shapeName(), lineString);
     }
 
