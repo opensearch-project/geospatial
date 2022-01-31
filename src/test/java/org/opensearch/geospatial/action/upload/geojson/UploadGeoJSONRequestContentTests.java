@@ -36,7 +36,7 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
         Map<String, Object> contents = buildRequestContent(indexName, fieldName);
         UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contents);
         assertNotNull(content);
-        assertEquals(fieldName, content.getGeospatialFieldName());
+        assertEquals(fieldName, content.getFieldName());
         assertEquals(indexName, content.getIndexName());
         assertEquals(contents.get(FIELD_DATA.getPreferredName()), content.getData());
     }
