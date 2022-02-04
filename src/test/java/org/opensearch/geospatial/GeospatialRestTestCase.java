@@ -9,7 +9,6 @@ import static java.util.stream.Collectors.joining;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
-import static org.opensearch.ingest.RandomDocumentPicks.randomString;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -41,6 +40,8 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     public static final String URL_DELIMITER = "/";
     public static final String FIELD_TYPE_KEY = "type";
     public static final String MAPPING_PROPERTIES_KEY = "properties";
+    public static final int RANDOM_STRING_MIN_LENGTH = 2;
+    public static final int RANDOM_STRING_MAX_LENGTH = 16;
 
     private static String buildPipelinePath(String name) {
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
@@ -115,7 +116,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     protected JSONObject buildUploadGeoJSONRequestContent() {
         JSONObject contents = new JSONObject();
         contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), randomLowerCaseString());
-        contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), randomString(random()));
+        contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), randomString());
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName(), "geo_shape");
         String fieldId = null;
         if (randomBoolean()) {
@@ -131,7 +132,11 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         return contents;
     }
 
+    private String randomString() {
+        return randomAlphaOfLengthBetween(RANDOM_STRING_MIN_LENGTH, RANDOM_STRING_MAX_LENGTH);
+    }
+
     private String randomLowerCaseString() {
-        return randomString(random()).toLowerCase(Locale.getDefault());
+        return randomString().toLowerCase(Locale.getDefault());
     }
 }
