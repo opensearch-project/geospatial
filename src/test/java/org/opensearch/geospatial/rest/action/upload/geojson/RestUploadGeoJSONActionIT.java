@@ -11,10 +11,7 @@
 
 package org.opensearch.geospatial.rest.action.upload.geojson;
 
-import static org.opensearch.ingest.RandomDocumentPicks.randomString;
-
 import java.io.IOException;
-import java.util.Locale;
 
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
@@ -33,9 +30,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
             RestUploadGeoJSONAction.ACTION_UPLOAD
         );
         Request request = new Request("POST", path);
-        String indexName = randomString(random()).toLowerCase(Locale.getDefault());
-        String geoShapeField = randomString(random());
-        request.setJsonEntity(buildRequestContent(indexName, geoShapeField).toString());
+        request.setJsonEntity(buildUploadGeoJSONRequestContent().toString());
         Response response = client().performRequest(request);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
 
@@ -50,9 +45,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
             RestUploadGeoJSONAction.ACTION_UPLOAD
         );
         Request request = new Request("PUT", path);
-        String indexName = randomString(random()).toLowerCase(Locale.getDefault());
-        String geoShapeField = randomString(random());
-        request.setJsonEntity(buildRequestContent(indexName, geoShapeField).toString());
+        request.setJsonEntity(buildUploadGeoJSONRequestContent().toString());
         Response response = client().performRequest(request);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
 
