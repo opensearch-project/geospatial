@@ -35,14 +35,18 @@ public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadG
     @Override
     protected void doExecute(Task task, UploadGeoJSONRequest request, ActionListener<AcknowledgedResponse> actionListener) {
         Map<String, Object> contentAsMap = GeospatialParser.convertToMap(request.getContent());
-        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contentAsMap);
-        // TODO https://github.com/opensearch-project/geospatial/issues/28 (Add logic to execute import action)
-        // 1. get index name and geospatial field from content
-        // 2. create index with mapping
-        // 3. Parse Data to get GeoJSON Object
-        // 4. Get features from GeoJSON
-        // 5. create Pipeline with GeoJSONFeatureProcessor
-        // 6. Create BulkIndex Request with features as documents.
-        actionListener.onResponse(new AcknowledgedResponse(true));
+        try {
+            UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contentAsMap);
+            // TODO https://github.com/opensearch-project/geospatial/issues/28 (Add logic to execute import action)
+            // 1. get index name and geospatial field from content
+            // 2. create index with mapping
+            // 3. Parse Data to get GeoJSON Object
+            // 4. Get features from GeoJSON
+            // 5. create Pipeline with GeoJSONFeatureProcessor
+            // 6. Create BulkIndex Request with features as documents.
+            actionListener.onResponse(new AcknowledgedResponse(true));
+        } catch (Exception e) {
+            actionListener.onFailure(e);
+        }
     }
 }
