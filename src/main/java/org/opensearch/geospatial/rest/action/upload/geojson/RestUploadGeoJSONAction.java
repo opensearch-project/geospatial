@@ -5,9 +5,11 @@
 
 package org.opensearch.geospatial.rest.action.upload.geojson;
 
-import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 import static org.opensearch.rest.RestRequest.Method.POST;
+import static org.opensearch.rest.RestRequest.Method.PUT;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
@@ -40,14 +42,46 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
      * Supported Routes are
      * POST /_plugins/geospatial/geojson/_upload
      * {
-     *     //TODO https://github.com/opensearch-project/geospatial/issues/29 (implement request body)
+     *   "index": "create_new_index",
+     *   "field" : "geospatial field name",
+     *   "type" : "geospatial field type",
+     *   "data" : [
+     *    {
+     *       "type": "Feature",
+     *       "geometry": {
+     *          "type": "Polygon",
+     *          "coordinates": [
+     *                [
+     *                    [100.0, 0.0],
+     *                    [101.0, 0.0],
+     *                    [101.0, 1.0],
+     *                    [100.0, 1.0],
+     *                    [100.0, 0.0]
+     *                ]
+     *           ]
+     *       },
+     *       "properties": {
+     *          "prop0": "value0",
+     *          "prop1": {
+     *             "this": "that"
+     *          }
+     *      }
+     *   }
+     *  ]
      * }
-     *
+     * PUT /_plugins/geospatial/geojson/_upload
+     * {
+     *   "index": "create_new_index_if_does_not_exists",
+     *   ....... same as POST ..........
+     * }
+     * The difference between PUT and POST is how index existence is tolerated.
+     * For POST, index should not exist, if found exists, operation will fail.
+     * For PUT, index existence doesn't matter, it will create if it doesn't exists.
      */
     @Override
     public List<Route> routes() {
         String path = String.join(URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
-        return singletonList(new Route(POST, path));
+        return unmodifiableList(Arrays.asList(new Route(POST, path), new Route(PUT, path)));
     }
 
     @Override

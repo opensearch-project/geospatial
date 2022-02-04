@@ -55,7 +55,6 @@ public final class UploadGeoJSONRequestContent {
         if (!Strings.hasText(fieldName)) {
             throw new IllegalArgumentException("field [ " + FIELD_GEOSPATIAL_TYPE.getPreferredName() + " ] cannot be empty");
         }
-
         Object geoJSONData = Objects.requireNonNull(
             input.get(FIELD_DATA.getPreferredName()),
             "field [ " + FIELD_DATA.getPreferredName() + " ] cannot be empty"

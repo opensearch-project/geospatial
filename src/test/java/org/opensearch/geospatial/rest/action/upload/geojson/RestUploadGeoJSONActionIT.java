@@ -24,7 +24,7 @@ import org.opensearch.rest.RestStatus;
 
 public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
-    public void testGeoJSONUploadSuccess() throws IOException {
+    public void testGeoJSONUploadSuccessPostMethod() throws IOException {
 
         String path = String.join(
             RestUploadGeoJSONAction.URL_DELIMITER,
@@ -33,6 +33,23 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
             RestUploadGeoJSONAction.ACTION_UPLOAD
         );
         Request request = new Request("POST", path);
+        String indexName = randomString(random()).toLowerCase(Locale.getDefault());
+        String geoShapeField = randomString(random());
+        request.setJsonEntity(buildRequestContent(indexName, geoShapeField).toString());
+        Response response = client().performRequest(request);
+        assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+    }
+
+    public void testGeoJSONUploadSuccessPutMethod() throws IOException {
+
+        String path = String.join(
+            RestUploadGeoJSONAction.URL_DELIMITER,
+            GeospatialPlugin.getPluginURLPrefix(),
+            RestUploadGeoJSONAction.ACTION_OBJECT,
+            RestUploadGeoJSONAction.ACTION_UPLOAD
+        );
+        Request request = new Request("PUT", path);
         String indexName = randomString(random()).toLowerCase(Locale.getDefault());
         String geoShapeField = randomString(random());
         request.setJsonEntity(buildRequestContent(indexName, geoShapeField).toString());
