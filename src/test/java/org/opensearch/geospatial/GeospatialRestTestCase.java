@@ -9,11 +9,13 @@ import static java.util.stream.Collectors.joining;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
+import static org.opensearch.ingest.RandomDocumentPicks.randomString;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -110,15 +112,25 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     }
 
     // TODO This method is copied from unit test. Refactor to common class to share across tests
-    protected JSONObject buildRequestContent(String indexName, String fieldName) {
+    protected JSONObject buildUploadGeoJSONRequestContent() {
         JSONObject contents = new JSONObject();
-        contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), indexName);
-        contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), fieldName);
+        contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), randomLowerCaseString());
+        contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), randomString(random()));
+        String fieldId = null;
+        if (randomBoolean()) {
+            fieldId = randomLowerCaseString();
+            contents.put(UploadGeoJSONRequestContent.FIELD_FEATURE_ID.getPreferredName(), fieldId);
+        }
         JSONArray values = new JSONArray();
-        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
-        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()), fieldId));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()), fieldId));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()), fieldId));
         values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents;
+    }
+
+    private String randomLowerCaseString() {
+        return randomString(random()).toLowerCase(Locale.getDefault());
     }
 }

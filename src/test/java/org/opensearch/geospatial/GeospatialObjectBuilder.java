@@ -11,6 +11,8 @@ import java.util.stream.IntStream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opensearch.common.Randomness;
+import org.opensearch.common.Strings;
+import org.opensearch.common.UUIDs;
 import org.opensearch.common.collect.List;
 import org.opensearch.common.geo.GeoShapeType;
 import org.opensearch.geo.GeometryTestUtils;
@@ -80,8 +82,17 @@ public class GeospatialObjectBuilder {
         return Randomness.get().ints(min, max).findFirst().getAsInt();
     }
 
+    public static JSONObject randomGeoJSONFeature(final JSONObject properties, String featureId) {
+        JSONObject geoJSONFeature = buildGeoJSONFeature(randomGeoJSONGeometry(), properties);
+        if (!Strings.hasText(featureId)) {
+            return geoJSONFeature;
+        }
+        geoJSONFeature.put(featureId, UUIDs.randomBase64UUID());
+        return geoJSONFeature;
+    }
+
     public static JSONObject randomGeoJSONFeature(final JSONObject properties) {
-        return buildGeoJSONFeature(randomGeoJSONGeometry(), properties);
+        return randomGeoJSONFeature(properties, null);
     }
 
     public static JSONObject randomGeoJSONGeometry() {
