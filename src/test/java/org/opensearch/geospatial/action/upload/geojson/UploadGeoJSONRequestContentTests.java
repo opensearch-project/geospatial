@@ -22,6 +22,7 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
         JSONObject contents = new JSONObject();
         contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), indexName);
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), fieldName);
+        contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName(), "geo_shape");
         JSONArray values = new JSONArray();
         values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
         values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
@@ -46,7 +47,7 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(buildRequestContent("", "location"))
         );
-        assertTrue(invalidIndexName.getMessage().contains("cannot be empty"));
+        assertTrue(invalidIndexName.getMessage().contains("[ index ] cannot be empty"));
     }
 
     public void testCreateEmptyGeospatialFieldName() {
@@ -54,6 +55,18 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(buildRequestContent("some-index", ""))
         );
-        assertTrue(invalidIndexName.getMessage().contains("cannot be empty"));
+        assertTrue(invalidIndexName.getMessage().contains("[ field ] cannot be empty"));
+    }
+
+    public void testCreateEmptyGeospatialFieldType() {
+        final String indexName = "some-index";
+        final String fieldName = "location";
+        Map<String, Object> contents = buildRequestContent(indexName, fieldName);
+        contents.remove(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName());
+        IllegalArgumentException invalidIndexName = assertThrows(
+            IllegalArgumentException.class,
+            () -> UploadGeoJSONRequestContent.create(contents)
+        );
+        assertTrue(invalidIndexName.getMessage().contains("[ type ] cannot be empty"));
     }
 }
