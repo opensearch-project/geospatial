@@ -16,10 +16,13 @@ import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFea
 import static org.opensearch.geospatial.geojson.FeatureCollection.FEATURES_KEY;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.opensearch.geospatial.GeospatialParser;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class FeatureCollectionTests extends OpenSearchTestCase {
@@ -34,6 +37,13 @@ public class FeatureCollectionTests extends OpenSearchTestCase {
         FeatureCollection collection = FeatureCollection.create(featureCollectionAsMap);
         assertNotNull(collection);
         assertEquals(features.toList().size(), collection.getFeatures().size());
+
+        List<Map<String, Object>> expected = features.toList()
+            .stream()
+            .map(GeospatialParser::toStringObjectMap)
+            .collect(Collectors.toList());
+
+        assertArrayEquals("features are not equal", expected.toArray(), collection.getFeatures().toArray());
     }
 
     public void testCreateFeatureCollectionInvalidType() {

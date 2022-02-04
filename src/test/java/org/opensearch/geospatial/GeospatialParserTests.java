@@ -7,10 +7,15 @@ package org.opensearch.geospatial;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opensearch.common.bytes.BytesArray;
+import org.opensearch.geospatial.geojson.Feature;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class GeospatialParserTests extends OpenSearchTestCase {
@@ -69,6 +74,39 @@ public class GeospatialParserTests extends OpenSearchTestCase {
         input.put("index", "test-index");
         Map<String, Object> actualMap = GeospatialParser.convertToMap(new BytesArray(input.toString().getBytes(StandardCharsets.UTF_8)));
         assertEquals(input.toMap(), actualMap);
+    }
+
+    public void testGetFeaturesWithGeoJSONFeature() {
+        Map<String, Object> geoJSON = GeospatialObjectBuilder.randomGeoJSONFeature(new JSONObject()).toMap();
+        Optional<List<Map<String, Object>>> features = GeospatialParser.getFeatures(geoJSON);
+        assertTrue(features.isPresent());
+        assertTrue(features.get().size() == 1);
+        assertEquals(features.get().get(0), geoJSON);
+    }
+
+    public void testGetFeaturesWithGeoJSONFeatureCollection() {
+        JSONArray features = new JSONArray();
+        features.put(GeospatialObjectBuilder.randomGeoJSONFeature(new JSONObject()));
+        features.put(GeospatialObjectBuilder.randomGeoJSONFeature(new JSONObject()));
+        features.put(GeospatialObjectBuilder.randomGeoJSONFeature(new JSONObject()));
+
+        JSONObject collection = GeospatialObjectBuilder.buildGeoJSONFeatureCollection(features);
+        Optional<List<Map<String, Object>>> featureList = GeospatialParser.getFeatures(collection.toMap());
+        assertTrue(featureList.isPresent());
+        assertTrue(featureList.get().size() == features.length());
+        List<Map<String, Object>> expected = features.toList()
+            .stream()
+            .map(GeospatialParser::toStringObjectMap)
+            .collect(Collectors.toList());
+
+        assertArrayEquals("features are not equal", expected.toArray(), featureList.get().toArray());
+    }
+
+    public void testGetFeaturesWithUnSupportedType() {
+        Map<String, Object> geoJSON = new HashMap<>();
+        geoJSON.put(Feature.TYPE_KEY, "invalid-type");
+        Optional<List<Map<String, Object>>> features = GeospatialParser.getFeatures(geoJSON);
+        assertFalse(features.isPresent());
     }
 
 }

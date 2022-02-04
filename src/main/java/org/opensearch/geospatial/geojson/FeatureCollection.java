@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.opensearch.geospatial.GeospatialParser;
@@ -18,36 +17,35 @@ import org.opensearch.geospatial.GeospatialParser;
 /**
  * FeatureCollection represents GEOJSON of type FeatureCollection. A FeatureCollection object has a member
  * with the name "features".  The value of "features" is a List.
- * Each element of the list is a {@link Feature} object.  It
- * is possible for this list to be empty.
+ * and it is possible for this list to be empty, if {@link FeatureCollection} has no Features.
  */
 public final class FeatureCollection {
     public static final String TYPE = "FeatureCollection";
     public static final String FEATURES_KEY = "features";
     public static final String TYPE_KEY = "type";
-    private final List<Feature> features;
+    private final List<Map<String, Object>> features;
 
     private FeatureCollection() {
         this.features = new ArrayList<>();
     }
 
     /**
-     * Gets the list of Features
+     * Gets the list of Features in Map format
      *
-     * @return List of {@link Feature}
+     * @return List of Feature as Map from the {@link FeatureCollection}
      */
-    public List<Feature> getFeatures() {
+    public List<Map<String, Object>> getFeatures() {
         return Collections.unmodifiableList(features);
     }
 
     /**
      * Add Features to this collection
-     * @param features List of {@link Feature}
+     * @param featureMap feature in Map format
      * @throws NullPointerException if feature is null
      */
-    public void addFeatures(List<Feature> features) {
-        Objects.requireNonNull(features, "cannot add null to features");
-        this.features.addAll(features);
+    public void addFeature(Map<String, Object> featureMap) {
+        Objects.requireNonNull(featureMap, "cannot add null to features");
+        this.features.add(featureMap);
     }
 
     /**
@@ -82,11 +80,7 @@ public final class FeatureCollection {
             );
         }
         Object[] featureArray = (Object[]) featureObject;
-        List<Feature> features = Stream.of(featureArray)
-            .map(GeospatialParser::toStringObjectMap)
-            .map(FeatureFactory::create)
-            .collect(Collectors.toList());
-        collection.addFeatures(features);
+        Stream.of(featureArray).map(GeospatialParser::toStringObjectMap).forEach(collection::addFeature);
         return collection;
     }
 
