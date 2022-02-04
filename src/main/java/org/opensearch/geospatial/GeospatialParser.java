@@ -5,13 +5,21 @@
 
 package org.opensearch.geospatial;
 
+import static org.opensearch.geospatial.geojson.Feature.TYPE_KEY;
+
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.geospatial.geojson.Feature;
+import org.opensearch.geospatial.geojson.FeatureCollection;
 
 /**
  * GeospatialParser provides helper methods to parse/extract/transform input to
@@ -64,5 +72,23 @@ public final class GeospatialParser {
     public static Map<String, Object> convertToMap(BytesReference content) {
         Objects.requireNonNull(content);
         return XContentHelper.convertToMap(content, false, XContentType.JSON).v2();
+    }
+
+    /**
+     * getFeatures will return features from given map input. This function abstracts the logic to parse given input and returns
+     * list of Features if exists in Map format.
+     * @param geoJSON given input which may contain GeoJSON Object
+     * @return List of Feature in Map
+     */
+    public static Optional<List<Map<String, Object>>> getFeatures(final Map<String, Object> geoJSON) {
+        final String type = extractValueAsString(geoJSON, TYPE_KEY);
+        Objects.requireNonNull(type, TYPE_KEY + " cannot be null");
+        if (Feature.TYPE.equalsIgnoreCase(type)) {
+            return Optional.ofNullable(Collections.unmodifiableList(Arrays.asList(geoJSON)));
+        }
+        if (FeatureCollection.TYPE.equalsIgnoreCase(type)) {
+            return Optional.ofNullable(Collections.unmodifiableList(FeatureCollection.create(geoJSON).getFeatures()));
+        }
+        return Optional.empty();
     }
 }
