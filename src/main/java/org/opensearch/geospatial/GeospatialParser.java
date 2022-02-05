@@ -78,7 +78,8 @@ public final class GeospatialParser {
      * getFeatures will return features from given map input. This function abstracts the logic to parse given input and returns
      * list of Features if exists in Map format.
      * @param geoJSON given input which may contain GeoJSON Object
-     * @return Optional List of Feature in Map, if Feature exist
+     * @return Returns an Optional with the List of Features as map if input is GeoJSON,
+     * else, returns an empty Optional instance.
      */
     public static Optional<List<Map<String, Object>>> getFeatures(final Map<String, Object> geoJSON) {
         final String type = extractValueAsString(geoJSON, TYPE_KEY);

@@ -87,7 +87,8 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
         Tuple<XContentType, BytesReference> sourceTuple = restRequest.contentOrSourceParam();
-        UploadGeoJSONRequest request = new UploadGeoJSONRequest(sourceTuple.v2());
+        RestRequest.Method method = restRequest.getHttpRequest().method();
+        UploadGeoJSONRequest request = new UploadGeoJSONRequest(method, sourceTuple.v2());
         return channel -> client.execute(UploadGeoJSONAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 }
