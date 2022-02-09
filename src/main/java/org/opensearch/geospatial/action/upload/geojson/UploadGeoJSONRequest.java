@@ -34,8 +34,8 @@ public class UploadGeoJSONRequest extends ActionRequest {
 
     public UploadGeoJSONRequest(StreamInput in) throws IOException {
         super(in);
-        this.content = Objects.requireNonNull(in.readBytesReference());
-        this.method = in.readEnum(RestRequest.Method.class);
+        this.content = Objects.requireNonNull(in.readBytesReference(), "data is missing");
+        this.method = Objects.requireNonNull(in.readEnum(RestRequest.Method.class), "RestRequest Method is missing");
     }
 
     public BytesReference getContent() {

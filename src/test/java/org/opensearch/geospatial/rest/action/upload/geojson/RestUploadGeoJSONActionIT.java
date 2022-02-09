@@ -11,6 +11,9 @@
 
 package org.opensearch.geospatial.rest.action.upload.geojson;
 
+import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_OBJECT;
+import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_UPLOAD;
+
 import java.io.IOException;
 
 import org.opensearch.client.Request;
@@ -23,7 +26,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPostMethod() throws IOException {
 
-        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), RestUploadGeoJSONAction.GEOJSON);
+        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         Request request = new Request("POST", path);
         request.setJsonEntity(buildUploadGeoJSONRequestContent().toString());
         Response response = client().performRequest(request);
@@ -33,7 +36,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPutMethod() throws IOException {
 
-        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), RestUploadGeoJSONAction.GEOJSON);
+        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         Request request = new Request("PUT", path);
         request.setJsonEntity(buildUploadGeoJSONRequestContent().toString());
         Response response = client().performRequest(request);
