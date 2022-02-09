@@ -23,12 +23,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPostMethod() throws IOException {
 
-        String path = String.join(
-            RestUploadGeoJSONAction.URL_DELIMITER,
-            GeospatialPlugin.getPluginURLPrefix(),
-            RestUploadGeoJSONAction.ACTION_OBJECT,
-            RestUploadGeoJSONAction.ACTION_UPLOAD
-        );
+        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), RestUploadGeoJSONAction.GEOJSON);
         Request request = new Request("POST", path);
         request.setJsonEntity(buildUploadGeoJSONRequestContent().toString());
         Response response = client().performRequest(request);
@@ -38,12 +33,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPutMethod() throws IOException {
 
-        String path = String.join(
-            RestUploadGeoJSONAction.URL_DELIMITER,
-            GeospatialPlugin.getPluginURLPrefix(),
-            RestUploadGeoJSONAction.ACTION_OBJECT,
-            RestUploadGeoJSONAction.ACTION_UPLOAD
-        );
+        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), RestUploadGeoJSONAction.GEOJSON);
         Request request = new Request("PUT", path);
         request.setJsonEntity(buildUploadGeoJSONRequestContent().toString());
         Response response = client().performRequest(request);

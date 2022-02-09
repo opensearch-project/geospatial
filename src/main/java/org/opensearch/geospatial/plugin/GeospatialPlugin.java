@@ -38,9 +38,10 @@ import org.opensearch.rest.RestHandler;
 public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin {
     public static final String NAME = "geospatial";
     public static final String PLUGIN_PREFIX = "_plugins";
+    public static final String URL_DELIMITER = "/";
 
     public static String getPluginURLPrefix() {
-        return String.join("/", PLUGIN_PREFIX, NAME);
+        return String.join(URL_DELIMITER, PLUGIN_PREFIX, NAME);
     }
 
     @Override

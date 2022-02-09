@@ -118,15 +118,10 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), randomLowerCaseString());
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), randomString());
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName(), "geo_shape");
-        String fieldId = null;
-        if (randomBoolean()) {
-            fieldId = randomLowerCaseString();
-            contents.put(UploadGeoJSONRequestContent.FIELD_FEATURE_ID.getPreferredName(), fieldId);
-        }
         JSONArray values = new JSONArray();
-        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()), fieldId));
-        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()), fieldId));
-        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()), fieldId));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
+        values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
         values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap())));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents;
