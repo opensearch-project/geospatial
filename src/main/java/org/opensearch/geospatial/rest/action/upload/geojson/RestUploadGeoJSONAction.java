@@ -6,6 +6,7 @@
 package org.opensearch.geospatial.rest.action.upload.geojson;
 
 import static java.util.Collections.unmodifiableList;
+import static org.opensearch.geospatial.plugin.GeospatialPlugin.URL_DELIMITER;
 import static org.opensearch.rest.RestRequest.Method.POST;
 import static org.opensearch.rest.RestRequest.Method.PUT;
 
@@ -28,7 +29,8 @@ import org.opensearch.rest.action.RestToXContentListener;
  */
 public class RestUploadGeoJSONAction extends BaseRestHandler {
 
-    public static final String GEOJSON = "geojson";
+    public static final String ACTION_OBJECT = "geojson";
+    public static final String ACTION_UPLOAD = "_upload";
     public static final String NAME = "upload_geojson_action";
 
     @Override
@@ -38,7 +40,7 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
 
     /**
      * Supported Routes are
-     * POST /_plugins/geospatial/geojson/
+     * POST /_plugins/geospatial/geojson/_upload
      * {
      *   "index": "create_new_index",
      *   "field" : "geospatial field name",
@@ -67,7 +69,7 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
      *   }
      *  ]
      * }
-     * PUT /_plugins/geospatial/geojson
+     * PUT /_plugins/geospatial/geojson/_upload
      * {
      *   "index": "create_new_index_if_does_not_exists",
      *   ....... same as POST ..........
@@ -78,7 +80,7 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
      */
     @Override
     public List<Route> routes() {
-        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), GEOJSON);
+        String path = String.join(URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         return unmodifiableList(Arrays.asList(new Route(POST, path), new Route(PUT, path)));
     }
 
