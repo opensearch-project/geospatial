@@ -11,7 +11,6 @@ import java.util.stream.IntStream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opensearch.common.Randomness;
-import org.opensearch.common.Strings;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.collect.List;
 import org.opensearch.common.geo.GeoShapeType;
@@ -32,6 +31,7 @@ public class GeospatialObjectBuilder {
     public static final int MIN_LINE_STRING_COORDINATES_SIZE = 2;
     public static final int MAX_POINTS = 10;
     public static final int POINTS_SIZE = 2;
+    public static final String GEOJSON_FIELD_ID = "id";
 
     public static JSONObject buildGeometry(String type, Object value) {
         JSONObject geometry = new JSONObject();
@@ -82,17 +82,12 @@ public class GeospatialObjectBuilder {
         return Randomness.get().ints(min, max).findFirst().getAsInt();
     }
 
-    public static JSONObject randomGeoJSONFeature(final JSONObject properties, String featureId) {
-        JSONObject geoJSONFeature = buildGeoJSONFeature(randomGeoJSONGeometry(), properties);
-        if (!Strings.hasText(featureId)) {
-            return geoJSONFeature;
-        }
-        geoJSONFeature.put(featureId, UUIDs.randomBase64UUID());
-        return geoJSONFeature;
-    }
-
     public static JSONObject randomGeoJSONFeature(final JSONObject properties) {
-        return randomGeoJSONFeature(properties, null);
+        JSONObject geoJSONFeature = buildGeoJSONFeature(randomGeoJSONGeometry(), properties);
+        if (Randomness.get().nextBoolean()) {
+            geoJSONFeature.put(GEOJSON_FIELD_ID, UUIDs.randomBase64UUID());
+        }
+        return geoJSONFeature;
     }
 
     public static JSONObject randomGeoJSONGeometry() {

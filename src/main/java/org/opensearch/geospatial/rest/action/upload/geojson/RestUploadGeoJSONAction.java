@@ -28,10 +28,8 @@ import org.opensearch.rest.action.RestToXContentListener;
  */
 public class RestUploadGeoJSONAction extends BaseRestHandler {
 
-    public static final String ACTION_OBJECT = "geojson";
-    public static final String ACTION_UPLOAD = "_upload";
+    public static final String GEOJSON = "geojson";
     public static final String NAME = "upload_geojson_action";
-    public static final String URL_DELIMITER = "/";
 
     @Override
     public String getName() {
@@ -40,7 +38,7 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
 
     /**
      * Supported Routes are
-     * POST /_plugins/geospatial/geojson/_upload
+     * POST /_plugins/geospatial/geojson/
      * {
      *   "index": "create_new_index",
      *   "field" : "geospatial field name",
@@ -69,7 +67,7 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
      *   }
      *  ]
      * }
-     * PUT /_plugins/geospatial/geojson/_upload
+     * PUT /_plugins/geospatial/geojson
      * {
      *   "index": "create_new_index_if_does_not_exists",
      *   ....... same as POST ..........
@@ -80,7 +78,7 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
      */
     @Override
     public List<Route> routes() {
-        String path = String.join(URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), GEOJSON);
         return unmodifiableList(Arrays.asList(new Route(POST, path), new Route(PUT, path)));
     }
 
