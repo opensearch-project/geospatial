@@ -74,7 +74,7 @@ public class GeospatialObjectBuilder {
     public static JSONObject buildGeoJSONFeatureCollection(JSONArray features) {
         JSONObject collection = new JSONObject();
         collection.put(FeatureCollection.TYPE_KEY, FeatureCollection.TYPE);
-        collection.put(FeatureCollection.FEATURES_KEY, features.toList().toArray());
+        collection.put(FeatureCollection.FEATURES_KEY, features.toList());
         return collection;
     }
 

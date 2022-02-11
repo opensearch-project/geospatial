@@ -6,11 +6,9 @@
 package org.opensearch.geospatial.geojson;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import org.opensearch.geospatial.GeospatialParser;
 
@@ -35,7 +33,7 @@ public final class FeatureCollection {
      * @return List of Feature as Map from the {@link FeatureCollection}
      */
     public List<Map<String, Object>> getFeatures() {
-        return Collections.unmodifiableList(features);
+        return features;
     }
 
     /**
@@ -74,13 +72,13 @@ public final class FeatureCollection {
         if (featureObject == null) { // empty features are valid based on definition
             return collection;
         }
-        if (!(featureObject instanceof Object[])) {
+        if (!(featureObject instanceof List)) {
             throw new IllegalArgumentException(
-                FEATURES_KEY + " is not an instance of type Object[], but of type [ " + featureObject.getClass().getName() + " ]"
+                FEATURES_KEY + " is not an instance of type List, but of type [ " + featureObject.getClass().getName() + " ]"
             );
         }
-        Object[] featureArray = (Object[]) featureObject;
-        Stream.of(featureArray).map(GeospatialParser::toStringObjectMap).forEach(collection::addFeature);
+        List<Object> featureArray = (List) featureObject;
+        featureArray.stream().map(GeospatialParser::toStringObjectMap).forEach(collection::addFeature);
         return collection;
     }
 

@@ -16,13 +16,10 @@ import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFea
 import static org.opensearch.geospatial.geojson.FeatureCollection.FEATURES_KEY;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.opensearch.geospatial.GeospatialParser;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class FeatureCollectionTests extends OpenSearchTestCase {
@@ -32,18 +29,11 @@ public class FeatureCollectionTests extends OpenSearchTestCase {
         features.put(randomGeoJSONFeature(new JSONObject()));
         features.put(randomGeoJSONFeature(new JSONObject()));
         features.put(randomGeoJSONFeature(new JSONObject()));
-        features.put(randomGeoJSONFeature(new JSONObject()));
+
         Map<String, Object> featureCollectionAsMap = buildGeoJSONFeatureCollection(features).toMap();
         FeatureCollection collection = FeatureCollection.create(featureCollectionAsMap);
         assertNotNull(collection);
         assertEquals(features.toList().size(), collection.getFeatures().size());
-
-        List<Map<String, Object>> expected = features.toList()
-            .stream()
-            .map(GeospatialParser::toStringObjectMap)
-            .collect(Collectors.toList());
-
-        assertArrayEquals("features are not equal", expected.toArray(), collection.getFeatures().toArray());
     }
 
     public void testCreateFeatureCollectionInvalidType() {
@@ -68,6 +58,6 @@ public class FeatureCollectionTests extends OpenSearchTestCase {
         featureCollectionAsMap.put(FeatureCollection.TYPE_KEY, FeatureCollection.TYPE);
         featureCollectionAsMap.put(FEATURES_KEY, "invalid");
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> FeatureCollection.create(featureCollectionAsMap));
-        assertTrue(ex.getMessage().contains(FEATURES_KEY + " is not an instance of type Object[]"));
+        assertTrue(ex.getMessage().contains(FEATURES_KEY + " is not an instance of type List"));
     }
 }
