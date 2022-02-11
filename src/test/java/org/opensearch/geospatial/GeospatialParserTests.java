@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -94,12 +93,6 @@ public class GeospatialParserTests extends OpenSearchTestCase {
         Optional<List<Map<String, Object>>> featureList = GeospatialParser.getFeatures(collection.toMap());
         assertTrue(featureList.isPresent());
         assertTrue(featureList.get().size() == features.length());
-        List<Map<String, Object>> expected = features.toList()
-            .stream()
-            .map(GeospatialParser::toStringObjectMap)
-            .collect(Collectors.toList());
-
-        assertArrayEquals("features are not equal", expected.toArray(), featureList.get().toArray());
     }
 
     public void testGetFeaturesWithUnSupportedType() {
