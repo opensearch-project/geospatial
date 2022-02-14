@@ -11,6 +11,7 @@
 
 package org.opensearch.geospatial.rest.action.upload.geojson;
 
+import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_OBJECT;
 import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_UPLOAD;
 

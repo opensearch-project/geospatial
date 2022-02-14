@@ -8,13 +8,13 @@ package org.opensearch.geospatial;
 import static java.util.stream.Collectors.joining;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
+import static org.opensearch.geospatial.GeospatialTestHelper.*;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -44,8 +44,6 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     public static final String URL_DELIMITER = "/";
     public static final String FIELD_TYPE_KEY = "type";
     public static final String MAPPING_PROPERTIES_KEY = "properties";
-    public static final int RANDOM_STRING_MIN_LENGTH = 2;
-    public static final int RANDOM_STRING_MAX_LENGTH = 16;
     public static final String MAPPING = "_mapping";
     public static final String FIELD_MAPPINGS_KEY = "mappings";
     public static final String COUNT = "_count";
@@ -132,14 +130,6 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         IntStream.range(0, totalGeoJSONObject).forEach(unUsed -> values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()))));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents;
-    }
-
-    private String randomString() {
-        return randomAlphaOfLengthBetween(RANDOM_STRING_MIN_LENGTH, RANDOM_STRING_MAX_LENGTH);
-    }
-
-    public String randomLowerCaseString() {
-        return randomString().toLowerCase(Locale.getDefault());
     }
 
     private RestStatus getIndexHeadRequestStatus(String indexName) throws IOException {
