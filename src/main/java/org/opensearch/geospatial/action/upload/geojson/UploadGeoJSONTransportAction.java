@@ -12,7 +12,6 @@
 package org.opensearch.geospatial.action.upload.geojson;
 
 import java.util.Map;
-import java.util.Objects;
 
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
@@ -49,32 +48,38 @@ public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadG
 
     @Override
     protected void doExecute(Task task, UploadGeoJSONRequest request, ActionListener<AcknowledgedResponse> actionListener) {
-        Map<String, Object> contentAsMap = GeospatialParser.convertToMap(request.getContent());
-        UploadGeoJSONRequestContent content;
-        // 1. extract content from request.
-        try {
-            content = UploadGeoJSONRequestContent.create(contentAsMap);
-        } catch (Exception e) {
-            actionListener.onFailure(e);
+        UploadGeoJSONRequestContent content = getContent(request, actionListener);
+        if (content == null) {
             return;
         }
 
-        // 2. Check should continue upload if index exist.
+        // 2. Check should we continue upload if index exist.
         boolean failIfIndexExist = shouldFailIfIndexExist(request.getMethod());
         final boolean indexExists = clusterService.state().getRoutingTable().hasIndex(content.getIndexName());
         if (indexExists && failIfIndexExist) {
             actionListener.onFailure(new ResourceAlreadyExistsException(content.getIndexName()));
             return;
         }
-
-        Uploader uploader = new Uploader(client, actionListener);
+        IndexManager indexManager = new IndexManager(client.admin().indices());
+        PipelineManager pipelineManager = new PipelineManager(client.admin().cluster());
+        ContentBuilder contentBuilder = new ContentBuilder(client);
+        Uploader uploader = new Uploader(indexManager, pipelineManager, contentBuilder);
         // 3. upload GeoJSON as index document.
         try {
-            uploader.upload(content, indexExists);
-        } catch (Exception e) {
+            uploader.upload(content, indexExists, actionListener);
+        } catch (Exception e) { // doExecute should not throw any Exception since it is executed asynchronously
             actionListener.onFailure(e);
         }
+    }
 
+    private UploadGeoJSONRequestContent getContent(UploadGeoJSONRequest request, ActionListener<AcknowledgedResponse> actionListener) {
+        Map<String, Object> contentAsMap = GeospatialParser.convertToMap(request.getContent());
+        try {
+            return UploadGeoJSONRequestContent.create(contentAsMap);
+        } catch (Exception e) {
+            actionListener.onFailure(e);
+            return null;
+        }
     }
 
     /*
@@ -82,10 +87,6 @@ public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadG
      * If method is POST, then, request should fail if index exist.
      */
     private boolean shouldFailIfIndexExist(RestRequest.Method method) {
-        Objects.requireNonNull(method, "method cannot be empty");
-        if (RestRequest.Method.POST.equals(method)) {
-            return true;
-        }
-        return false;
+        return RestRequest.Method.POST.equals(method);
     }
 }
