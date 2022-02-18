@@ -75,6 +75,7 @@ public class Uploader {
         StepListener<Exception> deletePipelineStep = new StepListener<>();
 
         if (isIndexAlreadyExists) {
+            LOGGER.info("Index [ " + content.getIndexName() + " ] is already exists");
             createIndexStep.onResponse(null); // mark create index step as completed, to continue to next steps.
         } else {
             // create index
