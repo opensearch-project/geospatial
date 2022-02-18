@@ -48,6 +48,7 @@ public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadG
 
     @Override
     protected void doExecute(Task task, UploadGeoJSONRequest request, ActionListener<AcknowledgedResponse> actionListener) {
+        // 1. parse request's data and extract into UploadGeoJSONRequestContent
         UploadGeoJSONRequestContent content = getContent(request, actionListener);
         if (content == null) {
             return;

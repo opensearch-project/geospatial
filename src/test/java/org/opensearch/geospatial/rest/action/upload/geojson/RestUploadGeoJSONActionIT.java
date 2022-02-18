@@ -54,6 +54,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
         Map<String, String> geoFields = new HashMap<>();
         geoFields.put(geoFieldName, "geo_shape");
         createIndex(index, Settings.EMPTY, geoFields);
+        assertIndexExists(index);
         String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         Request request = new Request("POST", path);
         final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, index, geoFieldName);

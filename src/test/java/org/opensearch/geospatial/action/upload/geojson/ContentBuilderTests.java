@@ -78,7 +78,7 @@ public class ContentBuilderTests extends OpenSearchTestCase {
         UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contentMap);
         BulkRequestBuilder mockBulkRequestBuilder = mockBulkRequestBuilder(ZERO_ACTIONS);
         final Optional<BulkRequestBuilder> prepare = contentBuilder.prepare(content, randomLowerCaseString());
-        verify(mockClient).prepareBulk();
+        verify(mockClient, never()).prepareBulk();
         verify(mockClient, never()).prepareIndex();
         verify(mockBulkRequestBuilder, never()).add(any(IndexRequestBuilder.class));
         assertFalse("Feature count should be empty", prepare.isPresent());
