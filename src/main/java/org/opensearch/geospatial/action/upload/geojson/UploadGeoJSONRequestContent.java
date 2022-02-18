@@ -7,6 +7,7 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import static org.opensearch.geospatial.GeospatialParser.extractValueAsString;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -25,9 +26,9 @@ public final class UploadGeoJSONRequestContent {
     private final String indexName;
     private final String fieldName;
     private final String fieldType;
-    private final Object data;
+    private final List<Object> data;
 
-    private UploadGeoJSONRequestContent(String indexName, String fieldName, String fieldType, Object data) {
+    private UploadGeoJSONRequestContent(String indexName, String fieldName, String fieldType, List<Object> data) {
         this.indexName = indexName;
         this.fieldName = fieldName;
         this.fieldType = fieldType;
@@ -59,7 +60,12 @@ public final class UploadGeoJSONRequestContent {
             input.get(FIELD_DATA.getPreferredName()),
             "field [ " + FIELD_DATA.getPreferredName() + " ] cannot be empty"
         );
-        return new UploadGeoJSONRequestContent(index, fieldName, fieldType, geoJSONData);
+        if (!(geoJSONData instanceof List)) {
+            throw new IllegalArgumentException(
+                geoJSONData + " is not an instance of List, but of type [ " + geoJSONData.getClass().getName() + " ]"
+            );
+        }
+        return new UploadGeoJSONRequestContent(index, fieldName, fieldType, (List<Object>) geoJSONData);
     }
 
     public final String getIndexName() {
@@ -70,7 +76,7 @@ public final class UploadGeoJSONRequestContent {
         return fieldName;
     }
 
-    public Object getData() {
+    public List<Object> getData() {
         return data;
     }
 

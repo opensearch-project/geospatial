@@ -38,9 +38,12 @@ public class ContentBuilder {
     // GeospatialParser.getFeatures to extract features from user input, create IndexRequestBuilder
     // with index name and pipeline.
     private Optional<BulkRequestBuilder> prepareContentRequest(UploadGeoJSONRequestContent content, String pipeline) {
+        if (content.getData().isEmpty()) {
+            return Optional.empty();
+        }
         BulkRequestBuilder builder = prepareBulkRequestBuilder();
-        List<Object> documents = (List<Object>) content.getData();
-        documents.stream()
+        content.getData()
+            .stream()
             .map(GeospatialParser::toStringObjectMap)
             .map(GeospatialParser::getFeatures)
             .filter(Optional::isPresent)
