@@ -34,10 +34,6 @@ public class ContentBuilder {
         return prepareContentRequest(content, pipeline);
     }
 
-    private BulkRequestBuilder prepareBulkRequestBuilder() {
-        return client.prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
-    }
-
     // build BulkRequestBuilder, by, iterating, UploadGeoJSONRequestContent's data. This depends on
     // GeospatialParser.getFeatures to extract features from user input, create IndexRequestBuilder
     // with index name and pipeline.
@@ -59,6 +55,10 @@ public class ContentBuilder {
             return Optional.empty();
         }
         return Optional.of(builder);
+    }
+
+    private BulkRequestBuilder prepareBulkRequestBuilder() {
+        return client.prepareBulk().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
     }
 
     private IndexRequestBuilder createIndexRequestBuilder(Map<String, Object> source) {
