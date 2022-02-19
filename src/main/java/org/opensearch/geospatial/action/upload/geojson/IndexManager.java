@@ -25,10 +25,10 @@ public class IndexManager {
     public static final String FIELD_TYPE_KEY = "type";
     public static final String MAPPING_PROPERTIES_KEY = "properties";
     public static final String DOCUMENT_TYPE = "_doc";
-    private final Logger logger = LogManager.getLogger(IndexManager.class);
+    private static final Logger LOGGER = LogManager.getLogger(IndexManager.class);
     private final IndicesAdminClient client;
 
-    public IndexManager(IndicesAdminClient client) {
+    public IndexManager(final IndicesAdminClient client) {
         this.client = Objects.requireNonNull(client, "Index admin client cannot be null");
     }
 
@@ -38,7 +38,7 @@ public class IndexManager {
      * @param fieldNameTypeMap Map of field name and type, that will be used for creating mapping.
      * @param createIndexStep Notification Listener that will notify status of action
      */
-    public void create(String indexName, Map<String, String> fieldNameTypeMap, StepListener<Void> createIndexStep) {
+    public void create(final String indexName, final Map<String, String> fieldNameTypeMap, final StepListener<Void> createIndexStep) {
         try (XContentBuilder mapping = buildMapping(fieldNameTypeMap)) {
             createIndex(indexName, mapping, createIndexStep);
         } catch (IOException mappingFailedException) {
@@ -59,7 +59,7 @@ public class IndexManager {
         CreateIndexRequest request = new CreateIndexRequest(indexName).mapping(DOCUMENT_TYPE, mapping);
         client.create(request, ActionListener.wrap(createIndexResponse -> {
             StringBuilder message = new StringBuilder("Created index: ").append(indexName);
-            logger.info(message.toString());
+            LOGGER.info(message.toString());
             createIndexStep.onResponse(null);
         }, createIndexStep::onFailure));
     }
