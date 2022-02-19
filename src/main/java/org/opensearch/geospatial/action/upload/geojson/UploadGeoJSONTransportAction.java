@@ -48,18 +48,18 @@ public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadG
 
     @Override
     protected void doExecute(Task task, UploadGeoJSONRequest request, ActionListener<AcknowledgedResponse> actionListener) {
-        Map<String, Object> contentAsMap = GeospatialParser.convertToMap(request.getContent());
+        final Map<String, Object> contentAsMap = GeospatialParser.convertToMap(request.getContent());
         // 1. parse request's data and extract into UploadGeoJSONRequestContent
-        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contentAsMap);
+        final UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contentAsMap);
         // 2. Check should we continue upload if index exist.
         boolean failIfIndexExist = shouldFailIfIndexExist(request.getMethod());
         final boolean indexExists = clusterService.state().getRoutingTable().hasIndex(content.getIndexName());
         if (indexExists && failIfIndexExist) {
             throw new ResourceAlreadyExistsException(content.getIndexName());
         }
-        IndexManager indexManager = new IndexManager(client.admin().indices());
-        PipelineManager pipelineManager = new PipelineManager(client.admin().cluster());
-        ContentBuilder contentBuilder = new ContentBuilder(client);
+        final IndexManager indexManager = new IndexManager(client.admin().indices());
+        final PipelineManager pipelineManager = new PipelineManager(client.admin().cluster());
+        final ContentBuilder contentBuilder = new ContentBuilder(client);
         // 3. upload GeoJSON as index document.
         new Uploader(indexManager, pipelineManager, contentBuilder).upload(content, indexExists, actionListener);
     }

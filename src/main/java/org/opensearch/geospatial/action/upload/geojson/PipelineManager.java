@@ -29,7 +29,7 @@ import org.opensearch.ingest.Pipeline;
  */
 public class PipelineManager {
 
-    private final Logger logger = LogManager.getLogger(PipelineManager.class);
+    private static final Logger LOGGER = LogManager.getLogger(PipelineManager.class);
 
     private final ClusterAdminClient client;
 
@@ -66,10 +66,10 @@ public class PipelineManager {
      * @param supplier Exception to be passed to the listener.
      */
     public void delete(String pipeline, StepListener<Exception> deletePipelineStep, final Supplier<Exception> supplier) {
-        DeletePipelineRequest pipelineRequest = new DeletePipelineRequest(pipeline);
+        final DeletePipelineRequest pipelineRequest = new DeletePipelineRequest(pipeline);
         client.deletePipeline(pipelineRequest, ActionListener.wrap(acknowledgedResponse -> {
             StringBuilder message = new StringBuilder("Deleted pipeline: ").append(pipeline);
-            logger.info(message.toString());
+            LOGGER.info(message.toString());
             deletePipelineStep.onResponse(supplier.get());
         }, deletePipelineRequestFailed -> {
             StringBuilder message = new StringBuilder("Failed to delete the pipeline: ").append(pipeline)
@@ -96,11 +96,11 @@ public class PipelineManager {
     }
 
     private void createPipeline(XContentBuilder pipelineRequestXContent, String pipelineID, StepListener<String> createPipelineStep) {
-        BytesReference pipelineRequestBodyBytes = BytesReference.bytes(pipelineRequestXContent);
-        PutPipelineRequest pipelineRequest = new PutPipelineRequest(pipelineID, pipelineRequestBodyBytes, XContentType.JSON);
+        final BytesReference pipelineRequestBodyBytes = BytesReference.bytes(pipelineRequestXContent);
+        final PutPipelineRequest pipelineRequest = new PutPipelineRequest(pipelineID, pipelineRequestBodyBytes, XContentType.JSON);
         client.putPipeline(pipelineRequest, ActionListener.wrap(acknowledgedResponse -> {
             StringBuilder pipelineMessage = new StringBuilder("Created pipeline: ").append(pipelineID);
-            logger.info(pipelineMessage.toString());
+            LOGGER.info(pipelineMessage.toString());
             createPipelineStep.onResponse(pipelineID);
         }, putPipelineRequestFailedException -> {
             StringBuilder message = new StringBuilder("Failed to create the pipeline: ").append(pipelineID)

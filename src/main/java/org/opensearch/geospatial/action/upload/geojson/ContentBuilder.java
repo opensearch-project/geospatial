@@ -23,7 +23,7 @@ import org.opensearch.geospatial.GeospatialParser;
  */
 public class ContentBuilder {
     public static final String GEOJSON_FEATURE_ID_FIELD = "id";
-    public static final String DOCUMENT_TYPE = "_doc";
+    private static final String DOCUMENT_TYPE = "_doc";
     private final Client client;
 
     public ContentBuilder(Client client) {
@@ -41,7 +41,7 @@ public class ContentBuilder {
         if (content.getData().isEmpty()) {
             return Optional.empty();
         }
-        BulkRequestBuilder builder = prepareBulkRequestBuilder();
+        final BulkRequestBuilder builder = prepareBulkRequestBuilder();
         content.getData()
             .stream()
             .map(GeospatialParser::toStringObjectMap)

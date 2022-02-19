@@ -41,7 +41,7 @@ public final class GeospatialParser {
         for (Map.Entry<Object, Object> entry : inputMap.entrySet()) {
             stringObjectMap.put(entry.getKey().toString(), entry.getValue());
         }
-        return stringObjectMap;
+        return Collections.unmodifiableMap(stringObjectMap);
     }
 
     /**
@@ -71,7 +71,7 @@ public final class GeospatialParser {
      */
     public static Map<String, Object> convertToMap(BytesReference content) {
         Objects.requireNonNull(content);
-        return XContentHelper.convertToMap(content, false, XContentType.JSON).v2();
+        return Collections.unmodifiableMap(XContentHelper.convertToMap(content, false, XContentType.JSON).v2());
     }
 
     /**

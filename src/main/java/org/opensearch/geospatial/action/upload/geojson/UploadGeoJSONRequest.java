@@ -24,7 +24,7 @@ import org.opensearch.rest.RestRequest;
 public class UploadGeoJSONRequest extends ActionRequest {
 
     private final RestRequest.Method method;
-    private BytesReference content;
+    private final BytesReference content;
 
     public UploadGeoJSONRequest(RestRequest.Method method, BytesReference content) {
         super();

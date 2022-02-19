@@ -36,7 +36,7 @@ public class FeatureProcessor extends AbstractProcessor {
         // 2. Remove field "type", since, we are not storing as geo-json
         // 3. Move properties.* as document's fields, since, we don't have to group it inside "properties"
         // 5. Move geojson's geometry object to geoshape field.
-        Feature feature = FeatureFactory.create(ingestDocument.getSourceAndMetadata());
+        final Feature feature = FeatureFactory.create(ingestDocument.getSourceAndMetadata());
         ingestDocument.removeField(Feature.TYPE_KEY);
         feature.getProperties().forEach((k, v) -> ingestDocument.setFieldValue(k, v));
         if (ingestDocument.hasField(Feature.PROPERTIES_KEY)) { // properties are optional in Feature
