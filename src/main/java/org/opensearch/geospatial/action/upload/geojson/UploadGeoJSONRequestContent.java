@@ -19,6 +19,7 @@ import org.opensearch.common.Strings;
  */
 public final class UploadGeoJSONRequestContent {
 
+    public static final String GEOSPATIAL_DEFAULT_FIELD_NAME = "location";
     public static final ParseField FIELD_INDEX = new ParseField("index", new String[0]);
     public static final ParseField FIELD_GEOSPATIAL = new ParseField("field", new String[0]);
     public static final ParseField FIELD_GEOSPATIAL_TYPE = new ParseField("type", new String[0]);
@@ -50,7 +51,7 @@ public final class UploadGeoJSONRequestContent {
         }
         String fieldName = extractValueAsString(input, FIELD_GEOSPATIAL.getPreferredName());
         if (!Strings.hasText(fieldName)) {
-            throw new IllegalArgumentException("field [ " + FIELD_GEOSPATIAL.getPreferredName() + " ] cannot be empty");
+            fieldName = GEOSPATIAL_DEFAULT_FIELD_NAME; // use default filed name, if field name is empty
         }
         String fieldType = extractValueAsString(input, FIELD_GEOSPATIAL_TYPE.getPreferredName());
         if (!Strings.hasText(fieldType)) {

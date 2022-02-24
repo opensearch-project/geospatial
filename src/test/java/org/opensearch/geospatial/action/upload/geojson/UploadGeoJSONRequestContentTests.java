@@ -8,6 +8,7 @@ package org.opensearch.geospatial.action.upload.geojson;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
+import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.GEOSPATIAL_DEFAULT_FIELD_NAME;
 
 import java.util.Collections;
 import java.util.Map;
@@ -51,11 +52,9 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
     }
 
     public void testCreateEmptyGeospatialFieldName() {
-        IllegalArgumentException invalidIndexName = assertThrows(
-            IllegalArgumentException.class,
-            () -> UploadGeoJSONRequestContent.create(buildRequestContent("some-index", ""))
-        );
-        assertTrue(invalidIndexName.getMessage().contains("[ field ] cannot be empty"));
+        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(buildRequestContent("some-index", ""));
+        assertNotNull(content);
+        assertEquals("wrong field name", GEOSPATIAL_DEFAULT_FIELD_NAME, content.getFieldName());
     }
 
     public void testCreateEmptyGeospatialFieldType() {
