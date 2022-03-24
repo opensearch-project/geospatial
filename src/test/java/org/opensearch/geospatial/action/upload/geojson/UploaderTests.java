@@ -215,7 +215,6 @@ public class UploaderTests extends OpenSearchTestCase {
             final BulkItemResponse.Failure failedToIndex = new BulkItemResponse.Failure(
                 randomLowerCaseString(),
                 randomLowerCaseString(),
-                UUIDs.randomBase64UUID(),
                 new OpenSearchException(randomLowerCaseString())
             );
             items.add(new BulkItemResponse(randomIntBetween(0, MAX_SHARD_ID), DocWriteRequest.OpType.CREATE, failedToIndex));
@@ -232,7 +231,6 @@ public class UploaderTests extends OpenSearchTestCase {
         String index = randomLowerCaseString();
         String indexUUid = UUIDs.randomBase64UUID();
         int shardId = randomIntBetween(0, MAX_SHARD_ID);
-        String type = randomLowerCaseString();
         String id = UUIDs.randomBase64UUID();
         long seqNo = randomIntBetween(0, MAX_SEQ_NO);
         long primaryTerm = randomIntBetween(0, MAX_PRIMARY_TERM);
@@ -240,7 +238,7 @@ public class UploaderTests extends OpenSearchTestCase {
         boolean created = randomBoolean();
         boolean forcedRefresh = randomBoolean();
         Tuple<ReplicationResponse.ShardInfo, ReplicationResponse.ShardInfo> shardInfo = RandomObjects.randomShardInfo(random());
-        IndexResponse actual = new IndexResponse(new ShardId(index, indexUUid, shardId), type, id, seqNo, primaryTerm, version, created);
+        IndexResponse actual = new IndexResponse(new ShardId(index, indexUUid, shardId), id, seqNo, primaryTerm, version, created);
         actual.setForcedRefresh(forcedRefresh);
         actual.setShardInfo(shardInfo.v1());
 
