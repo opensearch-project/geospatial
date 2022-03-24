@@ -23,7 +23,6 @@ import org.opensearch.geospatial.GeospatialParser;
  */
 public class ContentBuilder {
     public static final String GEOJSON_FEATURE_ID_FIELD = "id";
-    private static final String DOCUMENT_TYPE = "_doc";
     private final Client client;
 
     public ContentBuilder(Client client) {
@@ -52,7 +51,6 @@ public class ContentBuilder {
             .map(documentSource -> createIndexRequestBuilder(documentSource))
             .map(indexRequestBuilder -> indexRequestBuilder.setIndex(content.getIndexName()))
             .map(indexRequestBuilder -> indexRequestBuilder.setPipeline(pipeline))
-            .map(indexRequestBuilder -> indexRequestBuilder.setType(DOCUMENT_TYPE))
             .forEach(builder::add);
         if (builder.numberOfActions() < 1) { // check any features to upload
             return Optional.empty();

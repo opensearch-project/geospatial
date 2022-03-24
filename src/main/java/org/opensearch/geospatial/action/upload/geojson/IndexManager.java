@@ -56,7 +56,7 @@ public class IndexManager {
     }
 
     private void createIndex(String indexName, XContentBuilder mapping, StepListener<Void> createIndexStep) {
-        CreateIndexRequest request = new CreateIndexRequest(indexName).mapping(DOCUMENT_TYPE, mapping);
+        CreateIndexRequest request = new CreateIndexRequest(indexName).mapping(mapping);
         client.create(request, ActionListener.wrap(createIndexResponse -> {
             StringBuilder message = new StringBuilder("Created index: ").append(indexName);
             LOGGER.info(message.toString());
