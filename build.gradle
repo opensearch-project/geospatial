@@ -44,6 +44,7 @@ validateNebulaPom.enabled = false
 buildscript {
     ext {
         opensearch_version = System.getProperty("opensearch.version", "2.1.0-SNAPSHOT")
+        version_qualifier = System.getProperty("build.version_qualifier", "")
         opensearch_group = "org.opensearch"
     }
 
@@ -66,7 +67,10 @@ ext {
 }
 
 allprojects {
-    version = "${opensearch_version}" - "-SNAPSHOT" + ".0"
+    version = opensearch_version.tokenize('-')[0] + '.0'
+    if (version_qualifier) {
+        version += "-${version_qualifier}"
+    }
     if (isSnapshot) {
         version += "-SNAPSHOT"
     }
