@@ -27,7 +27,7 @@ jobs:
 
       - name: Run build
         run: |
-          ./gradlew build -Dopensearch.version=2.1.0-SNAPSHOT
+          ./gradlew build
 
       - name: Upload Coverage Report
         uses: codecov/codecov-action@v1
