@@ -7,16 +7,12 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
-import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkRequestBuilder;
-import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.collect.MapBuilder;
 
@@ -31,8 +27,6 @@ import org.opensearch.common.collect.MapBuilder;
  * At final stage response or failure will be added to the listener.
  */
 public class Uploader {
-
-    public static final String ERROR_MESSAGE_DELIMITER = "\n";
 
     private static final Logger LOGGER = LogManager.getLogger(Uploader.class);
 
@@ -127,8 +121,7 @@ public class Uploader {
         }
         contentRequestBuilder.get().execute(ActionListener.wrap(bulkResponse -> {
             if (bulkResponse.hasFailures()) {
-                final String failureMessage = buildUploadFailureMessage(bulkResponse);
-                throw new IllegalStateException(failureMessage);
+                throw new IllegalStateException(bulkResponse.buildFailureMessage());
             }
             LOGGER.info("indexed " + bulkResponse.getItems().length + " features");
             uploadStepListener.onResponse(null);
@@ -137,12 +130,5 @@ public class Uploader {
             StringBuilder message = new StringBuilder("Failed to index document due to ").append(bulkRequestFailedException.getMessage());
             uploadStepListener.onFailure(new IllegalStateException(message.toString()));
         }));
-    }
-
-    private String buildUploadFailureMessage(BulkResponse bulkResponse) {
-        return Stream.of(bulkResponse.getItems())
-            .filter(BulkItemResponse::isFailed)
-            .map(BulkItemResponse::getFailureMessage)
-            .collect(Collectors.joining(ERROR_MESSAGE_DELIMITER));
     }
 }
