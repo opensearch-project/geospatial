@@ -12,14 +12,13 @@
 package org.opensearch.geospatial.action.upload.geojson;
 
 import org.opensearch.action.ActionType;
-import org.opensearch.action.support.master.AcknowledgedResponse;
 
-public class UploadGeoJSONAction extends ActionType<AcknowledgedResponse> {
+public class UploadGeoJSONAction extends ActionType<UploadGeoJSONResponse> {
 
     public static UploadGeoJSONAction INSTANCE = new UploadGeoJSONAction();
     public static final String NAME = "cluster:admin/upload_geojson_action";
 
     private UploadGeoJSONAction() {
-        super(NAME, AcknowledgedResponse::new);
+        super(NAME, UploadGeoJSONResponse::new);
     }
 }

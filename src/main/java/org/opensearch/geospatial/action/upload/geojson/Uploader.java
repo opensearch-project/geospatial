@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.bulk.BulkRequestBuilder;
-import org.opensearch.action.support.master.AcknowledgedResponse;
+import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.common.collect.MapBuilder;
 
 /**
@@ -61,7 +61,7 @@ public class Uploader {
     public void upload(
         final UploadGeoJSONRequestContent content,
         final boolean isIndexAlreadyExists,
-        final ActionListener<AcknowledgedResponse> flowListener
+        final ActionListener<UploadGeoJSONResponse> flowListener
     ) {
         // validate input
         Objects.requireNonNull(flowListener, "listener cannot be null");
@@ -70,7 +70,7 @@ public class Uploader {
         // initialize step listeners to chain steps
         final StepListener<Void> createIndexStep = new StepListener<>();
         final StepListener<String> createPipelineStep = new StepListener<>();
-        final StepListener<Void> indexFeatureStep = new StepListener<>();
+        final StepListener<BulkResponse> indexFeatureStep = new StepListener<>();
         final StepListener<Exception> deletePipelineStep = new StepListener<>();
 
         if (isIndexAlreadyExists) {
@@ -108,23 +108,31 @@ public class Uploader {
             if (uploadFailedException != null) {
                 throw uploadFailedException;
             }
-            flowListener.onResponse(new AcknowledgedResponse(true));
-        }, flowListener::onFailure);
+            flowListener.onResponse(new UploadGeoJSONResponse(indexFeatureStep.result()));
+        }, deletePipelineFailed -> {
+            try {
+                BulkResponse response = indexFeatureStep.result();
+                // TODO Propogate deletePipelineFailed exception to response as low severity error
+                flowListener.onResponse(new UploadGeoJSONResponse(response));
+            } catch (IllegalStateException stepFailed) {
+                flowListener.onFailure(deletePipelineFailed);
+            }
+        });
 
     }
 
-    private void indexContentAsDocument(String pipeline, UploadGeoJSONRequestContent content, StepListener<Void> uploadStepListener) {
+    private void indexContentAsDocument(
+        String pipeline,
+        UploadGeoJSONRequestContent content,
+        StepListener<BulkResponse> uploadStepListener
+    ) {
         Optional<BulkRequestBuilder> contentRequestBuilder = contentBuilder.prepare(content, pipeline);
         if (!contentRequestBuilder.isPresent()) {
             uploadStepListener.onFailure(new IllegalStateException("No valid features are available to index"));
             return;
         }
         contentRequestBuilder.get().execute(ActionListener.wrap(bulkResponse -> {
-            if (bulkResponse.hasFailures()) {
-                throw new IllegalStateException(bulkResponse.buildFailureMessage());
-            }
-            LOGGER.info("indexed " + bulkResponse.getItems().length + " features");
-            uploadStepListener.onResponse(null);
+            uploadStepListener.onResponse(bulkResponse);
 
         }, bulkRequestFailedException -> {
             StringBuilder message = new StringBuilder("Failed to index document due to ").append(bulkRequestFailedException.getMessage());

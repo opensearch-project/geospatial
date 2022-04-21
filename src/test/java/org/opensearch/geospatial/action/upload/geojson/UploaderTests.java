@@ -173,7 +173,7 @@ public class UploaderTests extends OpenSearchTestCase {
         uploader.upload(content, INDEX_ALREADY_EXIST, mockListener);
         verify(mockBulkRequestBuilder).execute(any(ActionListener.class));
         verify(mockPipelineManager).delete(anyString(), any(StepListener.class), any(Supplier.class));
-        verify(mockListener).onFailure(any());
+        verify(mockListener).onResponse(any());
     }
 
     private void mockBulkRequestExecute(int noOfActions, boolean hasFailures) {

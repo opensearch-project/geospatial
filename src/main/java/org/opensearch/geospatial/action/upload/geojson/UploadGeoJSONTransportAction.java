@@ -17,7 +17,6 @@ import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
-import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
@@ -29,7 +28,7 @@ import org.opensearch.transport.TransportService;
 /**
  * TransportAction to handle import operation
  */
-public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadGeoJSONRequest, AcknowledgedResponse> {
+public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadGeoJSONRequest, UploadGeoJSONResponse> {
 
     private final ClusterService clusterService;
     private final Client client;
@@ -47,7 +46,7 @@ public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadG
     }
 
     @Override
-    protected void doExecute(Task task, UploadGeoJSONRequest request, ActionListener<AcknowledgedResponse> actionListener) {
+    protected void doExecute(Task task, UploadGeoJSONRequest request, ActionListener<UploadGeoJSONResponse> actionListener) {
         final Map<String, Object> contentAsMap = GeospatialParser.convertToMap(request.getContent());
         // 1. parse request's data and extract into UploadGeoJSONRequestContent
         final UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contentAsMap);
