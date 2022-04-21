@@ -14,28 +14,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
-import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
-import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.StepListener;
-import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.bulk.BulkResponse;
-import org.opensearch.action.index.IndexResponse;
-import org.opensearch.action.support.replication.ReplicationResponse;
-import org.opensearch.common.UUIDs;
-import org.opensearch.common.collect.Tuple;
 import org.opensearch.geospatial.GeospatialTestHelper;
-import org.opensearch.index.shard.ShardId;
 import org.opensearch.test.OpenSearchTestCase;
-import org.opensearch.test.RandomObjects;
 
 public class UploaderTests extends OpenSearchTestCase {
 
@@ -44,10 +32,7 @@ public class UploaderTests extends OpenSearchTestCase {
     public static final boolean BULK_REQUEST_SUCCESS = false;
     public static final boolean BULK_REQUEST_FAILURE = true;
     public static final boolean ACTION_FAILED = false;
-    public static final int MAX_SHARD_ID = 100;
-    public static final int MAX_SEQ_NO = 10000;
-    public static final int MAX_PRIMARY_TERM = 10000;
-    public static final int MAX_VERSION = 10000;
+
     public static final boolean INDEX_ALREADY_EXIST = true;
     public static final boolean INDEX_DOES_NOT_EXIST = false;
     private Uploader uploader;
@@ -179,7 +164,6 @@ public class UploaderTests extends OpenSearchTestCase {
         verify(mockListener).onResponse(any());
     }
 
-    //
     public void testBulkActionWithFailedIndexRequest() {
 
         mockCreatePipelineAction(ACTION_SUCCESS);
@@ -197,51 +181,8 @@ public class UploaderTests extends OpenSearchTestCase {
             Object[] args = invocation.getArguments();
             assert args.length == 1;
             ActionListener<BulkResponse> bulkRequestAction = (ActionListener<BulkResponse>) args[0];
-            bulkRequestAction.onResponse(generateRandomBulkResponse(noOfActions, hasFailures));
+            bulkRequestAction.onResponse(GeospatialTestHelper.generateRandomBulkResponse(noOfActions, hasFailures));
             return null;
         }).when(mockBulkRequestBuilder).execute(any(ActionListener.class));
-    }
-
-    private BulkResponse generateRandomBulkResponse(int noOfItems, boolean hasFailures) {
-        long took = randomNonNegativeLong();
-        long ingestTook = randomNonNegativeLong();
-        if (noOfItems < 1) {
-            return new BulkResponse(null, took, ingestTook);
-        }
-        List<BulkItemResponse> items = new ArrayList<>();
-        IntStream.range(0, noOfItems)
-            .forEach(shardId -> items.add(new BulkItemResponse(shardId, DocWriteRequest.OpType.CREATE, randomIndexResponse())));
-        if (hasFailures) {
-            final BulkItemResponse.Failure failedToIndex = new BulkItemResponse.Failure(
-                randomLowerCaseString(),
-                randomLowerCaseString(),
-                new OpenSearchException(randomLowerCaseString())
-            );
-            items.add(new BulkItemResponse(randomIntBetween(0, MAX_SHARD_ID), DocWriteRequest.OpType.CREATE, failedToIndex));
-        }
-        return new BulkResponse(items.stream().toArray(BulkItemResponse[]::new), took, ingestTook);
-    }
-
-    /**
-     * Returns random @link IndexResponse}s by generating inputs using random functions.
-     * It is not guaranted to generate every possible values, and it is not required since
-     * it is used by the unit test and will not be validated by the cluster.
-     */
-    public static IndexResponse randomIndexResponse() {
-        String index = randomLowerCaseString();
-        String indexUUid = UUIDs.randomBase64UUID();
-        int shardId = randomIntBetween(0, MAX_SHARD_ID);
-        String id = UUIDs.randomBase64UUID();
-        long seqNo = randomIntBetween(0, MAX_SEQ_NO);
-        long primaryTerm = randomIntBetween(0, MAX_PRIMARY_TERM);
-        long version = randomIntBetween(0, MAX_VERSION);
-        boolean created = randomBoolean();
-        boolean forcedRefresh = randomBoolean();
-        Tuple<ReplicationResponse.ShardInfo, ReplicationResponse.ShardInfo> shardInfo = RandomObjects.randomShardInfo(random());
-        IndexResponse actual = new IndexResponse(new ShardId(index, indexUUid, shardId), id, seqNo, primaryTerm, version, created);
-        actual.setForcedRefresh(forcedRefresh);
-        actual.setShardInfo(shardInfo.v1());
-
-        return actual;
     }
 }
