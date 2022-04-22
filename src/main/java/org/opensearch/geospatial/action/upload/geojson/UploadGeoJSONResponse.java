@@ -7,7 +7,7 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.opensearch.action.ActionResponse;
@@ -22,13 +22,15 @@ import org.opensearch.common.xcontent.XContentBuilder;
 public class UploadGeoJSONResponse extends ActionResponse implements ToXContentObject {
     private static final String ERRORS = "errors";
     private static final String FAILURE = "failure";
-    private static final String ID = "id";
     private static final String FAILURES = "failures";
+    private static final String ID = "id";
     private static final String MESSAGE = "message";
-    private static final String SUCCESS = "success";
-    private static final String TOOK = "took";
-    private static final String TOTAL = "total";
     private static final int NO_FAILURE = 0;
+    private static final String STATUS = "status";
+    private static final String SUCCESS = "success";
+    private static final String TOTAL = "total";
+    private static final String TOOK = "took";
+
     private final BulkResponse bulkResponse;
 
     public UploadGeoJSONResponse(BulkResponse bulkResponse) {
@@ -98,16 +100,17 @@ public class UploadGeoJSONResponse extends ActionResponse implements ToXContentO
     }
 
     private void buildFailureXContent(XContentBuilder builder) throws IOException {
-        final Map<String, String> failedResponses = Arrays.stream(bulkResponse.getItems())
+        final List<BulkItemResponse> failedResponses = Arrays.stream(bulkResponse.getItems())
             .filter(BulkItemResponse::isFailed)
-            .collect(Collectors.toMap(BulkItemResponse::getId, BulkItemResponse::getFailureMessage));
+            .collect(Collectors.toUnmodifiableList());
         int successCount = bulkResponse.getItems().length - failedResponses.size();
         buildResultXContent(builder, successCount, failedResponses.size());
         builder.startArray(FAILURES);
-        for (Map.Entry<String, String> entry : failedResponses.entrySet()) {
+        for (BulkItemResponse response : failedResponses) {
             builder.startObject();
-            builder.field(ID, entry.getKey());
-            builder.field(MESSAGE, entry.getValue());
+            builder.field(ID, response.getId());
+            builder.field(STATUS, response.getFailure().getStatus().getStatus());
+            builder.field(MESSAGE, response.getFailureMessage());
             builder.endObject();
         }
         builder.endArray();
