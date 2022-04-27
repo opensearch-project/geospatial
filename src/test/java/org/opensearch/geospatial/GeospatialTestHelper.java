@@ -37,6 +37,7 @@ import org.opensearch.action.support.replication.ReplicationResponse;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.collect.Tuple;
+import org.opensearch.geospatial.action.upload.UploadMetric;
 import org.opensearch.geospatial.action.upload.geojson.ContentBuilder;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.index.shard.ShardId;
@@ -49,6 +50,8 @@ public class GeospatialTestHelper {
     public static final int MAX_PRIMARY_TERM = 10000;
     public static final int MAX_VERSION = 10000;
     public static final int MAX_SHARD_ID = 100;
+
+    private static final int MINIMUM_UPLOAD_DOCUMENT_COUNT = 1;
 
     public static final int RANDOM_STRING_MIN_LENGTH = 2;
     public static final int RANDOM_STRING_MAX_LENGTH = 16;
@@ -118,6 +121,19 @@ public class GeospatialTestHelper {
             items.add(new BulkItemResponse(randomIntBetween(0, MAX_SHARD_ID), DocWriteRequest.OpType.CREATE, failedToIndex));
         }
         return new BulkResponse(items.stream().toArray(BulkItemResponse[]::new), took, ingestTook);
+    }
+
+    public static UploadMetric generateRandomUploadMetric() {
+        int uploadCount = randomIntBetween(MINIMUM_UPLOAD_DOCUMENT_COUNT, Integer.MAX_VALUE);
+        int successCount = randomIntBetween(MINIMUM_UPLOAD_DOCUMENT_COUNT, uploadCount);
+        int failedCount = uploadCount - successCount;
+
+        UploadMetric.UploadMetricBuilder builder = new UploadMetric.UploadMetricBuilder(randomLowerCaseString());
+        builder.uploadCount(uploadCount);
+        builder.successCount(successCount);
+        builder.failedCount(failedCount);
+        builder.duration(randomNonNegativeLong());
+        return builder.build();
     }
 
 }

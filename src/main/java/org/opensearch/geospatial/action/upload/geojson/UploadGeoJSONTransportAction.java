@@ -21,6 +21,7 @@ import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.GeospatialParser;
+import org.opensearch.geospatial.action.upload.UploadStats;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
@@ -47,6 +48,8 @@ public class UploadGeoJSONTransportAction extends HandledTransportAction<UploadG
 
     @Override
     protected void doExecute(Task task, UploadGeoJSONRequest request, ActionListener<UploadGeoJSONResponse> actionListener) {
+        UploadStats.getInstance().incrementAPICount();
+
         final Map<String, Object> contentAsMap = GeospatialParser.convertToMap(request.getContent());
         // 1. parse request's data and extract into UploadGeoJSONRequestContent
         final UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contentAsMap);

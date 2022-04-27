@@ -14,15 +14,22 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
+import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.geospatial.GeospatialTestHelper;
+import org.opensearch.geospatial.action.upload.UploadMetric;
+import org.opensearch.geospatial.action.upload.UploadStats;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploaderTests extends OpenSearchTestCase {
@@ -76,18 +83,20 @@ public class UploaderTests extends OpenSearchTestCase {
         }).when(mockIndexManager).create(anyString(), anyMap(), any(StepListener.class));
     }
 
-    private void mockCreatePipelineAction(boolean status) {
+    private String mockCreatePipelineAction(boolean status) {
+        String pipelineID = randomLowerCaseString();
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
             assert args.length == 2;
             StepListener<String> createPipelineListener = (StepListener<String>) args[1];
             if (status) {             // call onResponse flow
-                createPipelineListener.onResponse(randomLowerCaseString());
+                createPipelineListener.onResponse(pipelineID);
                 return null;
             }
             createPipelineListener.onFailure(new IllegalStateException(randomLowerCaseString()));
             return null;
         }).when(mockPipelineManager).create(anyString(), any(StepListener.class));
+        return pipelineID;
     }
 
     private void mockDeletePipelineAction(boolean status, Supplier<Exception> supplier) {
@@ -164,6 +173,49 @@ public class UploaderTests extends OpenSearchTestCase {
         verify(mockListener).onResponse(any());
     }
 
+    public void testUploadMetricAddedToStats() {
+        String pipelineID = mockCreatePipelineAction(ACTION_SUCCESS);
+        mockContentPreparation(ACTION_SUCCESS);
+        mockBulkRequestExecute(MAX_NUM_ACTION, BULK_REQUEST_SUCCESS);
+        mockDeletePipelineAction(ACTION_SUCCESS, () -> null);
+        uploader.upload(content, INDEX_ALREADY_EXIST, mockListener);
+        final List<String> uploadMetric = UploadStats.getInstance()
+            .getMetrics()
+            .stream()
+            .filter(metric -> pipelineID.equals(metric.getMetricID()))
+            .map(UploadMetric::getMetricID)
+            .collect(Collectors.toList());
+        // check metric is added
+        assertNotNull(uploadMetric);
+        assertArrayEquals(new String[] { pipelineID }, uploadMetric.toArray());
+    }
+
+    public void testUploadMetricValues() {
+        String pipelineID = mockCreatePipelineAction(ACTION_SUCCESS);
+        mockContentPreparation(ACTION_SUCCESS);
+        final BulkResponse mockResponse = mockBulkRequestExecute(MAX_NUM_ACTION, BULK_REQUEST_FAILURE);
+        mockDeletePipelineAction(ACTION_SUCCESS, () -> null);
+        uploader.upload(content, INDEX_ALREADY_EXIST, mockListener);
+        Optional<UploadMetric> actualMetric = UploadStats.getInstance()
+            .getMetrics()
+            .stream()
+            .filter(metric -> pipelineID.equals(metric.getMetricID()))
+            .findAny();
+        // check metric is added
+        assertTrue(actualMetric.isPresent());
+        final UploadMetric metric = actualMetric.get();
+        // check metric upload count
+        assertEquals(mockResponse.getItems().length, metric.getUploadCount());
+        // check metric failed count
+        long expectedFailCount = Arrays.stream(mockResponse.getItems()).filter(BulkItemResponse::isFailed).count();
+        assertEquals(expectedFailCount, metric.getFailedCount());
+        // check metric success count
+        long expectedSuccessCount = Arrays.stream(mockResponse.getItems()).filter(Predicate.not(BulkItemResponse::isFailed)).count();
+        assertEquals(expectedSuccessCount, metric.getSuccessCount());
+        // check metric duration
+        assertEquals(mockResponse.getTook().duration(), metric.getDuration());
+    }
+
     public void testBulkActionWithFailedIndexRequest() {
 
         mockCreatePipelineAction(ACTION_SUCCESS);
@@ -176,13 +228,15 @@ public class UploaderTests extends OpenSearchTestCase {
         verify(mockListener).onResponse(any());
     }
 
-    private void mockBulkRequestExecute(int noOfActions, boolean hasFailures) {
+    private BulkResponse mockBulkRequestExecute(int noOfActions, boolean hasFailures) {
+        final BulkResponse response = GeospatialTestHelper.generateRandomBulkResponse(noOfActions, hasFailures);
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
             assert args.length == 1;
             ActionListener<BulkResponse> bulkRequestAction = (ActionListener<BulkResponse>) args[0];
-            bulkRequestAction.onResponse(GeospatialTestHelper.generateRandomBulkResponse(noOfActions, hasFailures));
+            bulkRequestAction.onResponse(response);
             return null;
         }).when(mockBulkRequestBuilder).execute(any(ActionListener.class));
+        return response;
     }
 }
