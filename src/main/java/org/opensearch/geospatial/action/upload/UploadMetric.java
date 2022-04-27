@@ -5,14 +5,24 @@
 
 package org.opensearch.geospatial.action.upload;
 
+import java.io.IOException;
 import java.util.Objects;
 
 import org.opensearch.common.Strings;
+import org.opensearch.common.xcontent.ToXContentFragment;
+import org.opensearch.common.xcontent.XContentBuilder;
 
 /**
  * UploadMetric stores metric for an upload API
  */
-public final class UploadMetric {
+public final class UploadMetric implements ToXContentFragment {
+
+    public enum FIELD_NAMES {
+        count,
+        success,
+        failed,
+        duration
+    }
 
     private final long duration;
     private final long failedCount;
@@ -75,6 +85,17 @@ public final class UploadMetric {
     @Override
     public int hashCode() {
         return Objects.hash(metricID);
+    }
+
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        builder.startObject(metricID);
+        builder.field(FIELD_NAMES.count.name(), uploadCount);
+        builder.field(FIELD_NAMES.success.name(), successCount);
+        builder.field(FIELD_NAMES.failed.name(), failedCount);
+        builder.field(FIELD_NAMES.duration.name(), duration);
+        builder.endObject();
+        return builder;
     }
 
     /**
