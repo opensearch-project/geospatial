@@ -5,6 +5,7 @@
 
 package org.opensearch.geospatial.action.upload.geojson;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -12,9 +13,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
+import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.common.collect.MapBuilder;
+import org.opensearch.geospatial.action.upload.UploadMetric;
+import org.opensearch.geospatial.action.upload.UploadStats;
 
 /**
  * Uploader will upload GeoJSON objects from UploadGeoJSONRequestContent as
@@ -89,10 +93,7 @@ public class Uploader {
         );
 
         // index features as document after creating pipeline
-        createPipelineStep.whenComplete(
-            pipeline -> { indexContentAsDocument(pipeline, content, indexFeatureStep); },
-            createPipelineFailedException -> { flowListener.onFailure(createPipelineFailedException); }
-        );
+        createPipelineStep.whenComplete(pipeline -> indexContentAsDocument(pipeline, content, indexFeatureStep), flowListener::onFailure);
 
         // delete pipeline
         indexFeatureStep.whenComplete(notUsed -> {
@@ -108,11 +109,14 @@ public class Uploader {
             if (uploadFailedException != null) {
                 throw uploadFailedException;
             }
-            flowListener.onResponse(new UploadGeoJSONResponse(indexFeatureStep.result()));
+            BulkResponse response = indexFeatureStep.result();
+            createAndAddMetricToStats(createPipelineStep.result(), response);
+            flowListener.onResponse(new UploadGeoJSONResponse(response));
         }, deletePipelineFailed -> {
             try {
                 BulkResponse response = indexFeatureStep.result();
-                // TODO Propogate deletePipelineFailed exception to response as low severity error
+                createAndAddMetricToStats(createPipelineStep.result(), response);
+                // TODO Propagate deletePipelineFailed exception to response as low severity error
                 flowListener.onResponse(new UploadGeoJSONResponse(response));
             } catch (IllegalStateException stepFailed) {
                 flowListener.onFailure(deletePipelineFailed);
@@ -127,7 +131,7 @@ public class Uploader {
         StepListener<BulkResponse> uploadStepListener
     ) {
         Optional<BulkRequestBuilder> contentRequestBuilder = contentBuilder.prepare(content, pipeline);
-        if (!contentRequestBuilder.isPresent()) {
+        if (contentRequestBuilder.isEmpty()) {
             uploadStepListener.onFailure(new IllegalStateException("No valid features are available to index"));
             return;
         }
@@ -138,5 +142,38 @@ public class Uploader {
             StringBuilder message = new StringBuilder("Failed to index document due to ").append(bulkRequestFailedException.getMessage());
             uploadStepListener.onFailure(new IllegalStateException(message.toString()));
         }));
+    }
+
+    private void createAndAddMetricToStats(String metricID, BulkResponse response) {
+        UploadMetric metric = createUploadMetric(metricID, response);
+        UploadStats.getInstance().addMetric(metric);
+    }
+
+    private UploadMetric createUploadMetric(String id, BulkResponse response) {
+        UploadMetric.UploadMetricBuilder metricBuilder = new UploadMetric.UploadMetricBuilder(id);
+        BulkItemResponse[] items = response.getItems();
+        metricBuilder.uploadCount(items.length);
+        metricBuilder.duration(response.getTook().duration());
+        if (response.hasFailures()) {
+            return createFailedUploadMetric(metricBuilder, items);
+        }
+        return createSuccessUploadMetric(metricBuilder, items);
+    }
+
+    private UploadMetric createSuccessUploadMetric(UploadMetric.UploadMetricBuilder metricBuilder, BulkItemResponse[] items) {
+        Objects.requireNonNull(metricBuilder, "metric builder cannot be null");
+        Objects.requireNonNull(items, "BulkItemResponse array cannot be null");
+        metricBuilder.successCount(items.length);
+        return metricBuilder.build();
+    }
+
+    private UploadMetric createFailedUploadMetric(UploadMetric.UploadMetricBuilder metricBuilder, BulkItemResponse[] items) {
+        Objects.requireNonNull(metricBuilder, "metric builder cannot be null");
+        Objects.requireNonNull(items, "BulkItemResponse cannot be null");
+        long failed = Arrays.stream(items).filter(BulkItemResponse::isFailed).count();
+        metricBuilder.failedCount(failed);
+        long success = items.length - failed;
+        metricBuilder.successCount(success);
+        return metricBuilder.build();
     }
 }
