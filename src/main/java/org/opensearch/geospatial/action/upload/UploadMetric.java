@@ -6,6 +6,7 @@
 package org.opensearch.geospatial.action.upload;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
 
 import org.opensearch.common.Strings;
@@ -18,11 +19,16 @@ import org.opensearch.common.xcontent.XContentBuilder;
 public final class UploadMetric implements ToXContentFragment {
 
     public enum FIELDS {
-        id,
-        count,
-        success,
-        failed,
-        duration
+        ID,
+        COUNT,
+        SUCCESS,
+        FAILED,
+        DURATION;
+
+        @Override
+        public String toString() {
+            return this.name().toLowerCase(Locale.getDefault());
+        }
     }
 
     private final long duration;
@@ -90,11 +96,11 @@ public final class UploadMetric implements ToXContentFragment {
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.field(FIELDS.id.name(), metricID);
-        builder.field(FIELDS.count.name(), uploadCount);
-        builder.field(FIELDS.success.name(), successCount);
-        builder.field(FIELDS.failed.name(), failedCount);
-        builder.field(FIELDS.duration.name(), duration);
+        builder.field(FIELDS.ID.toString(), metricID);
+        builder.field(FIELDS.COUNT.toString(), uploadCount);
+        builder.field(FIELDS.SUCCESS.toString(), successCount);
+        builder.field(FIELDS.FAILED.toString(), failedCount);
+        builder.field(FIELDS.DURATION.toString(), duration);
         return builder;
     }
 

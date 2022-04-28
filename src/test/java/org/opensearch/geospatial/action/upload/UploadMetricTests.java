@@ -46,10 +46,10 @@ public class UploadMetricTests extends OpenSearchTestCase {
         UploadMetric actualMetric = GeospatialTestHelper.generateRandomUploadMetric();
         String metricAsString = Strings.toString(actualMetric);
         assertNotNull(metricAsString);
-        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.id, actualMetric.getMetricID())));
-        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.count, actualMetric.getUploadCount())));
-        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.duration, actualMetric.getDuration())));
-        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.failed, actualMetric.getFailedCount())));
-        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.success, actualMetric.getSuccessCount())));
+        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.ID, actualMetric.getMetricID())));
+        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.COUNT, actualMetric.getUploadCount())));
+        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.DURATION, actualMetric.getDuration())));
+        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.FAILED, actualMetric.getFailedCount())));
+        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.SUCCESS, actualMetric.getSuccessCount())));
     }
 }
