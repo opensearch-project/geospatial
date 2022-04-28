@@ -8,6 +8,7 @@ package org.opensearch.geospatial.action.upload;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,11 +21,16 @@ import org.opensearch.common.xcontent.XContentBuilder;
  */
 public final class UploadStats implements ToXContent {
 
-    public static final String ROOT_FIELD = "geospatial-upload";
-
     public enum FIELDS {
-        total,
-        metrics
+
+        METRICS,
+        TOTAL,
+        UPLOAD;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase(Locale.getDefault());
+        }
     }
 
     private static UploadStats instance = new UploadStats();
@@ -84,9 +90,9 @@ public final class UploadStats implements ToXContent {
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject(ROOT_FIELD);
-        builder.field(FIELDS.total.name(), getTotalAPICount());
-        builder.startArray(FIELDS.metrics.name());
+        builder.startObject(FIELDS.UPLOAD.toString());
+        builder.field(FIELDS.TOTAL.toString(), getTotalAPICount());
+        builder.startArray(FIELDS.METRICS.toString());
         for (UploadMetric metric : getMetrics()) {
             builder.startObject();
             metric.toXContent(builder, params);

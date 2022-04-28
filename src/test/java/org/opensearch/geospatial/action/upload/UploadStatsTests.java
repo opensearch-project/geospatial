@@ -75,9 +75,9 @@ public class UploadStatsTests extends OpenSearchTestCase {
         });
         String uploadStatsAsString = Strings.toString(stats);
         assertNotNull(uploadStatsAsString);
-        assertTrue(uploadStatsAsString.contains(UploadStats.ROOT_FIELD));
-        assertTrue(uploadStatsAsString.contains(buildFieldNameValuePair(UploadStats.FIELDS.total, stats.getTotalAPICount())));
-        assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.metrics.name()));
+        assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.UPLOAD.toString()));
+        assertTrue(uploadStatsAsString.contains(buildFieldNameValuePair(UploadStats.FIELDS.TOTAL.toString(), stats.getTotalAPICount())));
+        assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.METRICS.toString()));
         final String expectedMetricsAsString = expectedMetrics.stream()
             .map(Strings::toString)
             .collect(Collectors.joining(METRICS_DELIMITER));
