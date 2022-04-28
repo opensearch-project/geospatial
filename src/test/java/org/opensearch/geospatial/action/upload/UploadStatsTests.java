@@ -7,11 +7,8 @@ package org.opensearch.geospatial.action.upload;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.opensearch.common.Strings;
@@ -66,7 +63,7 @@ public class UploadStatsTests extends OpenSearchTestCase {
     public void testToXContent() {
         UploadStats stats = new UploadStats();
         int metricCount = randomIntBetween(MIN_API_CALLED, MAX_API_CALLED);
-        List<UploadMetric> expectedMetrics = new ArrayList<>();
+        Set<UploadMetric> expectedMetrics = new HashSet<>();
         IntStream.rangeClosed(MIN_API_CALLED, metricCount).forEach(unUsed -> {
             UploadMetric randomMetric = GeospatialTestHelper.generateRandomUploadMetric();
             expectedMetrics.add(randomMetric);
@@ -78,9 +75,8 @@ public class UploadStatsTests extends OpenSearchTestCase {
         assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.UPLOAD.toString()));
         assertTrue(uploadStatsAsString.contains(buildFieldNameValuePair(UploadStats.FIELDS.TOTAL.toString(), stats.getTotalAPICount())));
         assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.METRICS.toString()));
-        final String expectedMetricsAsString = expectedMetrics.stream()
+        expectedMetrics.stream()
             .map(Strings::toString)
-            .collect(Collectors.joining(METRICS_DELIMITER));
-        assertTrue(uploadStatsAsString.contains(expectedMetricsAsString));
+            .forEach(metricAsString -> { assertTrue(uploadStatsAsString.contains(metricAsString)); });
     }
 }
