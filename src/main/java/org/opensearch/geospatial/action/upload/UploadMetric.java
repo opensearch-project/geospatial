@@ -17,7 +17,8 @@ import org.opensearch.common.xcontent.XContentBuilder;
  */
 public final class UploadMetric implements ToXContentFragment {
 
-    public enum FIELD_NAMES {
+    public enum FIELDS {
+        id,
         count,
         success,
         failed,
@@ -89,12 +90,11 @@ public final class UploadMetric implements ToXContentFragment {
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject(metricID);
-        builder.field(FIELD_NAMES.count.name(), uploadCount);
-        builder.field(FIELD_NAMES.success.name(), successCount);
-        builder.field(FIELD_NAMES.failed.name(), failedCount);
-        builder.field(FIELD_NAMES.duration.name(), duration);
-        builder.endObject();
+        builder.field(FIELDS.id.name(), metricID);
+        builder.field(FIELDS.count.name(), uploadCount);
+        builder.field(FIELDS.success.name(), successCount);
+        builder.field(FIELDS.failed.name(), failedCount);
+        builder.field(FIELDS.duration.name(), duration);
         return builder;
     }
 
