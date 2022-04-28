@@ -135,13 +135,15 @@ public class Uploader {
             uploadStepListener.onFailure(new IllegalStateException("No valid features are available to index"));
             return;
         }
-        contentRequestBuilder.get().execute(ActionListener.wrap(bulkResponse -> {
-            uploadStepListener.onResponse(bulkResponse);
-
-        }, bulkRequestFailedException -> {
-            StringBuilder message = new StringBuilder("Failed to index document due to ").append(bulkRequestFailedException.getMessage());
-            uploadStepListener.onFailure(new IllegalStateException(message.toString()));
-        }));
+        contentRequestBuilder.get()
+            .execute(
+                ActionListener.wrap(
+                    uploadStepListener::onResponse,
+                    bulkRequestFailedException -> uploadStepListener.onFailure(
+                        new IllegalStateException("Failed to index document due to " + bulkRequestFailedException.getMessage())
+                    )
+                )
+            );
     }
 
     private void createAndAddMetricToStats(String metricID, BulkResponse response) {

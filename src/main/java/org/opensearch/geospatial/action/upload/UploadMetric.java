@@ -67,7 +67,7 @@ public final class UploadMetric implements ToXContentFragment {
     }
 
     /**
-     * @return Total time spent in milli seconds to upload, this includes both
+     * @return Total time spent in milliseconds to upload, this includes both
      * succeeded and failed time
      */
     public long getDuration() {
