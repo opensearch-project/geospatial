@@ -5,17 +5,27 @@
 
 package org.opensearch.geospatial.action.upload;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import org.opensearch.common.metrics.CounterMetric;
+import org.opensearch.common.xcontent.ToXContent;
+import org.opensearch.common.xcontent.XContentBuilder;
 
 /**
  * Contains the total upload stats
  */
-public final class UploadStats {
+public final class UploadStats implements ToXContent {
+
+    public static final String ROOT_FIELD = "geospatial-upload";
+
+    public enum FIELDS {
+        total,
+        metrics
+    }
 
     private static UploadStats instance = new UploadStats();
 
@@ -70,5 +80,19 @@ public final class UploadStats {
      */
     public List<UploadMetric> getMetrics() {
         return List.copyOf(metrics);
+    }
+
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        builder.startObject(ROOT_FIELD);
+        builder.field(FIELDS.total.name(), getTotalAPICount());
+        builder.startArray(FIELDS.metrics.name());
+        for (UploadMetric metric : getMetrics()) {
+            builder.startObject();
+            metric.toXContent(builder, params);
+            builder.endObject();
+        }
+        builder.endArray();
+        return builder.endObject();
     }
 }

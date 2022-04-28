@@ -5,10 +5,16 @@
 
 package org.opensearch.geospatial.action.upload;
 
+import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
+
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.opensearch.common.Strings;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -17,6 +23,7 @@ public class UploadStatsTests extends OpenSearchTestCase {
     private static final int NO_API_CALLED = 0;
     private static final int MIN_API_CALLED = 1;
     private static final int MAX_API_CALLED = 5;
+    public static final String METRICS_DELIMITER = ",";
 
     public void testGetInstance() {
         UploadStats stats = new UploadStats();
@@ -54,5 +61,26 @@ public class UploadStatsTests extends OpenSearchTestCase {
         UploadMetric randomMetric = GeospatialTestHelper.generateRandomUploadMetric();
         stats.addMetric(randomMetric);
         assertThrows("duplicate metrics are not allowed", IllegalArgumentException.class, () -> stats.addMetric(randomMetric));
+    }
+
+    public void testToXContent() {
+        UploadStats stats = new UploadStats();
+        int metricCount = randomIntBetween(MIN_API_CALLED, MAX_API_CALLED);
+        List<UploadMetric> expectedMetrics = new ArrayList<>();
+        IntStream.rangeClosed(MIN_API_CALLED, metricCount).forEach(unUsed -> {
+            UploadMetric randomMetric = GeospatialTestHelper.generateRandomUploadMetric();
+            expectedMetrics.add(randomMetric);
+            stats.addMetric(randomMetric);
+            stats.incrementAPICount();
+        });
+        String uploadStatsAsString = Strings.toString(stats);
+        assertNotNull(uploadStatsAsString);
+        assertTrue(uploadStatsAsString.contains(UploadStats.ROOT_FIELD));
+        assertTrue(uploadStatsAsString.contains(buildFieldNameValuePair(UploadStats.FIELDS.total, stats.getTotalAPICount())));
+        assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.metrics.name()));
+        final String expectedMetricsAsString = expectedMetrics.stream()
+            .map(Strings::toString)
+            .collect(Collectors.joining(METRICS_DELIMITER));
+        assertTrue(uploadStatsAsString.contains(expectedMetricsAsString));
     }
 }

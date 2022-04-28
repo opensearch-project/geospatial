@@ -136,4 +136,13 @@ public class GeospatialTestHelper {
         return builder.build();
     }
 
+    public static StringBuilder buildFieldNameValuePair(Object field, Object value) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("\"").append(field).append("\":");
+        if (!(value instanceof String)) {
+            return builder.append(value);
+        }
+        return builder.append("\"").append(value).append("\"");
+    }
+
 }
