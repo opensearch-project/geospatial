@@ -33,7 +33,7 @@ public final class UploadStats implements ToXContent {
         }
     }
 
-    private static UploadStats instance = new UploadStats();
+    private static final UploadStats instance = new UploadStats();
 
     private final Set<UploadMetric> metrics;
     private final CounterMetric totalAPICount;
@@ -52,7 +52,7 @@ public final class UploadStats implements ToXContent {
 
     /**
      * Add new metric to {@link UploadStats}
-     * @param newMetric
+     * @param newMetric {@link UploadMetric} to be added to Stats
      */
     public void addMetric(UploadMetric newMetric) {
         Objects.requireNonNull(newMetric, "metric cannot be null");
@@ -82,7 +82,7 @@ public final class UploadStats implements ToXContent {
 
     /**
      * Get list of added metrics so far to stats
-     * @return
+     * @return List of {@link UploadMetric}
      */
     public List<UploadMetric> getMetrics() {
         return List.copyOf(metrics);
