@@ -28,8 +28,8 @@ import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.geospatial.GeospatialTestHelper;
-import org.opensearch.geospatial.action.upload.UploadMetric;
-import org.opensearch.geospatial.action.upload.UploadStats;
+import org.opensearch.geospatial.stats.upload.UploadMetric;
+import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploaderTests extends OpenSearchTestCase {
