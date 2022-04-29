@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.action.upload;
+package org.opensearch.geospatial.stats;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
 
@@ -13,6 +13,8 @@ import java.util.stream.IntStream;
 
 import org.opensearch.common.Strings;
 import org.opensearch.geospatial.GeospatialTestHelper;
+import org.opensearch.geospatial.stats.upload.UploadMetric;
+import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadStatsTests extends OpenSearchTestCase {

@@ -21,7 +21,7 @@ import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.GeospatialParser;
-import org.opensearch.geospatial.action.upload.UploadStats;
+import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
