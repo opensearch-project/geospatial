@@ -68,7 +68,7 @@ public class UploadMetricTests extends OpenSearchTestCase {
         assertNotNull(metricAsString);
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.ID, actualMetric.getMetricID())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.TYPE, GEOJSON)));
-        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.COUNT, actualMetric.getUploadCount())));
+        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.UPLOAD, actualMetric.getUploadCount())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.DURATION, actualMetric.getDuration())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.FAILED, actualMetric.getFailedCount())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.SUCCESS, actualMetric.getSuccessCount())));
