@@ -5,7 +5,6 @@
 
 package org.opensearch.geospatial.stats.upload;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -13,13 +12,11 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.opensearch.common.metrics.CounterMetric;
-import org.opensearch.common.xcontent.ToXContent;
-import org.opensearch.common.xcontent.XContentBuilder;
 
 /**
  * Contains the total upload stats
  */
-public final class UploadStats implements ToXContent {
+public final class UploadStats {
 
     public enum FIELDS {
 
@@ -88,17 +85,4 @@ public final class UploadStats implements ToXContent {
         return List.copyOf(metrics);
     }
 
-    @Override
-    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject(FIELDS.UPLOAD.toString());
-        builder.field(FIELDS.TOTAL.toString(), getTotalAPICount());
-        builder.startArray(FIELDS.METRICS.toString());
-        for (UploadMetric metric : getMetrics()) {
-            builder.startObject();
-            metric.toXContent(builder, params);
-            builder.endObject();
-        }
-        builder.endArray();
-        return builder.endObject();
-    }
 }
