@@ -6,13 +6,11 @@
 package org.opensearch.geospatial.stats.upload;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.GEOJSON;
-import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import org.opensearch.common.Strings;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -61,23 +59,5 @@ public class UploadStatsTests extends OpenSearchTestCase {
         UploadMetric randomMetric = GeospatialTestHelper.generateRandomUploadMetric();
         stats.addMetric(randomMetric);
         assertThrows("duplicate metrics are not allowed", IllegalArgumentException.class, () -> stats.addMetric(randomMetric));
-    }
-
-    public void testToXContent() {
-        UploadStats stats = new UploadStats();
-        int metricCount = randomIntBetween(MIN_API_CALLED, MAX_API_CALLED);
-        Set<UploadMetric> expectedMetrics = new HashSet<>();
-        IntStream.rangeClosed(MIN_API_CALLED, metricCount).forEach(unUsed -> {
-            UploadMetric randomMetric = GeospatialTestHelper.generateRandomUploadMetric();
-            expectedMetrics.add(randomMetric);
-            stats.addMetric(randomMetric);
-            stats.incrementAPICount();
-        });
-        String uploadStatsAsString = Strings.toString(stats);
-        assertNotNull(uploadStatsAsString);
-        assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.UPLOAD.toString()));
-        assertTrue(uploadStatsAsString.contains(buildFieldNameValuePair(UploadStats.FIELDS.TOTAL.toString(), stats.getTotalAPICount())));
-        assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.METRICS.toString()));
-        expectedMetrics.stream().map(Strings::toString).forEach(metricAsString -> assertTrue(uploadStatsAsString.contains(metricAsString)));
     }
 }
