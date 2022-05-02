@@ -33,6 +33,7 @@ import org.opensearch.geospatial.stats.upload.UploadStats;
 public class Uploader {
 
     private static final Logger LOGGER = LogManager.getLogger(Uploader.class);
+    private static final String GEOJSON = "geojson";
 
     private final IndexManager indexManager;
     private final PipelineManager pipelineManager;
@@ -152,7 +153,7 @@ public class Uploader {
     }
 
     private UploadMetric createUploadMetric(String id, BulkResponse response) {
-        UploadMetric.UploadMetricBuilder metricBuilder = new UploadMetric.UploadMetricBuilder(id);
+        UploadMetric.UploadMetricBuilder metricBuilder = new UploadMetric.UploadMetricBuilder(id, GEOJSON);
         BulkItemResponse[] items = response.getItems();
         metricBuilder.uploadCount(items.length);
         metricBuilder.duration(response.getTook().duration());

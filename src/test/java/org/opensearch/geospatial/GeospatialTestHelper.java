@@ -46,6 +46,7 @@ import org.opensearch.test.RandomObjects;
 
 public class GeospatialTestHelper {
 
+    public static final String GEOJSON = "geojson";
     public static final int MAX_SEQ_NO = 10000;
     public static final int MAX_PRIMARY_TERM = 10000;
     public static final int MAX_VERSION = 10000;
@@ -128,7 +129,7 @@ public class GeospatialTestHelper {
         int successCount = randomIntBetween(MINIMUM_UPLOAD_DOCUMENT_COUNT, uploadCount);
         int failedCount = uploadCount - successCount;
 
-        UploadMetric.UploadMetricBuilder builder = new UploadMetric.UploadMetricBuilder(randomLowerCaseString());
+        UploadMetric.UploadMetricBuilder builder = new UploadMetric.UploadMetricBuilder(randomLowerCaseString(), GEOJSON);
         builder.uploadCount(uploadCount);
         builder.successCount(successCount);
         builder.failedCount(failedCount);

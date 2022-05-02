@@ -1,10 +1,17 @@
 /*
- * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ *
+ * Modifications Copyright OpenSearch Contributors. See
+ * GitHub history for details.
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
+import static org.opensearch.geospatial.GeospatialTestHelper.GEOJSON;
 import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
 
 import java.util.HashSet;
@@ -13,8 +20,6 @@ import java.util.stream.IntStream;
 
 import org.opensearch.common.Strings;
 import org.opensearch.geospatial.GeospatialTestHelper;
-import org.opensearch.geospatial.stats.upload.UploadMetric;
-import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadStatsTests extends OpenSearchTestCase {
@@ -22,7 +27,6 @@ public class UploadStatsTests extends OpenSearchTestCase {
     private static final int NO_API_CALLED = 0;
     private static final int MIN_API_CALLED = 1;
     private static final int MAX_API_CALLED = 5;
-    public static final String METRICS_DELIMITER = ",";
 
     public void testGetInstance() {
         UploadStats stats = new UploadStats();
@@ -51,7 +55,10 @@ public class UploadStatsTests extends OpenSearchTestCase {
 
     public void testAddMetricFailsForNoUploadCount() {
         UploadStats stats = new UploadStats();
-        UploadMetric.UploadMetricBuilder emptyBuilder = new UploadMetric.UploadMetricBuilder(GeospatialTestHelper.randomLowerCaseString());
+        UploadMetric.UploadMetricBuilder emptyBuilder = new UploadMetric.UploadMetricBuilder(
+            GeospatialTestHelper.randomLowerCaseString(),
+            GEOJSON
+        );
         assertThrows("metric without upload cannot be added", IllegalArgumentException.class, () -> stats.addMetric(emptyBuilder.build()));
     }
 
@@ -77,8 +84,6 @@ public class UploadStatsTests extends OpenSearchTestCase {
         assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.UPLOAD.toString()));
         assertTrue(uploadStatsAsString.contains(buildFieldNameValuePair(UploadStats.FIELDS.TOTAL.toString(), stats.getTotalAPICount())));
         assertTrue(uploadStatsAsString.contains(UploadStats.FIELDS.METRICS.toString()));
-        expectedMetrics.stream()
-            .map(Strings::toString)
-            .forEach(metricAsString -> { assertTrue(uploadStatsAsString.contains(metricAsString)); });
+        expectedMetrics.stream().map(Strings::toString).forEach(metricAsString -> assertTrue(uploadStatsAsString.contains(metricAsString)));
     }
 }

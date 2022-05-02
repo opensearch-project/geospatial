@@ -1,16 +1,22 @@
 /*
- * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ *
+ * Modifications Copyright OpenSearch Contributors. See
+ * GitHub history for details.
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
+import static org.opensearch.geospatial.GeospatialTestHelper.GEOJSON;
 import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
 import org.opensearch.common.Strings;
 import org.opensearch.geospatial.GeospatialTestHelper;
-import org.opensearch.geospatial.stats.upload.UploadMetric;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadMetricTests extends OpenSearchTestCase {
@@ -19,7 +25,7 @@ public class UploadMetricTests extends OpenSearchTestCase {
 
     public void testInstanceCreation() {
         String metricID = randomLowerCaseString();
-        UploadMetric.UploadMetricBuilder builder = new UploadMetric.UploadMetricBuilder(metricID);
+        UploadMetric.UploadMetricBuilder builder = new UploadMetric.UploadMetricBuilder(metricID, GEOJSON);
 
         int uploadCount = randomIntBetween(MINIMUM_UPLOAD_DOCUMENT_COUNT, Integer.MAX_VALUE);
         builder.uploadCount(uploadCount);
@@ -41,6 +47,25 @@ public class UploadMetricTests extends OpenSearchTestCase {
         assertEquals(failedCount, actualMetric.getFailedCount());
         assertEquals(duration, actualMetric.getDuration());
         assertEquals(metricID, actualMetric.getMetricID());
+        assertEquals(GEOJSON, actualMetric.getType());
+    }
+
+    public void testInstanceFailsDueToNullID() {
+        assertThrows(IllegalArgumentException.class, () -> new UploadMetric.UploadMetricBuilder(null, GEOJSON));
+    }
+
+    public void testInstanceFailsDueToEmptypID() {
+        assertThrows(IllegalArgumentException.class, () -> new UploadMetric.UploadMetricBuilder(new String(), GEOJSON));
+    }
+
+    public void testInstanceFailsDueToNullType() {
+        String metricID = randomLowerCaseString();
+        assertThrows(IllegalArgumentException.class, () -> new UploadMetric.UploadMetricBuilder(metricID, null));
+    }
+
+    public void testInstanceFailsDueToEmptyType() {
+        String metricID = randomLowerCaseString();
+        assertThrows(IllegalArgumentException.class, () -> new UploadMetric.UploadMetricBuilder(metricID, new String()));
     }
 
     public void testToXContent() {
@@ -48,6 +73,7 @@ public class UploadMetricTests extends OpenSearchTestCase {
         String metricAsString = Strings.toString(actualMetric);
         assertNotNull(metricAsString);
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.ID, actualMetric.getMetricID())));
+        assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.TYPE, GEOJSON)));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.COUNT, actualMetric.getUploadCount())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.DURATION, actualMetric.getDuration())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.FAILED, actualMetric.getFailedCount())));
