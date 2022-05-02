@@ -25,11 +25,12 @@ import org.opensearch.common.xcontent.XContentBuilder;
 public final class UploadMetric implements ToXContentFragment {
 
     public enum FIELDS {
-        ID,
         COUNT,
-        SUCCESS,
+        DURATION,
         FAILED,
-        DURATION;
+        ID,
+        SUCCESS,
+        TYPE;
 
         @Override
         public String toString() {
@@ -43,12 +44,15 @@ public final class UploadMetric implements ToXContentFragment {
     private final long successCount;
     private final long uploadCount;
 
+    private final String type;
+
     private UploadMetric(UploadMetricBuilder builder) {
         this.metricID = builder.metricID;
         this.uploadCount = builder.uploadCount;
         this.successCount = builder.successCount;
         this.failedCount = builder.failedCount;
         this.duration = builder.duration;
+        this.type = builder.type;
     }
 
     /**
@@ -87,6 +91,13 @@ public final class UploadMetric implements ToXContentFragment {
         return duration;
     }
 
+    /**
+     * @return Geospatial object's type
+     */
+    public String getType() {
+        return type;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -103,6 +114,7 @@ public final class UploadMetric implements ToXContentFragment {
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.field(FIELDS.ID.toString(), metricID);
+        builder.field(FIELDS.TYPE.toString(), type);
         builder.field(FIELDS.COUNT.toString(), uploadCount);
         builder.field(FIELDS.SUCCESS.toString(), successCount);
         builder.field(FIELDS.FAILED.toString(), failedCount);
@@ -118,14 +130,19 @@ public final class UploadMetric implements ToXContentFragment {
         private long duration;
         private long failedCount;
         private String metricID;
+        private String type;
         private long successCount;
         private long uploadCount;
 
-        public UploadMetricBuilder(String metricID) {
+        public UploadMetricBuilder(String metricID, String type) {
             if (!Strings.hasText(metricID)) {
                 throw new IllegalArgumentException("metric ID cannot be empty");
             }
+            if (!Strings.hasText(type)) {
+                throw new IllegalArgumentException("type cannot be empty");
+            }
             this.metricID = metricID;
+            this.type = type;
         }
 
         public UploadMetricBuilder uploadCount(long uploadCount) {
