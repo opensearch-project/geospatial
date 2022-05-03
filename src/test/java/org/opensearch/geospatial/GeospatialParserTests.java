@@ -92,7 +92,7 @@ public class GeospatialParserTests extends OpenSearchTestCase {
         JSONObject collection = GeospatialObjectBuilder.buildGeoJSONFeatureCollection(features);
         Optional<List<Map<String, Object>>> featureList = GeospatialParser.getFeatures(collection.toMap());
         assertTrue(featureList.isPresent());
-        assertTrue(featureList.get().size() == features.length());
+        assertEquals(featureList.get().size(), features.length());
     }
 
     public void testGetFeaturesWithUnSupportedType() {

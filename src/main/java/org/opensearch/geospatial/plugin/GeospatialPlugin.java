@@ -63,7 +63,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     ) {
         RestUploadGeoJSONAction uploadGeoJSONAction = new RestUploadGeoJSONAction();
         return singletonList(uploadGeoJSONAction);
-    };
+    }
 
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {

@@ -123,8 +123,8 @@ public final class UploadMetric implements ToXContentFragment {
 
         private long duration;
         private long failedCount;
-        private String metricID;
-        private String type;
+        private final String metricID;
+        private final String type;
         private long successCount;
         private long uploadCount;
 

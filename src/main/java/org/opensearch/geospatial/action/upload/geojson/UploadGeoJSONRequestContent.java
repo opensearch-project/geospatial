@@ -20,10 +20,10 @@ import org.opensearch.common.Strings;
 public final class UploadGeoJSONRequestContent {
 
     public static final String GEOSPATIAL_DEFAULT_FIELD_NAME = "location";
-    public static final ParseField FIELD_INDEX = new ParseField("index", new String[0]);
-    public static final ParseField FIELD_GEOSPATIAL = new ParseField("field", new String[0]);
-    public static final ParseField FIELD_GEOSPATIAL_TYPE = new ParseField("type", new String[0]);
-    public static final ParseField FIELD_DATA = new ParseField("data", new String[0]);
+    public static final ParseField FIELD_INDEX = new ParseField("index");
+    public static final ParseField FIELD_GEOSPATIAL = new ParseField("field");
+    public static final ParseField FIELD_GEOSPATIAL_TYPE = new ParseField("type");
+    public static final ParseField FIELD_DATA = new ParseField("data");
     private final String indexName;
     private final String fieldName;
     private final String fieldType;
@@ -69,11 +69,11 @@ public final class UploadGeoJSONRequestContent {
         return new UploadGeoJSONRequestContent(index, fieldName, fieldType, (List<Object>) geoJSONData);
     }
 
-    public final String getIndexName() {
+    public String getIndexName() {
         return indexName;
     }
 
-    public final String getFieldName() {
+    public String getFieldName() {
         return fieldName;
     }
 

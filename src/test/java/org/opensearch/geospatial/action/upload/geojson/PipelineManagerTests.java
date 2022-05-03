@@ -33,11 +33,6 @@ public class PipelineManagerTests extends OpenSearchTestCase {
         manager = new PipelineManager(mockClient);
     }
 
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     private void mockCreatePipelineAction(boolean actionSucceeded) {
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();

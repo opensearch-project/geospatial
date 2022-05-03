@@ -40,11 +40,6 @@ public class IndexManagerTests extends OpenSearchTestCase {
         listener = new StepListener<>();
     }
 
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     private Map<String, String> randomFieldMap(int size) {
         Map<String, String> fieldMap = new HashMap<>();
         IntStream.range(0, size).forEach(unUsed -> fieldMap.put(randomLowerCaseString(), randomLowerCaseString()));

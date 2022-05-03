@@ -5,12 +5,12 @@
 
 package org.opensearch.geospatial.action.upload.geojson;
 
+import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 import static org.opensearch.rest.RestRequest.Method.POST;
 import static org.opensearch.rest.RestRequest.Method.PUT;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import org.json.JSONObject;
 import org.opensearch.common.bytes.BytesArray;
@@ -21,19 +21,14 @@ import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadGeoJSONRequestTests extends OpenSearchTestCase {
 
-    private String getRequestBody(Map<String, Object> contentMap) {
+    private String getRandomRequestBody() {
         JSONObject json = new JSONObject();
-        if (contentMap == null) {
-            return json.toString();
-        }
-        for (Map.Entry<String, Object> entry : contentMap.entrySet()) {
-            json.put(entry.getKey(), entry.getValue());
-        }
+        json.put(randomLowerCaseString(), randomLowerCaseString());
         return json.toString();
     }
 
     public void testStreams() throws IOException {
-        String requestBody = getRequestBody(null);
+        String requestBody = getRandomRequestBody();
         RestRequest.Method method = PUT;
         UploadGeoJSONRequest request = new UploadGeoJSONRequest(method, new BytesArray(requestBody.getBytes(StandardCharsets.UTF_8)));
         BytesStreamOutput output = new BytesStreamOutput();
@@ -48,7 +43,7 @@ public class UploadGeoJSONRequestTests extends OpenSearchTestCase {
     public void testRequestValidation() {
         UploadGeoJSONRequest request = new UploadGeoJSONRequest(
             POST,
-            new BytesArray(getRequestBody(null).getBytes(StandardCharsets.UTF_8))
+            new BytesArray(getRandomRequestBody().getBytes(StandardCharsets.UTF_8))
         );
         assertNull(request.validate());
     }

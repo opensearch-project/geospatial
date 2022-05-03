@@ -17,7 +17,7 @@ public class Feature {
     public static final String PROPERTIES_KEY = "properties";
     public static final String TYPE_KEY = "type";
     private final Map<String, Object> geometry;
-    private Map<String, Object> properties;
+    private final Map<String, Object> properties;
 
     private Feature(Map<String, Object> geometry) {
         this.geometry = new HashMap<>();
@@ -66,7 +66,7 @@ public class Feature {
         /**
          * Adds given properties to existing properties
          *
-         * @param properties
+         * @param properties to be included in Feature
          * @return FeatureBuilder instance
          */
         public FeatureBuilder properties(Map<String, Object> properties) {
