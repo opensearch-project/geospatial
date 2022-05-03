@@ -14,6 +14,7 @@ package org.opensearch.geospatial.rest.action.upload.geojson;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_OBJECT;
 import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_UPLOAD;
+import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,7 +27,6 @@ import org.opensearch.client.ResponseException;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
-import org.opensearch.geospatial.plugin.GeospatialPlugin;
 import org.opensearch.rest.RestStatus;
 
 public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
@@ -35,7 +35,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPostMethod() throws IOException {
 
-        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         Request request = new Request("POST", path);
         final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, null, null);
         final String index = requestBody.getString(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName());
@@ -55,7 +55,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
         geoFields.put(geoFieldName, "geo_shape");
         createIndex(index, Settings.EMPTY, geoFields);
         assertIndexExists(index);
-        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         Request request = new Request("POST", path);
         final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, index, geoFieldName);
         request.setJsonEntity(requestBody.toString());
@@ -65,7 +65,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPutMethod() throws IOException {
 
-        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         Request request = new Request("PUT", path);
         final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, null, null);
         final String index = requestBody.getString(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName());
@@ -81,7 +81,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
         String index = randomLowerCaseString();
         String geoFieldName = randomLowerCaseString();
-        String path = String.join(GeospatialPlugin.URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
         Request request = new Request("PUT", path);
         final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, index, geoFieldName);
         request.setJsonEntity(requestBody.toString());

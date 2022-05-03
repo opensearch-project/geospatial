@@ -38,11 +38,6 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         assertTrue(processors.get(FeatureProcessor.TYPE) instanceof FeatureProcessor.Factory);
     }
 
-    public void testPluginPrefix() {
-        String pluginPrefix = GeospatialPlugin.getPluginURLPrefix();
-        assertEquals("_plugins/geospatial", pluginPrefix);
-    }
-
     public void testTotalRestHandlers() {
         GeospatialPlugin plugin = new GeospatialPlugin();
         assertEquals(1, plugin.getRestHandlers(Settings.EMPTY, null, null, null, null, null, null).size());
