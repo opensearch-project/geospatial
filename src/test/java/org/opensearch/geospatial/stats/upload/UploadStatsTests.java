@@ -7,10 +7,13 @@ package org.opensearch.geospatial.stats.upload;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.GEOJSON;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -59,5 +62,24 @@ public class UploadStatsTests extends OpenSearchTestCase {
         UploadMetric randomMetric = GeospatialTestHelper.generateRandomUploadMetric();
         stats.addMetric(randomMetric);
         assertThrows("duplicate metrics are not allowed", IllegalArgumentException.class, () -> stats.addMetric(randomMetric));
+    }
+
+    public void testStreams() throws IOException {
+        UploadStats stats = new UploadStats();
+        int metricCount = randomIntBetween(MIN_API_CALLED, MAX_API_CALLED);
+        Set<UploadMetric> expectedMetrics = new HashSet<>();
+        IntStream.rangeClosed(MIN_API_CALLED, metricCount).forEach(unUsed -> {
+            UploadMetric randomMetric = GeospatialTestHelper.generateRandomUploadMetric();
+            expectedMetrics.add(randomMetric);
+            stats.addMetric(randomMetric);
+            stats.incrementAPICount();
+        });
+        BytesStreamOutput output = new BytesStreamOutput();
+        stats.writeTo(output);
+        StreamInput in = StreamInput.wrap(output.bytes().toBytesRef().bytes);
+        UploadStats serializedStats = UploadStats.fromStreamInput(in);
+        assertNotNull("serialized stats cannot be null", serializedStats);
+        assertEquals("api count is ", stats.getTotalAPICount(), serializedStats.getTotalAPICount());
+        assertEquals("failed to serialize metrics", stats.getMetrics().size(), serializedStats.getMetrics().size());
     }
 }

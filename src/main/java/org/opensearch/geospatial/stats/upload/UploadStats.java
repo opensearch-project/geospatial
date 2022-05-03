@@ -5,17 +5,21 @@
 
 package org.opensearch.geospatial.stats.upload;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.common.io.stream.Writeable;
 import org.opensearch.common.metrics.CounterMetric;
 
 /**
  * Contains the total upload stats
  */
-public final class UploadStats {
+public final class UploadStats implements Writeable {
 
     private static final UploadStats instance = new UploadStats();
 
@@ -32,6 +36,19 @@ public final class UploadStats {
     UploadStats() {
         metrics = new HashSet<>();
         totalAPICount = new CounterMetric();
+    }
+
+    /**
+     * Get UploadStats from {@link StreamInput}.
+     * @param input contains {@link UploadStats} in serialized form
+     * @return UploadStats instance
+     * @throws IOException if cannot read {@link UploadStats} from given input
+     */
+    public static UploadStats fromStreamInput(StreamInput input) throws IOException {
+        UploadStats instance = new UploadStats();
+        instance.totalAPICount.inc(input.readVLong());
+        instance.metrics.addAll(input.readSet(UploadMetric.UploadMetricBuilder::fromStreamInput));
+        return instance;
     }
 
     /**
@@ -72,4 +89,9 @@ public final class UploadStats {
         return List.copyOf(metrics);
     }
 
+    @Override
+    public void writeTo(StreamOutput output) throws IOException {
+        output.writeVLong(getTotalAPICount());
+        output.writeCollection(metrics);
+    }
 }

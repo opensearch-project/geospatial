@@ -9,7 +9,11 @@ import static org.opensearch.geospatial.GeospatialTestHelper.GEOJSON;
 import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
+import java.io.IOException;
+
 import org.opensearch.common.Strings;
+import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -73,4 +77,45 @@ public class UploadMetricTests extends OpenSearchTestCase {
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.FAILED, actualMetric.getFailedCount())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.SUCCESS, actualMetric.getSuccessCount())));
     }
+
+    public void testStreams() throws IOException {
+        UploadMetric actualMetric = GeospatialTestHelper.generateRandomUploadMetric();
+        BytesStreamOutput output = new BytesStreamOutput();
+        actualMetric.writeTo(output);
+        StreamInput in = StreamInput.wrap(output.bytes().toBytesRef().bytes);
+
+        UploadMetric serializedMetric = UploadMetric.UploadMetricBuilder.fromStreamInput(in);
+        assertNotNull("serialized metric cannot be null", serializedMetric);
+        assertEquals(
+            "upload count is not matching between serialized and deserialized",
+            actualMetric.getUploadCount(),
+            serializedMetric.getUploadCount()
+        );
+        assertEquals(
+            "success count is not matching between serialized and deserialized",
+            actualMetric.getSuccessCount(),
+            serializedMetric.getSuccessCount()
+        );
+        assertEquals(
+            "failed count is not matching between serialized and deserialized",
+            actualMetric.getFailedCount(),
+            serializedMetric.getFailedCount()
+        );
+        assertEquals(
+            "duration is not matching between serialized and deserialized",
+            actualMetric.getDuration(),
+            serializedMetric.getDuration()
+        );
+        assertEquals(
+            "metric id is not matching between serialized and deserialized",
+            actualMetric.getMetricID(),
+            serializedMetric.getMetricID()
+        );
+        assertEquals(
+            "geospatial type is not matching between serialized and deserialized",
+            actualMetric.getType(),
+            serializedMetric.getType()
+        );
+    }
+
 }
