@@ -10,13 +10,16 @@ import java.util.Locale;
 import java.util.Objects;
 
 import org.opensearch.common.Strings;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.common.io.stream.Writeable;
 import org.opensearch.common.xcontent.ToXContentFragment;
 import org.opensearch.common.xcontent.XContentBuilder;
 
 /**
  * UploadMetric stores metric for an upload API
  */
-public final class UploadMetric implements ToXContentFragment {
+public final class UploadMetric implements ToXContentFragment, Writeable {
 
     public enum FIELDS {
         UPLOAD,
@@ -116,6 +119,16 @@ public final class UploadMetric implements ToXContentFragment {
         return builder;
     }
 
+    @Override
+    public void writeTo(StreamOutput output) throws IOException {
+        output.writeString(metricID);
+        output.writeString(type);
+        output.writeVLong(uploadCount);
+        output.writeVLong(successCount);
+        output.writeVLong(failedCount);
+        output.writeVLong(duration);
+    }
+
     /**
      * Builder to create {@link UploadMetric}
      */
@@ -164,6 +177,22 @@ public final class UploadMetric implements ToXContentFragment {
          */
         public UploadMetric build() {
             return new UploadMetric(this);
+        }
+
+        /**
+         * Deserialize {@link UploadMetric} from given {@link StreamInput}
+         * @param input StreamInput instance
+         * @return UploadMetric returns {@link UploadMetric} from {@link StreamInput}
+         * @throws IOException if unable to read from {@link StreamInput}
+         */
+        public static UploadMetric fromStreamInput(StreamInput input) throws IOException {
+            String metricId = input.readString();
+            String type = input.readString();
+            UploadMetricBuilder builder = new UploadMetricBuilder(metricId, type).uploadCount(input.readVLong())
+                .successCount(input.readVLong())
+                .failedCount(input.readVLong())
+                .duration(input.readVLong());
+            return builder.build();
         }
 
     }
