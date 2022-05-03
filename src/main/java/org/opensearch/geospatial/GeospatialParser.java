@@ -7,7 +7,6 @@ package org.opensearch.geospatial;
 
 import static org.opensearch.geospatial.geojson.Feature.TYPE_KEY;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -85,10 +84,10 @@ public final class GeospatialParser {
         final String type = extractValueAsString(geoJSON, TYPE_KEY);
         Objects.requireNonNull(type, TYPE_KEY + " cannot be null");
         if (Feature.TYPE.equalsIgnoreCase(type)) {
-            return Optional.ofNullable(Collections.unmodifiableList(Arrays.asList(geoJSON)));
+            return Optional.of(List.of(geoJSON));
         }
         if (FeatureCollection.TYPE.equalsIgnoreCase(type)) {
-            return Optional.ofNullable(Collections.unmodifiableList(FeatureCollection.create(geoJSON).getFeatures()));
+            return Optional.of(Collections.unmodifiableList(FeatureCollection.create(geoJSON).getFeatures()));
         }
         return Optional.empty();
     }

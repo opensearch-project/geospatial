@@ -80,8 +80,8 @@ public class GeospatialTestHelper {
     }
 
     /**
-     * Returns random @link IndexResponse}s by generating inputs using random functions.
-     * It is not guaranted to generate every possible values, and it is not required since
+     * Returns random {@link IndexResponse} by generating inputs using random functions.
+     * It is not guaranteed to generate every possible values, and it is not required since
      * it is used by the unit test and will not be validated by the cluster.
      */
     private static IndexResponse randomIndexResponse() {
@@ -121,7 +121,7 @@ public class GeospatialTestHelper {
             );
             items.add(new BulkItemResponse(randomIntBetween(0, MAX_SHARD_ID), DocWriteRequest.OpType.CREATE, failedToIndex));
         }
-        return new BulkResponse(items.stream().toArray(BulkItemResponse[]::new), took, ingestTook);
+        return new BulkResponse(items.toArray(BulkItemResponse[]::new), took, ingestTook);
     }
 
     public static UploadMetric generateRandomUploadMetric() {

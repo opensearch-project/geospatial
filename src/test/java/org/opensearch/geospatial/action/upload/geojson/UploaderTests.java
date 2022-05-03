@@ -64,11 +64,6 @@ public class UploaderTests extends OpenSearchTestCase {
         content = UploadGeoJSONRequestContent.create(contentMap);
     }
 
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     private void mockCreateIndexAction(boolean status) {
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
