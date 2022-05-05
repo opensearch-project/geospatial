@@ -7,7 +7,6 @@ package org.opensearch.geospatial.stats.upload;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -17,18 +16,6 @@ import org.opensearch.common.metrics.CounterMetric;
  * Contains the total upload stats
  */
 public final class UploadStats {
-
-    public enum FIELDS {
-
-        METRICS,
-        TOTAL,
-        UPLOAD;
-
-        @Override
-        public String toString() {
-            return name().toLowerCase(Locale.getDefault());
-        }
-    }
 
     private static final UploadStats instance = new UploadStats();
 
