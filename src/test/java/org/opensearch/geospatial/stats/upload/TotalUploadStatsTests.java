@@ -12,19 +12,17 @@
 package org.opensearch.geospatial.stats.upload;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
+import static org.opensearch.geospatial.stats.upload.UploadStatsBuilder.randomUploadStats;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import org.opensearch.common.Strings;
 import org.opensearch.common.xcontent.ToXContent;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class TotalUploadStatsTests extends OpenSearchTestCase {
@@ -34,19 +32,6 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
     private static final int MIN_STATS_COUNT = 2;
 
     private static final long INIT = 0L;
-
-    private UploadStats randomUploadStats() {
-        int randomMetricCount = randomIntBetween(MIN_METRIC_COUNT, MAX_METRIC_COUNT);
-        UploadStats stats = new UploadStats();
-        IntStream.range(0, randomMetricCount).forEach(unUsed -> stats.addMetric(GeospatialTestHelper.generateRandomUploadMetric()));
-        return stats;
-    }
-
-    private List<UploadStats> randomUploadStats(int max) {
-        List<UploadStats> stats = new ArrayList<>();
-        IntStream.range(0, max).forEach(unUsed -> stats.add(randomUploadStats()));
-        return stats;
-    }
 
     public void testInstanceCreation() {
         int randomStatsCount = randomIntBetween(MIN_STATS_COUNT, MAX_STATS_COUNT);
