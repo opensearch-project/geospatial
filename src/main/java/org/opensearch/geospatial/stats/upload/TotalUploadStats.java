@@ -40,7 +40,6 @@ public final class TotalUploadStats implements ToXContentObject {
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-
         builder.startObject(FIELDS.TOTAL.toString());
         if (isUploadStatsEmpty()) {
             return builder.endObject();
