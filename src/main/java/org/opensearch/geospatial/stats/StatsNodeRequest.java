@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats.upload;
+package org.opensearch.geospatial.stats;
 
 import java.io.IOException;
 
@@ -11,20 +11,20 @@ import org.opensearch.action.support.nodes.BaseNodeRequest;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
 
-public class UploadStatsNodeRequest extends BaseNodeRequest {
+public class StatsNodeRequest extends BaseNodeRequest {
 
-    private UploadStatsRequest request;
+    private StatsRequest request;
 
-    public UploadStatsNodeRequest() {
+    public StatsNodeRequest() {
         super();
     }
 
-    public UploadStatsNodeRequest(StreamInput in) throws IOException {
+    public StatsNodeRequest(StreamInput in) throws IOException {
         super(in);
-        request = new UploadStatsRequest(in);
+        request = new StatsRequest(in);
     }
 
-    public UploadStatsNodeRequest(UploadStatsRequest request) {
+    public StatsNodeRequest(StatsRequest request) {
         this.request = request;
     }
 

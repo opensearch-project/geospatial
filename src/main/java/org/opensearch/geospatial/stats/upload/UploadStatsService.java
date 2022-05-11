@@ -20,7 +20,6 @@ import org.opensearch.common.xcontent.XContentBuilder;
 public class UploadStatsService implements ToXContentFragment {
 
     public static final String UPLOADS = "uploads";
-    public static final String TOTAL = "total";
     public static final String METRICS = "metrics";
     public static final String NODE_ID = "node_id";
     private final Map<String, UploadStats> uploadStats;
