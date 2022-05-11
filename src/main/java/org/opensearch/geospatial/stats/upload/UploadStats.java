@@ -8,6 +8,7 @@ package org.opensearch.geospatial.stats.upload;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -15,13 +16,25 @@ import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.common.io.stream.Writeable;
 import org.opensearch.common.metrics.CounterMetric;
+import org.opensearch.common.xcontent.ToXContentObject;
+import org.opensearch.common.xcontent.XContentBuilder;
 
 /**
  * Contains the total upload stats
  */
-public final class UploadStats implements Writeable {
+public final class UploadStats implements Writeable, ToXContentObject {
 
     private static final UploadStats instance = new UploadStats();
+
+    public enum FIELDS {
+        METRICS,
+        REQUEST_COUNT;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase(Locale.getDefault());
+        }
+    }
 
     private final Set<UploadMetric> metrics;
     private final CounterMetric totalAPICount;
@@ -93,5 +106,18 @@ public final class UploadStats implements Writeable {
     public void writeTo(StreamOutput output) throws IOException {
         output.writeVLong(getTotalAPICount());
         output.writeCollection(metrics);
+    }
+
+    @Override
+    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        builder.field(FIELDS.REQUEST_COUNT.toString(), getTotalAPICount());
+        builder.startArray(FIELDS.METRICS.toString());
+        for (UploadMetric metric : metrics) {
+            builder.startObject();
+            metric.toXContent(builder, params);
+            builder.endObject();
+        }
+        builder.endArray();
+        return builder;
     }
 }
