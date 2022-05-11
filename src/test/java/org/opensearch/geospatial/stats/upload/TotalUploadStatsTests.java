@@ -1,12 +1,6 @@
 /*
+ * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- *
- * Modifications Copyright OpenSearch Contributors. See
- * GitHub history for details.
  */
 
 package org.opensearch.geospatial.stats.upload;
@@ -26,9 +20,7 @@ import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class TotalUploadStatsTests extends OpenSearchTestCase {
-    private static final int MAX_METRIC_COUNT = 10;
     private static final int MAX_STATS_COUNT = 5;
-    private static final int MIN_METRIC_COUNT = 2;
     private static final int MIN_STATS_COUNT = 2;
 
     private static final long INIT = 0L;
