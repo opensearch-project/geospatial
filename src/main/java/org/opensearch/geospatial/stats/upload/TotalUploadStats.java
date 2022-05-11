@@ -28,7 +28,7 @@ public final class TotalUploadStats implements ToXContentObject {
 
         @Override
         public String toString() {
-            return this.name().toLowerCase(Locale.getDefault());
+            return name().toLowerCase(Locale.getDefault());
         }
     }
 
