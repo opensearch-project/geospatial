@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats.upload;
+package org.opensearch.geospatial.stats;
 
 import static org.opensearch.geospatial.shared.URLBuilder.URL_DELIMITER;
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
@@ -16,9 +16,9 @@ import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
 
-public class RestUploadStatsAction extends BaseRestHandler {
+public class RestStatsAction extends BaseRestHandler {
 
-    private static final String NAME = "upload_stats";
+    private static final String NAME = "geospatial_stats";
     public static final String ACTION_OBJECT = "stats";
 
     @Override
@@ -34,6 +34,6 @@ public class RestUploadStatsAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient nodeClient) {
-        return channel -> nodeClient.execute(UploadStatsAction.INSTANCE, new UploadStatsRequest(), new RestToXContentListener<>(channel));
+        return channel -> nodeClient.execute(StatsAction.INSTANCE, new StatsRequest(), new RestToXContentListener<>(channel));
     }
 }

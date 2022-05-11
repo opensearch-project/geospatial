@@ -12,6 +12,8 @@
 package org.opensearch.geospatial;
 
 import static org.apache.lucene.tests.util.LuceneTestCase.random;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
@@ -144,6 +146,12 @@ public class GeospatialTestHelper {
             return builder.append(value);
         }
         return builder.append("\"").append(value).append("\"");
+    }
+
+    public static String removeStartAndEndObject(String content) {
+        assertNotNull(content);
+        assertTrue("content length should be at least 2", content.length() > 1);
+        return content.substring(1, content.length() - 1);
     }
 
 }

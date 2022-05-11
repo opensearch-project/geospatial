@@ -7,6 +7,7 @@ package org.opensearch.geospatial.stats.upload;
 
 import static org.opensearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.opensearch.geospatial.GeospatialTestHelper.buildFieldNameValuePair;
+import static org.opensearch.geospatial.GeospatialTestHelper.removeStartAndEndObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,12 +22,6 @@ import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadStatsServiceTests extends OpenSearchTestCase {
-
-    private String removeStartAndEndObject(String content) {
-        assertNotNull(content);
-        assertTrue("content length should be at least 2", content.length() > 1);
-        return content.substring(1, content.length() - 1);
-    }
 
     public void testInstanceCreation() {
         Map<String, UploadStats> randomMap = new HashMap<>();
