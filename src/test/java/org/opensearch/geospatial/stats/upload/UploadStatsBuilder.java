@@ -5,6 +5,7 @@
 
 package org.opensearch.geospatial.stats.upload;
 
+import static org.opensearch.test.OpenSearchTestCase.randomBoolean;
 import static org.opensearch.test.OpenSearchTestCase.randomIntBetween;
 
 import java.util.ArrayList;
@@ -20,7 +21,14 @@ public class UploadStatsBuilder {
     public static UploadStats randomUploadStats() {
         int randomMetricCount = randomIntBetween(MIN_METRIC_COUNT, MAX_METRIC_COUNT);
         UploadStats stats = new UploadStats();
-        IntStream.range(0, randomMetricCount).forEach(unUsed -> stats.addMetric(GeospatialTestHelper.generateRandomUploadMetric()));
+        IntStream.range(0, randomMetricCount).forEach(unUsed -> {
+            stats.addMetric(GeospatialTestHelper.generateRandomUploadMetric());
+            stats.incrementAPICount();
+        });
+        // simulate failed upload by randomly increasing the api count
+        if (randomBoolean()) {
+            stats.incrementAPICount();
+        }
         return stats;
     }
 
