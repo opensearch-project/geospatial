@@ -58,6 +58,7 @@ public final class UploadStats implements Writeable, ToXContentObject {
      * @throws IOException if cannot read {@link UploadStats} from given input
      */
     public static UploadStats fromStreamInput(StreamInput input) throws IOException {
+        Objects.requireNonNull(input, "StreamInput cannot be null");
         UploadStats instance = new UploadStats();
         instance.totalAPICount.inc(input.readVLong());
         instance.metrics.addAll(input.readSet(UploadMetric.UploadMetricBuilder::fromStreamInput));
