@@ -19,7 +19,6 @@ import org.opensearch.common.xcontent.XContentBuilder;
 // Service to calculate summary of upload stats and generate XContent for UploadStatsResponse
 public class UploadStatsService implements ToXContentFragment {
 
-    public static final String UPLOADS = "uploads";
     public static final String METRICS = "metrics";
     public static final String NODE_ID = "node_id";
     private final Map<String, UploadStats> uploadStats;
@@ -34,7 +33,6 @@ public class UploadStatsService implements ToXContentFragment {
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         /*
         {
-          "uploads": {
             "total": {
                 request_count : # of request,
                 "upload"       : sum of documents to upload across API,
@@ -52,10 +50,9 @@ public class UploadStatsService implements ToXContentFragment {
                     "duration" : duration in milliseconds to ingest document
                 }, ......
             ]
-          }
         }
          */
-        builder.startObject(UPLOADS);
+        builder.startObject();
         totalUploadStats.toXContent(builder, params);
         builder.startArray(METRICS);
         if (totalUploadStats.isUploadStatsEmpty()) {

@@ -5,9 +5,9 @@
 
 package org.opensearch.geospatial.stats.upload;
 
-import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_UPLOAD;
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 import static org.opensearch.geospatial.stats.upload.RestUploadStatsAction.ACTION_OBJECT;
+import static org.opensearch.geospatial.stats.upload.RestUploadStatsAction.ACTION_UPLOAD;
 
 import java.io.IOException;
 
@@ -23,17 +23,19 @@ public class RestUploadStatsActionIT extends GeospatialRestTestCase {
 
     private static final int NUMBER_OF_FEATURES_TO_ADD = 3;
 
+    private String getUploadStatsPath() {
+        return String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+    }
+
     private String getStatsResponseAsString() throws IOException {
-        String statsPath = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT);
-        Request statsRequest = new Request("GET", statsPath);
+        Request statsRequest = new Request("GET", getUploadStatsPath());
         Response statsResponse = client().performRequest(statsRequest);
         return EntityUtils.toString(statsResponse.getEntity());
     }
 
     public void testStatsAPISuccess() throws IOException {
 
-        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT);
-        Request request = new Request("GET", path);
+        Request request = new Request("GET", getUploadStatsPath());
         Response response = client().performRequest(request);
         assertEquals("Failed to retrieve stats", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
@@ -44,7 +46,12 @@ public class RestUploadStatsActionIT extends GeospatialRestTestCase {
         assertNotNull(currentUploadStats);
 
         // upload geoJSON
-        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), RestUploadGeoJSONAction.ACTION_OBJECT, ACTION_UPLOAD);
+        String path = String.join(
+            URL_DELIMITER,
+            getPluginURLPrefix(),
+            RestUploadGeoJSONAction.ACTION_OBJECT,
+            RestUploadGeoJSONAction.ACTION_UPLOAD
+        );
         Request request = new Request("POST", path);
         final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, null, null);
         request.setJsonEntity(requestBody.toString());
