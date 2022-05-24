@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,17 +14,16 @@ import org.opensearch.action.support.nodes.TransportNodesAction;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.common.io.stream.StreamInput;
-import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
 
-public class StatsTransportAction extends TransportNodesAction<StatsRequest, StatsResponse, StatsNodeRequest, StatsNodeResponse> {
+public class UploadStatsTransportAction extends TransportNodesAction<UploadStatsRequest, UploadStatsResponse, UploadStatsNodeRequest, UploadStatsNodeResponse> {
 
     private final TransportService transportService;
     private final UploadStats uploadStats;
 
     @Inject
-    public StatsTransportAction(
+    public UploadStatsTransportAction(
         TransportService transportService,
         ClusterService clusterService,
         ThreadPool threadPool,
@@ -32,41 +31,41 @@ public class StatsTransportAction extends TransportNodesAction<StatsRequest, Sta
         UploadStats uploadStats
     ) {
         super(
-            StatsAction.NAME,
+            UploadStatsAction.NAME,
             threadPool,
             clusterService,
             transportService,
             actionFilters,
-            StatsRequest::new,
-            StatsNodeRequest::new,
+            UploadStatsRequest::new,
+            UploadStatsNodeRequest::new,
             ThreadPool.Names.MANAGEMENT,
-            StatsNodeResponse.class
+            UploadStatsNodeResponse.class
         );
         this.transportService = transportService;
         this.uploadStats = uploadStats;
     }
 
     @Override
-    protected StatsResponse newResponse(
-        StatsRequest nodesRequest,
-        List<StatsNodeResponse> nodeResponses,
+    protected UploadStatsResponse newResponse(
+        UploadStatsRequest nodesRequest,
+        List<UploadStatsNodeResponse> nodeResponses,
         List<FailedNodeException> failures
     ) {
-        return new StatsResponse(clusterService.getClusterName(), nodeResponses, failures);
+        return new UploadStatsResponse(clusterService.getClusterName(), nodeResponses, failures);
     }
 
     @Override
-    protected StatsNodeRequest newNodeRequest(StatsRequest nodesRequest) {
-        return new StatsNodeRequest(nodesRequest);
+    protected UploadStatsNodeRequest newNodeRequest(UploadStatsRequest nodesRequest) {
+        return new UploadStatsNodeRequest(nodesRequest);
     }
 
     @Override
-    protected StatsNodeResponse newNodeResponse(StreamInput streamInput) throws IOException {
-        return new StatsNodeResponse(streamInput);
+    protected UploadStatsNodeResponse newNodeResponse(StreamInput streamInput) throws IOException {
+        return new UploadStatsNodeResponse(streamInput);
     }
 
     @Override
-    protected StatsNodeResponse nodeOperation(StatsNodeRequest nodeRequest) {
-        return new StatsNodeResponse(transportService.getLocalNode(), uploadStats);
+    protected UploadStatsNodeResponse nodeOperation(UploadStatsNodeRequest nodeRequest) {
+        return new UploadStatsNodeResponse(transportService.getLocalNode(), uploadStats);
     }
 }

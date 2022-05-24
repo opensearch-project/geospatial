@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
 import java.io.IOException;
 
@@ -12,15 +12,15 @@ import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
-public class StatsNodeResponseTests extends OpenSearchTestCase {
+public class UploadStatsNodeResponseTests extends OpenSearchTestCase {
 
     public void testStream() throws IOException {
-        StatsNodeResponse nodeResponse = StatsNodeResponseBuilder.randomStatsNodeResponse(GeospatialTestHelper.randomLowerCaseString());
+        UploadStatsNodeResponse nodeResponse = UploadStatsNodeResponseBuilder.randomStatsNodeResponse(GeospatialTestHelper.randomLowerCaseString());
         BytesStreamOutput output = new BytesStreamOutput();
         nodeResponse.writeTo(output);
         StreamInput in = StreamInput.wrap(output.bytes().toBytesRef().bytes);
 
-        StatsNodeResponse serializedNodeResponse = new StatsNodeResponse(in);
+        UploadStatsNodeResponse serializedNodeResponse = new UploadStatsNodeResponse(in);
         assertNotNull("serialized node response cannot be null", serializedNodeResponse);
         assertArrayEquals(
             "mismatch metrics during serialization",
