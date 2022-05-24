@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -17,18 +17,18 @@ import org.opensearch.common.xcontent.ToXContentObject;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 
-public class StatsNodeResponse extends BaseNodeResponse implements ToXContentObject {
+public class UploadStatsNodeResponse extends BaseNodeResponse implements ToXContentObject {
 
     private static final String UPLOADS = "uploads";
     @Nullable
     private final UploadStats uploadStats;
 
-    public StatsNodeResponse(DiscoveryNode node, UploadStats uploadStats) {
+    public UploadStatsNodeResponse(DiscoveryNode node, UploadStats uploadStats) {
         super(node);
         this.uploadStats = Objects.requireNonNull(uploadStats, "upload stats cannot be null");
     }
 
-    public StatsNodeResponse(StreamInput in) throws IOException {
+    public UploadStatsNodeResponse(StreamInput in) throws IOException {
         super(in);
         uploadStats = UploadStats.fromStreamInput(in);
     }

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import org.opensearch.common.xcontent.ToXContentFragment;
 import org.opensearch.common.xcontent.XContentBuilder;
 
-// Service to calculate summary of upload stats and generate XContent for StatsResponse
+// Service to calculate summary of upload stats and generate XContent for UploadStatsResponse
 public class UploadStatsService implements ToXContentFragment {
 
     public static final String UPLOADS = "uploads";

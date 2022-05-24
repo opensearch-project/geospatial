@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
 import static org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction.ACTION_UPLOAD;
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
-import static org.opensearch.geospatial.stats.RestStatsAction.ACTION_OBJECT;
+import static org.opensearch.geospatial.stats.upload.RestUploadStatsAction.ACTION_OBJECT;
 
 import java.io.IOException;
 
@@ -19,7 +19,7 @@ import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.rest.RestStatus;
 
-public class RestStatsActionIT extends GeospatialRestTestCase {
+public class RestUploadStatsActionIT extends GeospatialRestTestCase {
 
     private static final int NUMBER_OF_FEATURES_TO_ADD = 3;
 

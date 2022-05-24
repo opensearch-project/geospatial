@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
 import static java.util.Collections.emptyList;
 import static org.opensearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 import static org.opensearch.geospatial.GeospatialTestHelper.removeStartAndEndObject;
-import static org.opensearch.geospatial.stats.StatsNodeResponseBuilder.randomStatsNodeResponse;
+import static org.opensearch.geospatial.stats.upload.UploadStatsNodeResponseBuilder.randomStatsNodeResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,23 +22,20 @@ import org.opensearch.common.Strings;
 import org.opensearch.common.xcontent.ToXContent;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.geospatial.stats.upload.TotalUploadStats;
-import org.opensearch.geospatial.stats.upload.UploadMetric;
-import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.test.OpenSearchTestCase;
 
-public class StatsResponseTests extends OpenSearchTestCase {
+public class UploadStatsResponseTests extends OpenSearchTestCase {
 
     public void testXContentWithMetrics() throws IOException {
 
-        Map<String, StatsNodeResponse> nodeResponse = randomStatsNodeResponse();
-        StatsResponse statsResponse = new StatsResponse(
+        Map<String, UploadStatsNodeResponse> nodeResponse = randomStatsNodeResponse();
+        UploadStatsResponse uploadStatsResponse = new UploadStatsResponse(
             new ClusterName(randomLowerCaseString()),
             new ArrayList<>(nodeResponse.values()),
             emptyList()
         );
         final XContentBuilder serviceContentBuilder = jsonBuilder();
-        statsResponse.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
+        uploadStatsResponse.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
         String nodesResponseAsString = Strings.toString(serviceContentBuilder);
         assertNotNull(nodesResponseAsString);
 
@@ -55,14 +52,14 @@ public class StatsResponseTests extends OpenSearchTestCase {
 
     public void testXContentWithTotalUploads() throws IOException {
 
-        Map<String, StatsNodeResponse> nodeResponse = randomStatsNodeResponse();
-        StatsResponse statsResponse = new StatsResponse(
+        Map<String, UploadStatsNodeResponse> nodeResponse = randomStatsNodeResponse();
+        UploadStatsResponse uploadStatsResponse = new UploadStatsResponse(
             new ClusterName(randomLowerCaseString()),
             new ArrayList<>(nodeResponse.values()),
             emptyList()
         );
         final XContentBuilder serviceContentBuilder = jsonBuilder();
-        statsResponse.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
+        uploadStatsResponse.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
         String nodesResponseAsString = Strings.toString(serviceContentBuilder);
         assertNotNull(nodesResponseAsString);
 
@@ -75,14 +72,14 @@ public class StatsResponseTests extends OpenSearchTestCase {
         assertTrue(nodesResponseAsString.contains(removeStartAndEndObject(totalUploadStatsAsString)));
     }
 
-    private List<UploadStats> getUploadStats(Map<String, StatsNodeResponse> nodeResponse) {
-        return nodeResponse.values().stream().map(StatsNodeResponse::getUploadStats).collect(Collectors.toList());
+    private List<UploadStats> getUploadStats(Map<String, UploadStatsNodeResponse> nodeResponse) {
+        return nodeResponse.values().stream().map(UploadStatsNodeResponse::getUploadStats).collect(Collectors.toList());
     }
 
-    private List<UploadMetric> getUploadMetrics(Map<String, StatsNodeResponse> nodeResponse) {
+    private List<UploadMetric> getUploadMetrics(Map<String, UploadStatsNodeResponse> nodeResponse) {
         return nodeResponse.values()
             .stream()
-            .map(StatsNodeResponse::getUploadStats)
+            .map(UploadStatsNodeResponse::getUploadStats)
             .map(UploadStats::getMetrics)
             .flatMap(List::stream)
             .collect(Collectors.toList());

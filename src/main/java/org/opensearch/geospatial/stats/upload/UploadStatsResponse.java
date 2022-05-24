@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.stats;
+package org.opensearch.geospatial.stats.upload;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,26 +19,24 @@ import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.common.io.stream.Writeable;
 import org.opensearch.common.xcontent.ToXContentObject;
 import org.opensearch.common.xcontent.XContentBuilder;
-import org.opensearch.geospatial.stats.upload.UploadStats;
-import org.opensearch.geospatial.stats.upload.UploadStatsService;
 
-public class StatsResponse extends BaseNodesResponse<StatsNodeResponse> implements Writeable, ToXContentObject {
+public class UploadStatsResponse extends BaseNodesResponse<UploadStatsNodeResponse> implements Writeable, ToXContentObject {
 
-    protected StatsResponse(StreamInput in) throws IOException {
+    protected UploadStatsResponse(StreamInput in) throws IOException {
         super(in);
     }
 
-    public StatsResponse(ClusterName clusterName, List<StatsNodeResponse> nodes, List<FailedNodeException> failures) {
+    public UploadStatsResponse(ClusterName clusterName, List<UploadStatsNodeResponse> nodes, List<FailedNodeException> failures) {
         super(clusterName, nodes, failures);
     }
 
     @Override
-    protected List<StatsNodeResponse> readNodesFrom(StreamInput in) throws IOException {
-        return in.readList(StatsNodeResponse::new);
+    protected List<UploadStatsNodeResponse> readNodesFrom(StreamInput in) throws IOException {
+        return in.readList(UploadStatsNodeResponse::new);
     }
 
     @Override
-    protected void writeNodesTo(StreamOutput out, List<StatsNodeResponse> nodeResponses) throws IOException {
+    protected void writeNodesTo(StreamOutput out, List<UploadStatsNodeResponse> nodeResponses) throws IOException {
         super.writeTo(out);
         out.writeList(nodeResponses);
     }
@@ -47,7 +45,7 @@ public class StatsResponse extends BaseNodesResponse<StatsNodeResponse> implemen
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
 
         final Map<String, UploadStats> nodeIDStatsMap = getNodes().stream()
-            .collect(Collectors.toMap(response -> response.getNode().getId(), StatsNodeResponse::getUploadStats));
+            .collect(Collectors.toMap(response -> response.getNode().getId(), UploadStatsNodeResponse::getUploadStats));
         UploadStatsService uploadStatsService = new UploadStatsService(nodeIDStatsMap);
         builder.startObject();
         uploadStatsService.toXContent(builder, params);
@@ -58,7 +56,7 @@ public class StatsResponse extends BaseNodesResponse<StatsNodeResponse> implemen
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        StatsResponse otherResponse = (StatsResponse) o;
+        UploadStatsResponse otherResponse = (UploadStatsResponse) o;
         return Objects.equals(getNodes(), otherResponse.getNodes()) && Objects.equals(failures(), otherResponse.failures());
     }
 

@@ -29,9 +29,9 @@ import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
-import org.opensearch.geospatial.stats.RestStatsAction;
-import org.opensearch.geospatial.stats.StatsAction;
-import org.opensearch.geospatial.stats.StatsTransportAction;
+import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
+import org.opensearch.geospatial.stats.upload.UploadStatsAction;
+import org.opensearch.geospatial.stats.upload.UploadStatsTransportAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.ingest.Processor;
 import org.opensearch.plugins.ActionPlugin;
@@ -85,7 +85,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         Supplier<DiscoveryNodes> nodesInCluster
     ) {
         RestUploadGeoJSONAction uploadGeoJSONAction = new RestUploadGeoJSONAction();
-        RestStatsAction statsAction = new RestStatsAction();
+        RestUploadStatsAction statsAction = new RestUploadStatsAction();
         return List.of(statsAction, uploadGeoJSONAction);
     }
 
@@ -93,7 +93,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return List.of(
             new ActionHandler<>(UploadGeoJSONAction.INSTANCE, UploadGeoJSONTransportAction.class),
-            new ActionHandler<>(StatsAction.INSTANCE, StatsTransportAction.class)
+            new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class)
         );
     }
 }
