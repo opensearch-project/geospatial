@@ -17,7 +17,11 @@ import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
 
-public class UploadStatsTransportAction extends TransportNodesAction<UploadStatsRequest, UploadStatsResponse, UploadStatsNodeRequest, UploadStatsNodeResponse> {
+public class UploadStatsTransportAction extends TransportNodesAction<
+    UploadStatsRequest,
+    UploadStatsResponse,
+    UploadStatsNodeRequest,
+    UploadStatsNodeResponse> {
 
     private final TransportService transportService;
     private final UploadStats uploadStats;

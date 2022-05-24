@@ -15,7 +15,9 @@ import org.opensearch.test.OpenSearchTestCase;
 public class UploadStatsNodeResponseTests extends OpenSearchTestCase {
 
     public void testStream() throws IOException {
-        UploadStatsNodeResponse nodeResponse = UploadStatsNodeResponseBuilder.randomStatsNodeResponse(GeospatialTestHelper.randomLowerCaseString());
+        UploadStatsNodeResponse nodeResponse = UploadStatsNodeResponseBuilder.randomStatsNodeResponse(
+            GeospatialTestHelper.randomLowerCaseString()
+        );
         BytesStreamOutput output = new BytesStreamOutput();
         nodeResponse.writeTo(output);
         StreamInput in = StreamInput.wrap(output.bytes().toBytesRef().bytes);

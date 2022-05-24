@@ -36,24 +36,25 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
         assertThrows(NullPointerException.class, () -> new UploadStatsService(null));
     }
 
-    public void testXContentWithNodeID() {
+    public void testXContentWithNodeID() throws IOException {
         Map<String, UploadStats> randomMap = new HashMap<>();
         randomMap.put(GeospatialTestHelper.randomLowerCaseString(), UploadStatsBuilder.randomUploadStats());
         randomMap.put(GeospatialTestHelper.randomLowerCaseString(), UploadStatsBuilder.randomUploadStats());
         UploadStatsService service = new UploadStatsService(randomMap);
-        String xContent = Strings.toString(service);
-        assertNotNull(xContent);
+        final XContentBuilder serviceContentBuilder = jsonBuilder();
+        service.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
+        String content = Strings.toString(serviceContentBuilder);
+        assertNotNull(content);
         for (String nodeID : randomMap.keySet()) {
-            assertTrue(nodeID + " is missing", xContent.contains(buildFieldNameValuePair(UploadStatsService.NODE_ID, nodeID)));
+            assertTrue(nodeID + " is missing", content.contains(buildFieldNameValuePair(UploadStatsService.NODE_ID, nodeID)));
         }
     }
 
     public void testXContentWithEmptyStats() throws IOException {
         UploadStatsService service = new UploadStatsService(new HashMap<>());
-        final XContentBuilder contentBuilder = jsonBuilder().startObject();
+        final XContentBuilder contentBuilder = jsonBuilder();
         service.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
-        contentBuilder.endObject();
-        String emptyContent = "{\"uploads\":{\"total\":{},\"metrics\":[]}}";
+        String emptyContent = "{\"total\":{},\"metrics\":[]}";
         assertEquals(emptyContent, Strings.toString(contentBuilder));
     }
 
@@ -65,9 +66,8 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
             randomMap.put(GeospatialTestHelper.randomLowerCaseString(), stats);
         }
         UploadStatsService service = new UploadStatsService(randomMap);
-        final XContentBuilder serviceContentBuilder = jsonBuilder().startObject();
+        final XContentBuilder serviceContentBuilder = jsonBuilder();
         service.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
-        serviceContentBuilder.endObject();
         String content = Strings.toString(serviceContentBuilder);
         assertNotNull(content);
 
@@ -89,9 +89,8 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
             randomMetrics.addAll(stats.getMetrics());
         }
         UploadStatsService service = new UploadStatsService(randomMap);
-        final XContentBuilder serviceContentBuilder = jsonBuilder().startObject();
+        final XContentBuilder serviceContentBuilder = jsonBuilder();
         service.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
-        serviceContentBuilder.endObject();
         String content = Strings.toString(serviceContentBuilder);
         assertNotNull(content);
 

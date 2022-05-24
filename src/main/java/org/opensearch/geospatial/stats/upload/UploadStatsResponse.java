@@ -47,9 +47,7 @@ public class UploadStatsResponse extends BaseNodesResponse<UploadStatsNodeRespon
         final Map<String, UploadStats> nodeIDStatsMap = getNodes().stream()
             .collect(Collectors.toMap(response -> response.getNode().getId(), UploadStatsNodeResponse::getUploadStats));
         UploadStatsService uploadStatsService = new UploadStatsService(nodeIDStatsMap);
-        builder.startObject();
-        uploadStatsService.toXContent(builder, params);
-        return builder.endObject();
+        return uploadStatsService.toXContent(builder, params);
     }
 
     @Override

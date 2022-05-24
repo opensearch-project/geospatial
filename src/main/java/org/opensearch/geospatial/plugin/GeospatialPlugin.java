@@ -30,9 +30,9 @@ import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAct
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
+import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.geospatial.stats.upload.UploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStatsTransportAction;
-import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.ingest.Processor;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.IngestPlugin;
