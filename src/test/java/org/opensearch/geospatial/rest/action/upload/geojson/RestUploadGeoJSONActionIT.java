@@ -35,13 +35,9 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPostMethod() throws IOException {
 
-        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
-        Request request = new Request("POST", path);
-        final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, null, null);
-        final String index = requestBody.getString(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName());
+        final String index = randomLowerCaseString();
         assertIndexNotExists(index);
-        request.setJsonEntity(requestBody.toString());
-        Response response = client().performRequest(request);
+        Response response = uploadGeoJSONFeatures(NUMBER_OF_FEATURES_TO_ADD, index, null);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
         assertIndexExists(index);
         assertEquals("failed to index documents", NUMBER_OF_FEATURES_TO_ADD, getIndexDocumentCount(index));
@@ -55,11 +51,10 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
         geoFields.put(geoFieldName, "geo_shape");
         createIndex(index, Settings.EMPTY, geoFields);
         assertIndexExists(index);
-        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
-        Request request = new Request("POST", path);
-        final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, index, geoFieldName);
-        request.setJsonEntity(requestBody.toString());
-        final ResponseException responseException = assertThrows(ResponseException.class, () -> client().performRequest(request));
+        final ResponseException responseException = assertThrows(
+            ResponseException.class,
+            () -> uploadGeoJSONFeatures(NUMBER_OF_FEATURES_TO_ADD, index, geoFieldName)
+        );
         assertTrue("Not an expected exception", responseException.getMessage().contains("resource_already_exists_exception"));
     }
 

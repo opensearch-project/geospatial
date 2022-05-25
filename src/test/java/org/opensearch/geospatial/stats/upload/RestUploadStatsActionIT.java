@@ -12,11 +12,9 @@ import static org.opensearch.geospatial.stats.upload.RestUploadStatsAction.ACTIO
 import java.io.IOException;
 
 import org.apache.http.util.EntityUtils;
-import org.json.JSONObject;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.geospatial.GeospatialRestTestCase;
-import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.rest.RestStatus;
 
 public class RestUploadStatsActionIT extends GeospatialRestTestCase {
@@ -45,17 +43,7 @@ public class RestUploadStatsActionIT extends GeospatialRestTestCase {
         final String currentUploadStats = getStatsResponseAsString();
         assertNotNull(currentUploadStats);
 
-        // upload geoJSON
-        String path = String.join(
-            URL_DELIMITER,
-            getPluginURLPrefix(),
-            RestUploadGeoJSONAction.ACTION_OBJECT,
-            RestUploadGeoJSONAction.ACTION_UPLOAD
-        );
-        Request request = new Request("POST", path);
-        final JSONObject requestBody = buildUploadGeoJSONRequestContent(NUMBER_OF_FEATURES_TO_ADD, null, null);
-        request.setJsonEntity(requestBody.toString());
-        Response response = client().performRequest(request);
+        Response response = uploadGeoJSONFeatures(NUMBER_OF_FEATURES_TO_ADD, null, null);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
 
         // get stats response after an upload
