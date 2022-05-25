@@ -7,7 +7,7 @@ package org.opensearch.geospatial.stats.upload;
 
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 import static org.opensearch.geospatial.stats.upload.RestUploadStatsAction.ACTION_OBJECT;
-import static org.opensearch.geospatial.stats.upload.RestUploadStatsAction.ACTION_UPLOAD;
+import static org.opensearch.geospatial.stats.upload.RestUploadStatsAction.ACTION_STATS;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ public class RestUploadStatsActionIT extends GeospatialRestTestCase {
     private static final int NUMBER_OF_FEATURES_TO_ADD = 3;
 
     private String getUploadStatsPath() {
-        return String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        return String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_STATS);
     }
 
     private String getStatsResponseAsString() throws IOException {

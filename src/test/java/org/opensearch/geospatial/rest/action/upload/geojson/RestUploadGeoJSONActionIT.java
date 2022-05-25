@@ -56,7 +56,6 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
         String index = randomLowerCaseString();
         Response response = uploadGeoJSONFeaturesIntoExistingIndex(NUMBER_OF_FEATURES_TO_ADD, index, null);
-        ;
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
         assertIndexExists(index);
         assertEquals("failed to index documents", NUMBER_OF_FEATURES_TO_ADD, getIndexDocumentCount(index));

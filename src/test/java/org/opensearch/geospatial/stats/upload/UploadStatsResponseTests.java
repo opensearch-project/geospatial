@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 import org.opensearch.cluster.ClusterName;
 import org.opensearch.common.Strings;
+import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.xcontent.ToXContent;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -70,6 +72,21 @@ public class UploadStatsResponseTests extends OpenSearchTestCase {
         final String totalUploadStatsAsString = Strings.toString(totalUploadStatsContent);
         assertNotNull(totalUploadStatsAsString);
         assertTrue(nodesResponseAsString.contains(removeStartAndEndObject(totalUploadStatsAsString)));
+    }
+
+    public void testUploadStatsResponseStream() throws IOException {
+        Map<String, UploadStatsNodeResponse> nodeResponse = randomStatsNodeResponse();
+        UploadStatsResponse uploadStatsResponse = new UploadStatsResponse(
+            new ClusterName(randomLowerCaseString()),
+            new ArrayList<>(nodeResponse.values()),
+            emptyList()
+        );
+        BytesStreamOutput output = new BytesStreamOutput();
+        uploadStatsResponse.writeTo(output);
+        StreamInput in = StreamInput.wrap(output.bytes().toBytesRef().bytes);
+
+        UploadStatsResponse serializedResponse = new UploadStatsResponse(in);
+        assertNotNull("serialized response cannot be null", serializedResponse);
     }
 
     private List<UploadStats> getUploadStats(Map<String, UploadStatsNodeResponse> nodeResponse) {

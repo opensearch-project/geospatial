@@ -13,11 +13,7 @@ import org.opensearch.common.io.stream.StreamOutput;
 
 public class UploadStatsNodeRequest extends BaseNodeRequest {
 
-    private UploadStatsRequest request;
-
-    public UploadStatsNodeRequest() {
-        super();
-    }
+    private final UploadStatsRequest request;
 
     public UploadStatsNodeRequest(StreamInput in) throws IOException {
         super(in);
