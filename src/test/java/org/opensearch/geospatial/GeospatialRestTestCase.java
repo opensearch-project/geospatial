@@ -8,7 +8,6 @@ package org.opensearch.geospatial;
 import static java.util.stream.Collectors.joining;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
-import static org.opensearch.geospatial.GeospatialTestHelper.*;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;

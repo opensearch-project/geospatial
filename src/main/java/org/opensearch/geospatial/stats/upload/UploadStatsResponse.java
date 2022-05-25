@@ -22,8 +22,8 @@ import org.opensearch.common.xcontent.XContentBuilder;
 
 public class UploadStatsResponse extends BaseNodesResponse<UploadStatsNodeResponse> implements Writeable, ToXContentObject {
 
-    protected UploadStatsResponse(StreamInput in) throws IOException {
-        super(in);
+    public UploadStatsResponse(StreamInput in) throws IOException {
+        super(new ClusterName(in), in.readList(UploadStatsNodeResponse::new), in.readList(FailedNodeException::new));
     }
 
     public UploadStatsResponse(ClusterName clusterName, List<UploadStatsNodeResponse> nodes, List<FailedNodeException> failures) {
@@ -37,7 +37,6 @@ public class UploadStatsResponse extends BaseNodesResponse<UploadStatsNodeRespon
 
     @Override
     protected void writeNodesTo(StreamOutput out, List<UploadStatsNodeResponse> nodeResponses) throws IOException {
-        super.writeTo(out);
         out.writeList(nodeResponses);
     }
 

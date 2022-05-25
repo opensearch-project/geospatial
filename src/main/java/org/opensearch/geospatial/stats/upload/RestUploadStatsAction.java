@@ -21,7 +21,7 @@ public class RestUploadStatsAction extends BaseRestHandler {
     private static final String NAME = "upload_stats";
     public static final String ACTION_OBJECT = "_upload";
 
-    public static final String ACTION_UPLOAD = "stats";
+    public static final String ACTION_STATS = "stats";
 
     @Override
     public String getName() {
@@ -30,7 +30,7 @@ public class RestUploadStatsAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_STATS);
         return List.of(new Route(GET, path));
     }
 

@@ -24,7 +24,6 @@ import org.opensearch.common.xcontent.XContentFactory;
 public class IndexManager {
     public static final String FIELD_TYPE_KEY = "type";
     public static final String MAPPING_PROPERTIES_KEY = "properties";
-    public static final String DOCUMENT_TYPE = "_doc";
     private static final Logger LOGGER = LogManager.getLogger(IndexManager.class);
     private final IndicesAdminClient client;
 
