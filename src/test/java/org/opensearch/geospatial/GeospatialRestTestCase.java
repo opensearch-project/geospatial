@@ -9,7 +9,9 @@ import static java.util.stream.Collectors.joining;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialTestHelper.*;
+import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
+import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -33,6 +35,7 @@ import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.processor.FeatureProcessor;
+import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.ingest.Pipeline;
 import org.opensearch.rest.RestStatus;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
@@ -173,4 +176,29 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         MatcherAssert.assertThat(FIELD_COUNT_KEY + " does not exist", responseMap, Matchers.hasKey(FIELD_COUNT_KEY));
         return (Integer) responseMap.get(FIELD_COUNT_KEY);
     }
+
+    private Response uploadGeoJSONFeaturesByMethod(String method, int featureCount, String indexName, String geospatialFieldName)
+        throws IOException {
+        // upload geoJSON
+        String path = String.join(
+            URL_DELIMITER,
+            getPluginURLPrefix(),
+            RestUploadGeoJSONAction.ACTION_OBJECT,
+            RestUploadGeoJSONAction.ACTION_UPLOAD
+        );
+        Request request = new Request(method, path);
+        final JSONObject requestBody = buildUploadGeoJSONRequestContent(featureCount, indexName, geospatialFieldName);
+        request.setJsonEntity(requestBody.toString());
+        return client().performRequest(request);
+    }
+
+    protected final Response uploadGeoJSONFeaturesIntoExistingIndex(int featureCount, String indexName, String geospatialFieldName)
+        throws IOException {
+        return uploadGeoJSONFeaturesByMethod("PUT", featureCount, indexName, geospatialFieldName);
+    }
+
+    protected final Response uploadGeoJSONFeatures(int featureCount, String indexName, String geospatialFieldName) throws IOException {
+        return uploadGeoJSONFeaturesByMethod("POST", featureCount, indexName, geospatialFieldName);
+    }
+
 }
