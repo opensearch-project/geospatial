@@ -21,16 +21,15 @@ import org.opensearch.index.mapper.ParseContext;
 public class ShapeIndexer implements AbstractGeometryFieldMapper.Indexer<Geometry, Geometry> {
 
     private final GeometryVisitor<IndexableField[], RuntimeException> indexableFieldsVisitor;
-    private final GeometryVisitor<Geometry, RuntimeException> xyShapeSupportVisitor;
+    private final GeometryVisitor<Geometry, RuntimeException> supportVisitor;
 
-    /**
-     * Create an instance of ShapeIndexer for given field name from document.
-     * @param fieldName Lucene XYShape field name for the value
-     */
-    public ShapeIndexer(String fieldName) {
-        Objects.requireNonNull(fieldName, "field name cannot be null");
-        indexableFieldsVisitor = new XYShapeIndexableFieldsVisitor(fieldName);
-        xyShapeSupportVisitor = new XYShapeSupportVisitor();
+    public ShapeIndexer(
+        GeometryVisitor<Geometry, RuntimeException> supportVisitor,
+        GeometryVisitor<IndexableField[], RuntimeException> indexableFieldsVisitor
+    ) {
+        this.supportVisitor = Objects.requireNonNull(supportVisitor, "support visitor param cannot be null");
+        this.indexableFieldsVisitor = Objects.requireNonNull(indexableFieldsVisitor, "indexable field visitor param cannot be null");
+        ;
     }
 
     @Override
@@ -38,7 +37,7 @@ public class ShapeIndexer implements AbstractGeometryFieldMapper.Indexer<Geometr
         if (geometry == null) {
             return null;
         }
-        return geometry.visit(xyShapeSupportVisitor);
+        return geometry.visit(supportVisitor);
     }
 
     @Override
