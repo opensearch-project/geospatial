@@ -154,4 +154,8 @@ public class GeospatialTestHelper {
         return content.substring(1, content.length() - 1);
     }
 
+    public static double[] toDoubleArray(float[] input) {
+        return IntStream.range(0, input.length).mapToDouble(i -> input[i]).toArray();
+    }
+
 }
