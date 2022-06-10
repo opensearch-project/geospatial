@@ -57,6 +57,10 @@ public class ShapeIndexerTests extends OpenSearchTestCase {
         parseContext = mock(ParseContext.class);
     }
 
+    public void testIndexingNullGeometry() {
+        expectThrows(NullPointerException.class, () -> indexer.indexShape(parseContext, null));
+    }
+
     public void testIndexingCircle() {
         Circle circle = randomCircle();
         when(mockIndexableFieldVisitor.visit(circle)).thenReturn(new IndexableField[0]);
