@@ -47,6 +47,7 @@ public class ShapeIndexer implements AbstractGeometryFieldMapper.Indexer<Geometr
 
     @Override
     public List<IndexableField> indexShape(ParseContext parseContext, Geometry geometry) {
+        Objects.requireNonNull(geometry, "geometry cannot be null");
         return Arrays.asList(geometry.visit(indexableFieldsVisitor));
     }
 }
