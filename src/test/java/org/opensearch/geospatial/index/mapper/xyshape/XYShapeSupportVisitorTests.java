@@ -3,18 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.index.mapper.shape;
+package org.opensearch.geospatial.index.mapper.xyshape;
 
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomCircle;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomGeometryCollection;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomLine;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomLinearRing;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomMultiLine;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomMultiPoint;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomMultiPolygon;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomPoint;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomPolygon;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomRectangle;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomCircle;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomGeometryCollection;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomLine;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomLinearRing;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomMultiLine;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomMultiPoint;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomMultiPolygon;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomPoint;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomPolygon;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomRectangle;
 
 import java.io.IOException;
 import java.text.ParseException;

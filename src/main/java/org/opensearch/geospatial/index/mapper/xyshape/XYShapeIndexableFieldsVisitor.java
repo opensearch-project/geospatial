@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.index.mapper.shape;
+package org.opensearch.geospatial.index.mapper.xyshape;
 
 import static org.opensearch.geometry.ShapeType.CIRCLE;
 import static org.opensearch.geometry.ShapeType.LINEARRING;
@@ -30,7 +30,7 @@ import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.geometry.ShapeType;
-import org.opensearch.geospatial.index.common.shape.ShapeConverter;
+import org.opensearch.geospatial.index.common.xyshape.XYShapeConverter;
 
 // Visitor to build only supported Shapes into Lucene indexable fields
 public final class XYShapeIndexableFieldsVisitor implements GeometryVisitor<IndexableField[], RuntimeException> {
@@ -55,7 +55,7 @@ public final class XYShapeIndexableFieldsVisitor implements GeometryVisitor<Inde
 
     @Override
     public IndexableField[] visit(Line line) {
-        XYLine cartesianLine = ShapeConverter.toXYLine(line);
+        XYLine cartesianLine = XYShapeConverter.toXYLine(line);
         return XYShape.createIndexableFields(fieldName, cartesianLine);
     }
 
@@ -94,13 +94,13 @@ public final class XYShapeIndexableFieldsVisitor implements GeometryVisitor<Inde
 
     @Override
     public IndexableField[] visit(Polygon polygon) {
-        XYPolygon luceneXYPolygon = ShapeConverter.toXYPolygon(polygon);
+        XYPolygon luceneXYPolygon = XYShapeConverter.toXYPolygon(polygon);
         return createIndexableFields(luceneXYPolygon);
     }
 
     @Override
     public IndexableField[] visit(Rectangle rectangle) {
-        XYPolygon luceneXYPolygon = ShapeConverter.toXYPolygon(rectangle);
+        XYPolygon luceneXYPolygon = XYShapeConverter.toXYPolygon(rectangle);
         return createIndexableFields(luceneXYPolygon);
     }
 
