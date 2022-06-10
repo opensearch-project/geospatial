@@ -9,6 +9,7 @@ import static org.opensearch.geometry.ShapeType.CIRCLE;
 import static org.opensearch.geometry.ShapeType.LINEARRING;
 
 import java.util.Locale;
+import java.util.Objects;
 
 import org.opensearch.geometry.Circle;
 import org.opensearch.geometry.Geometry;
@@ -32,12 +33,12 @@ public final class XYShapeSupportVisitor implements GeometryVisitor<Geometry, Ru
 
     @Override
     public Geometry visit(GeometryCollection<?> collection) {
-        return collection;
+        return Objects.requireNonNull(collection, "Geometry collection cannot be null");
     }
 
     @Override
     public Geometry visit(Line line) {
-        return line;
+        return Objects.requireNonNull(line, "Line cannot be null");
     }
 
     @Override
@@ -47,31 +48,31 @@ public final class XYShapeSupportVisitor implements GeometryVisitor<Geometry, Ru
 
     @Override
     public Geometry visit(MultiLine multiLine) {
-        return multiLine;
+        return Objects.requireNonNull(multiLine, "Multi Line cannot be null");
     }
 
     @Override
     public Geometry visit(MultiPoint multiPoint) {
-        return multiPoint;
+        return Objects.requireNonNull(multiPoint, "Multi Point cannot be null");
     }
 
     @Override
     public Geometry visit(MultiPolygon multiPolygon) {
-        return multiPolygon;
+        return Objects.requireNonNull(multiPolygon, "Multi Polygon cannot be null");
     }
 
     @Override
     public Geometry visit(Point point) {
-        return point;
+        return Objects.requireNonNull(point, "Point cannot be null");
     }
 
     @Override
     public Geometry visit(Polygon polygon) {
-        return polygon;
+        return Objects.requireNonNull(polygon, "Polygon cannot be null");
     }
 
     @Override
     public Geometry visit(Rectangle rectangle) {
-        return rectangle;
+        return Objects.requireNonNull(rectangle, "Rectangle cannot be null");
     }
 }
