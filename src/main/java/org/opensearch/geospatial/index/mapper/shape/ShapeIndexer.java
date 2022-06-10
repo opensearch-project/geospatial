@@ -29,14 +29,11 @@ public class ShapeIndexer implements AbstractGeometryFieldMapper.Indexer<Geometr
     ) {
         this.supportVisitor = Objects.requireNonNull(supportVisitor, "support visitor param cannot be null");
         this.indexableFieldsVisitor = Objects.requireNonNull(indexableFieldsVisitor, "indexable field visitor param cannot be null");
-        ;
     }
 
     @Override
     public Geometry prepareForIndexing(Geometry geometry) {
-        if (geometry == null) {
-            return null;
-        }
+        Objects.requireNonNull(geometry, "Geometry cannot be null");
         return geometry.visit(supportVisitor);
     }
 
