@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.index.mapper.shape;
+package org.opensearch.geospatial.index.mapper.xyshape;
 
 import static org.opensearch.geometry.ShapeType.CIRCLE;
 import static org.opensearch.geometry.ShapeType.LINEARRING;

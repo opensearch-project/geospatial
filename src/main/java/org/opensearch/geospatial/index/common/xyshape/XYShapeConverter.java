@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.index.common.shape;
+package org.opensearch.geospatial.index.common.xyshape;
 
 import static org.apache.commons.lang3.ArrayUtils.toPrimitive;
 
@@ -21,7 +21,7 @@ import org.opensearch.geometry.Rectangle;
 import org.opensearch.geometry.ShapeType;
 
 // Utility class to convert compatible shapes from opensearch to Lucene
-public class ShapeConverter {
+public class XYShapeConverter {
 
     public static XYLine toXYLine(Line line) {
         Objects.requireNonNull(line, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.LINESTRING));
@@ -63,7 +63,7 @@ public class ShapeConverter {
     private static XYPolygon[] extractXYPolygonsFromHoles(final Polygon polygon) {
         return IntStream.range(0, polygon.getNumberOfHoles())
             .mapToObj(polygon::getHole)
-            .map(ShapeConverter::toXYLine)
+            .map(XYShapeConverter::toXYLine)
             .map(line -> new XYPolygon(line.getX(), line.getY()))
             .collect(Collectors.toList())
             .toArray(XYPolygon[]::new);

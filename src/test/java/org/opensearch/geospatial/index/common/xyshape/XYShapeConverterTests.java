@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.index.common.shape;
+package org.opensearch.geospatial.index.common.xyshape;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.toDoubleArray;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomLine;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomPolygon;
-import static org.opensearch.geospatial.index.common.shape.ShapeObjectBuilder.randomRectangle;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomLine;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomPolygon;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomRectangle;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -22,7 +22,7 @@ import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.test.OpenSearchTestCase;
 
-public class ShapeConverterTests extends OpenSearchTestCase {
+public class XYShapeConverterTests extends OpenSearchTestCase {
 
     private final static Integer MAX_NUMBER_OF_VERTICES = 100;
     private final static Integer MIN_NUMBER_OF_VERTICES = 2;
@@ -31,14 +31,14 @@ public class ShapeConverterTests extends OpenSearchTestCase {
     public void testXYLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
         Line line = randomLine(verticesLimit);
-        final XYLine xyLine = ShapeConverter.toXYLine(line);
+        final XYLine xyLine = XYShapeConverter.toXYLine(line);
         assertArrayEquals("not matching x coords", line.getX(), toDoubleArray(xyLine.getX()), DELTA_ERROR);
         assertArrayEquals("not matching y coords", line.getY(), toDoubleArray(xyLine.getY()), DELTA_ERROR);
     }
 
     public void testRectangleToXYPolygon() {
         Rectangle rectangle = randomRectangle();
-        final XYPolygon xyPolygon = ShapeConverter.toXYPolygon(rectangle);
+        final XYPolygon xyPolygon = XYShapeConverter.toXYPolygon(rectangle);
         assertNotNull("failed to convert to XYPolygon", xyPolygon);
         Double[] expectedXCoords = Arrays.asList(
             rectangle.getMinX(),
@@ -63,7 +63,7 @@ public class ShapeConverterTests extends OpenSearchTestCase {
 
     public void testPolygonToXYPolygon() throws IOException, ParseException {
         Polygon polygon = randomPolygon();
-        final XYPolygon xyPolygon = ShapeConverter.toXYPolygon(polygon);
+        final XYPolygon xyPolygon = XYShapeConverter.toXYPolygon(polygon);
         assertNotNull("failed to convert to XYPolygon", xyPolygon);
         assertArrayEquals(polygon.getPolygon().getX(), toDoubleArray(xyPolygon.getPolyX()), DELTA_ERROR);
         assertArrayEquals(polygon.getPolygon().getY(), toDoubleArray(xyPolygon.getPolyY()), DELTA_ERROR);

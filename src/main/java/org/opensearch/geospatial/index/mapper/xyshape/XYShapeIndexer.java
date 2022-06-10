@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.index.mapper.shape;
+package org.opensearch.geospatial.index.mapper.xyshape;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,12 +18,12 @@ import org.opensearch.index.mapper.ParseContext;
 /**
  * Converts geometries into Lucene-compatible form for indexing in a shape field.
  */
-public class ShapeIndexer implements AbstractGeometryFieldMapper.Indexer<Geometry, Geometry> {
+public class XYShapeIndexer implements AbstractGeometryFieldMapper.Indexer<Geometry, Geometry> {
 
     private final GeometryVisitor<IndexableField[], RuntimeException> indexableFieldsVisitor;
     private final GeometryVisitor<Geometry, RuntimeException> supportVisitor;
 
-    public ShapeIndexer(
+    public XYShapeIndexer(
         GeometryVisitor<Geometry, RuntimeException> supportVisitor,
         GeometryVisitor<IndexableField[], RuntimeException> indexableFieldsVisitor
     ) {
