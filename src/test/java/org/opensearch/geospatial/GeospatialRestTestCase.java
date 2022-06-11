@@ -27,11 +27,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
+import org.opensearch.common.CheckedConsumer;
 import org.opensearch.common.Strings;
+import org.opensearch.common.UUIDs;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
@@ -50,6 +53,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     public static final String FIELD_MAPPINGS_KEY = "mappings";
     public static final String COUNT = "_count";
     public static final String FIELD_COUNT_KEY = "count";
+    public static final String PARAM_REFRESH_KEY = "refresh";
 
     private static String buildPipelinePath(String name) {
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
@@ -86,10 +90,26 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         createIndex(name, settings, mapping.substring(1, mapping.length() - 1));
     }
 
-    public static void indexDocument(String indexName, String docID, String body, Map<String, String> params) throws IOException {
+    public static String indexDocument(String indexName, String body) throws IOException {
+        return indexDocument(indexName, body, Map.of());
+    }
 
+    public static String indexDocument(String indexName, String body, Map<String, String> params) throws IOException {
+        return indexDocument(indexName, UUIDs.randomBase64UUID(), body, params);
+    }
+
+    public static String indexDocument(String indexName, String docID, String body) throws IOException {
+        return indexDocument(indexName, docID, body, Map.of());
+    }
+
+    public static String indexDocument(String indexName, String docID, String body, Map<String, String> params) throws IOException {
         String path = String.join(URL_DELIMITER, indexName, DOC, docID);
-        String queryParams = params.entrySet().stream().map(Object::toString).collect(joining("&"));
+        Map<String, String> indexParams = new HashMap<>();
+        if (params != null) {
+            indexParams.putAll(params);
+        }
+        indexParams.put(PARAM_REFRESH_KEY, Boolean.TRUE.toString());
+        String queryParams = indexParams.entrySet().stream().map(Object::toString).collect(joining("&"));
         StringBuilder endpoint = new StringBuilder();
         endpoint.append(path);
         endpoint.append("?");
@@ -98,6 +118,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         Request request = new Request("PUT", endpoint.toString());
         request.setJsonEntity(body);
         client().performRequest(request);
+        return docID;
     }
 
     protected Map<String, Object> buildGeoJSONFeatureProcessorConfig(Map<String, String> properties) {
@@ -152,7 +173,6 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
      Get index mapping as map
      */
     protected Map<String, Object> getIndexMapping(String index) throws IOException {
-
         String indexMappingURL = String.join(URL_DELIMITER, index, MAPPING);
         Request request = new Request("GET", indexMappingURL);
         Response response = client().performRequest(request);
@@ -161,6 +181,15 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
         Map<String, Object> responseMap = createParser(XContentType.JSON.xContent(), responseBody).map();
         MatcherAssert.assertThat(index + " does not exist", responseMap, Matchers.hasKey(index));
         return (Map<String, Object>) ((Map<String, Object>) responseMap.get(index)).get(FIELD_MAPPINGS_KEY);
+    }
+
+    /*
+        Get index mapping's properties as map
+     */
+    protected Map<String, Object> getIndexProperties(String index) throws IOException {
+        final Map<String, Object> indexMapping = getIndexMapping(index);
+        MatcherAssert.assertThat("No properties found for index: " + index, indexMapping, Matchers.hasKey(MAPPING_PROPERTIES_KEY));
+        return (Map<String, Object>) indexMapping.get(MAPPING_PROPERTIES_KEY);
     }
 
     protected int getIndexDocumentCount(String index) throws IOException {
@@ -198,6 +227,13 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
 
     protected final Response uploadGeoJSONFeatures(int featureCount, String indexName, String geospatialFieldName) throws IOException {
         return uploadGeoJSONFeaturesByMethod("POST", featureCount, indexName, geospatialFieldName);
+    }
+
+    public String indexContentAsString(CheckedConsumer<XContentBuilder, IOException> build) throws IOException {
+        XContentBuilder builder = JsonXContent.contentBuilder().startObject();
+        build.accept(builder);
+        builder.endObject();
+        return Strings.toString(builder);
     }
 
 }
