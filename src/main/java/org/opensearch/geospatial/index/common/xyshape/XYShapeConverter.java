@@ -20,7 +20,9 @@ import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.geometry.ShapeType;
 
-// Utility class to convert compatible shapes from opensearch to Lucene
+/**
+ * Utility class to convert compatible shapes from opensearch to Lucene
+ */
 public class XYShapeConverter {
 
     public static XYLine toXYLine(Line line) {

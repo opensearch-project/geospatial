@@ -32,7 +32,9 @@ import org.opensearch.geometry.Rectangle;
 import org.opensearch.geometry.ShapeType;
 import org.opensearch.geospatial.index.common.xyshape.XYShapeConverter;
 
-// Visitor to build only supported Shapes into Lucene indexable fields
+/**
+ * Visitor to build only supported Shapes into Lucene indexable fields
+ */
 public final class XYShapeIndexableFieldsVisitor implements GeometryVisitor<IndexableField[], RuntimeException> {
     private final String fieldName;
 
