@@ -24,7 +24,9 @@ import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 
-// Visitor to check whether shape is supported for indexing or not
+/**
+ * Visitor to check whether shape is supported for indexing or not
+ */
 public final class XYShapeSupportVisitor implements GeometryVisitor<Geometry, RuntimeException> {
     @Override
     public Geometry visit(Circle circle) {
