@@ -27,15 +27,19 @@ import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
+import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
+import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.geospatial.stats.upload.UploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStatsTransportAction;
+import org.opensearch.index.mapper.Mapper;
 import org.opensearch.ingest.Processor;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.IngestPlugin;
+import org.opensearch.plugins.MapperPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.rest.RestController;
@@ -48,7 +52,7 @@ import org.opensearch.watcher.ResourceWatcherService;
  * Entry point for Geospatial features. It provides additional Processors, Actions
  * to interact with Cluster.
  */
-public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin {
+public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin {
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
@@ -95,5 +99,10 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             new ActionHandler<>(UploadGeoJSONAction.INSTANCE, UploadGeoJSONTransportAction.class),
             new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class)
         );
+    }
+
+    @Override
+    public Map<String, Mapper.TypeParser> getMappers() {
+        return Map.of(XYShapeFieldMapper.CONTENT_TYPE, new XYShapeFieldTypeParser());
     }
 }
