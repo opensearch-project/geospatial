@@ -7,6 +7,7 @@ package org.opensearch.geospatial.index.common.xyshape;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.toDoubleArray;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomLine;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomPoint;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomPolygon;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomRectangle;
 
@@ -16,8 +17,11 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.lucene.geo.XYLine;
+import org.apache.lucene.geo.XYPoint;
 import org.apache.lucene.geo.XYPolygon;
+import org.apache.lucene.geo.XYRectangle;
 import org.opensearch.geometry.Line;
+import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.test.OpenSearchTestCase;
@@ -68,5 +72,28 @@ public class XYShapeConverterTests extends OpenSearchTestCase {
         assertArrayEquals(polygon.getPolygon().getX(), toDoubleArray(xyPolygon.getPolyX()), DELTA_ERROR);
         assertArrayEquals(polygon.getPolygon().getY(), toDoubleArray(xyPolygon.getPolyY()), DELTA_ERROR);
         assertEquals("number of holes are  differnt", polygon.getNumberOfHoles(), xyPolygon.numHoles());
+    }
+
+    public void testRectangleToXYRectangle() {
+        Rectangle rectangle = randomRectangle();
+        final XYRectangle xyRectangle = XYShapeConverter.toXYRectangle(rectangle);
+        assertNotNull("failed to convert to XYRectangle", xyRectangle);
+        assertArrayEquals(
+            "Vertices didn't match between Rectangle and XYRectangle",
+            new double[] { rectangle.getMaxX(), rectangle.getMaxY(), rectangle.getMinX(), rectangle.getMinY() },
+            toDoubleArray(new float[] { xyRectangle.maxX, xyRectangle.maxY, xyRectangle.minX, xyRectangle.minY }),
+            DELTA_ERROR
+        );
+    }
+
+    public void testXYPoint() {
+        Point point = randomPoint();
+        final XYPoint xyPoint = XYShapeConverter.toXYPoint(point);
+        assertArrayEquals(
+            "Coordinates didn't match",
+            new double[] { point.getX(), point.getY() },
+            toDoubleArray(new float[] { xyPoint.getX(), xyPoint.getY() }),
+            DELTA_ERROR
+        );
     }
 }
