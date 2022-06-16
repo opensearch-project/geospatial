@@ -14,6 +14,7 @@ import static org.opensearch.geospatial.index.common.xyshape.XYShapeConverter.to
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import org.apache.lucene.geo.XYGeometry;
@@ -29,12 +30,11 @@ import org.opensearch.geometry.MultiPolygon;
 import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
-import org.opensearch.geometry.ShapeType;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.index.query.QueryShardException;
 
 /**
- * Geomtery Visitor to create a query to find all cartesian XYShapes
+ * Geometry Visitor to create a query to find all cartesian XYShapes
  * that comply ShapeRelation with all other XYShapes objects
  */
 public class XYShapeQueryVisitor implements GeometryVisitor<List<XYGeometry>, RuntimeException> {
@@ -49,7 +49,7 @@ public class XYShapeQueryVisitor implements GeometryVisitor<List<XYGeometry>, Ru
 
     @Override
     public List<XYGeometry> visit(Circle circle) throws RuntimeException {
-        Objects.requireNonNull(circle, ShapeType.CIRCLE + " cannot be null");
+        Objects.requireNonNull(circle, "Circle cannot be null");
         // XYShape don't support indexing Circle, but, can perform query to identify list of shapes
         // that interact with a provided circle
         return List.of(toXYCircle(circle));
@@ -57,7 +57,7 @@ public class XYShapeQueryVisitor implements GeometryVisitor<List<XYGeometry>, Ru
 
     @Override
     public List<XYGeometry> visit(GeometryCollection<?> geometryCollection) throws RuntimeException {
-        Objects.requireNonNull(geometryCollection, " Geometry collection cannot be null");
+        Objects.requireNonNull(geometryCollection, "Geometry collection cannot be null");
         return visitCollection(geometryCollection);
     }
 
@@ -69,12 +69,15 @@ public class XYShapeQueryVisitor implements GeometryVisitor<List<XYGeometry>, Ru
 
     @Override
     public List<XYGeometry> visit(LinearRing linearRing) throws RuntimeException {
-        throw new QueryShardException(this.context, "Field [" + this.name + "] found an unsupported shape LinearRing");
+        throw new QueryShardException(
+            this.context,
+            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape LinearRing", this.name)
+        );
     }
 
     @Override
     public List<XYGeometry> visit(MultiLine multiLine) throws RuntimeException {
-        Objects.requireNonNull(multiLine, "Multi line cannot be null");
+        Objects.requireNonNull(multiLine, "Multi Line cannot be null");
         return visitCollection(multiLine);
     }
 
