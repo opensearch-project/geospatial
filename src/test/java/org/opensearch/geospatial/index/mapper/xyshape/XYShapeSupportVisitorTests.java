@@ -19,6 +19,7 @@ import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.
 import java.io.IOException;
 import java.text.ParseException;
 
+import org.opensearch.geometry.Geometry;
 import org.opensearch.geometry.GeometryCollection;
 import org.opensearch.geometry.Line;
 import org.opensearch.geometry.LinearRing;
@@ -89,9 +90,9 @@ public class XYShapeSupportVisitorTests extends OpenSearchTestCase {
         assertEquals(geometry, visitor.visit(geometry));
     }
 
-    public void testPrepareForIndexingGeometryCollection() throws IOException, ParseException {
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        assertEquals(geometry, visitor.visit(geometry));
+    public void testPrepareForIndexingGeometryCollection() {
+        GeometryCollection<Geometry> collection = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        assertEquals(collection, visitor.visit(collection));
     }
 
     public void testPrepareForIndexingRectangle() {

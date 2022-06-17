@@ -133,7 +133,7 @@ public class XYShapeFieldMapperTests extends FieldMapperTestCase2<XYShapeFieldMa
             XYShapeFieldMapper.fieldType().orientation(),
             AbstractShapeGeometryFieldMapper.Defaults.ORIENTATION.value()
         );
-        assertEquals("param [ docs_value ] default value should be false", XYShapeFieldMapper.fieldType().hasDocValues(), false);
+        assertFalse("param [ docs_value ] default value should be false", XYShapeFieldMapper.fieldType().hasDocValues());
         assertEquals("param [ ignore_malformed ] default value should be false", XYShapeFieldMapper.ignoreMalformed().value(), false);
         assertEquals("param [ ignore_z_value ] default value should be true", XYShapeFieldMapper.ignoreZValue().value(), true);
         assertEquals("param [ coerce ] default value should be false", XYShapeFieldMapper.coerce().value(), false);

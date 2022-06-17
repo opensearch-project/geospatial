@@ -79,7 +79,7 @@ public class GeospatialParserTests extends OpenSearchTestCase {
         Map<String, Object> geoJSON = GeospatialObjectBuilder.randomGeoJSONFeature(new JSONObject()).toMap();
         Optional<List<Map<String, Object>>> features = GeospatialParser.getFeatures(geoJSON);
         assertTrue(features.isPresent());
-        assertTrue(features.get().size() == 1);
+        assertEquals(1, features.get().size());
         assertEquals(features.get().get(0), geoJSON);
     }
 

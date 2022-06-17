@@ -8,13 +8,12 @@ package org.opensearch.geospatial.processor;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.GEOMETRY_TYPE_KEY;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
-import static org.opensearch.ingest.RandomDocumentPicks.randomString;
+import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -42,9 +41,9 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
 
     public void testIndexGeoJSONSuccess() throws IOException {
 
-        String indexName = randomString(random()).toLowerCase(Locale.getDefault());
-        String geoShapeField = randomString(random());
-        String pipelineName = randomString(random());
+        String indexName = randomLowerCaseString();
+        String geoShapeField = randomLowerCaseString();
+        String pipelineName = randomLowerCaseString();
 
         Map<String, String> geoFields = new HashMap<>();
         geoFields.put(geoShapeField, "geo_shape");
@@ -60,15 +59,15 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
         createIndex(indexName, Settings.EMPTY, geoFields);
 
         Map<String, Object> properties = new HashMap<>();
-        properties.put(randomString(random()), randomString(random()));
-        properties.put(randomString(random()), randomString(random()));
+        properties.put(randomLowerCaseString(), randomLowerCaseString());
+        properties.put(randomLowerCaseString(), randomLowerCaseString());
 
         JSONObject feature = randomGeoJSONFeature(buildProperties(properties));
         String requestBody = feature.toString();
         Map<String, String> params = new HashMap<>();
         params.put("pipeline", pipelineName);
 
-        String docID = randomString(random());
+        String docID = randomLowerCaseString();
         indexDocument(indexName, docID, requestBody, params);
 
         Map<String, Object> document = getDocument(docID, indexName);

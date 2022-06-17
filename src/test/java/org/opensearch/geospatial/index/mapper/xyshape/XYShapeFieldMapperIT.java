@@ -30,7 +30,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
     }
 
     private String getDocumentWithWKTValueForXYShape(String fieldName, Geometry geometry) throws IOException {
-        return indexContentAsString(build -> { build.field(fieldName, geometry.toString()); });
+        return indexContentAsString(build -> build.field(fieldName, geometry.toString()));
     }
 
     public void testMappingWithXYShapeField() throws IOException {
@@ -38,7 +38,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYShapeFieldMapper.CONTENT_TYPE));
         final Map<String, Object> fieldNameTypeMap = getIndexProperties(indexName);
-        assertTrue("field name is not found inside mapping", fieldName.contains(fieldName));
+        assertTrue("field name is not found inside mapping", fieldNameTypeMap.containsKey(fieldName));
         final Map<String, Object> fieldType = (Map<String, Object>) fieldNameTypeMap.get(fieldName);
         assertEquals("invalid field type", XYShapeFieldMapper.CONTENT_TYPE, fieldType.get(FIELD_TYPE_KEY));
         deleteIndex(indexName);
