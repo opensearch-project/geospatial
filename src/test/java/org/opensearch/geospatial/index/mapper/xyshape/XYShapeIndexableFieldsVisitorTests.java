@@ -5,7 +5,6 @@
 
 package org.opensearch.geospatial.index.mapper.xyshape;
 
-import static org.mockito.Mockito.mock;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomCircle;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomGeometryCollection;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomLine;
@@ -22,6 +21,7 @@ import java.text.ParseException;
 
 import org.apache.lucene.index.IndexableField;
 import org.opensearch.geometry.Circle;
+import org.opensearch.geometry.Geometry;
 import org.opensearch.geometry.GeometryCollection;
 import org.opensearch.geometry.GeometryVisitor;
 import org.opensearch.geometry.Line;
@@ -33,7 +33,6 @@ import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.geospatial.GeospatialTestHelper;
-import org.opensearch.index.mapper.ParseContext;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
@@ -42,13 +41,11 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
     private final static Integer MIN_NUMBER_OF_VERTICES = 2;
     private final static Integer MIN_NUMBER_OF_GEOMETRY_OBJECTS = 10;
     private GeometryVisitor<IndexableField[], RuntimeException> visitor;
-    private ParseContext parseContext;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
         visitor = new XYShapeIndexableFieldsVisitor(GeospatialTestHelper.randomLowerCaseString());
-        parseContext = mock(ParseContext.class);
     }
 
     private int numberOfTrianglesFromLine(int vertices) {
@@ -126,8 +123,8 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
         assertTrue("indexable field list cannot be empty", indexableFields.length >= geometry.size());
     }
 
-    public void testIndexingGeometryCollection() throws IOException, ParseException {
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+    public void testIndexingGeometryCollection() {
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         assertTrue("indexing is incomplete", indexableFields.length >= geometry.size());

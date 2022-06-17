@@ -38,7 +38,7 @@ public class FeatureProcessor extends AbstractProcessor {
         // 5. Move geojson's geometry object to geoshape field.
         final Feature feature = FeatureFactory.create(ingestDocument.getSourceAndMetadata());
         ingestDocument.removeField(Feature.TYPE_KEY);
-        feature.getProperties().forEach((k, v) -> ingestDocument.setFieldValue(k, v));
+        feature.getProperties().forEach(ingestDocument::setFieldValue);
         if (ingestDocument.hasField(Feature.PROPERTIES_KEY)) { // properties are optional in Feature
             ingestDocument.removeField(Feature.PROPERTIES_KEY);
         }

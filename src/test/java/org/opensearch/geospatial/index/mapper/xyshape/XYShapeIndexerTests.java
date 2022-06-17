@@ -121,8 +121,8 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
         verify(mockIndexableFieldVisitor).visit(geometry);
     }
 
-    public void testIndexingGeometryCollection() throws IOException, ParseException {
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+    public void testIndexingGeometryCollection() {
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
         when(mockIndexableFieldVisitor.visit(geometry)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, geometry));
         verify(mockIndexableFieldVisitor).visit(geometry);
@@ -187,8 +187,8 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
         verify(mockSupportVisitor).visit(geometry);
     }
 
-    public void testPrepareIndexingGeometryCollection() throws IOException, ParseException {
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+    public void testPrepareIndexingGeometryCollection() {
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
         indexer.prepareForIndexing(geometry);
         verify(mockSupportVisitor).visit(geometry);
     }

@@ -48,7 +48,7 @@ public class ContentBuilder {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .flatMap(List::stream)
-            .map(documentSource -> createIndexRequestBuilder(documentSource))
+            .map(this::createIndexRequestBuilder)
             .map(indexRequestBuilder -> indexRequestBuilder.setIndex(content.getIndexName()))
             .map(indexRequestBuilder -> indexRequestBuilder.setPipeline(pipeline))
             .forEach(builder::add);

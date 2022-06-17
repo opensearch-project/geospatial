@@ -88,7 +88,7 @@ public class PipelineManagerTests extends OpenSearchTestCase {
     public void testDeletePipelineFailed() {
         mockDeletePipelineAction(ACTION_FAILED);
         StepListener<Exception> deletePipelineListener = new StepListener<>();
-        manager.delete(randomLowerCaseString(), deletePipelineListener, () -> new IllegalStateException());
+        manager.delete(randomLowerCaseString(), deletePipelineListener, IllegalStateException::new);
         verify(mockClient).deletePipeline(any(DeletePipelineRequest.class), any(ActionListener.class));
         expectThrows(IllegalStateException.class, deletePipelineListener::result);
     }

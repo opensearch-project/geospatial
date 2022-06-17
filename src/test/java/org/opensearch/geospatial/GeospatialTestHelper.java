@@ -68,7 +68,7 @@ public class GeospatialTestHelper {
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), randomLowerCaseString());
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName(), "geo_shape");
         JSONArray values = new JSONArray();
-        IntStream.range(0, featureCount).forEach(notUsed -> { values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()))); });
+        IntStream.range(0, featureCount).forEach(notUsed -> values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()))));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents.toMap();
     }

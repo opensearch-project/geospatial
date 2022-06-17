@@ -110,23 +110,23 @@ public class ShapeObjectBuilder {
         return WellKnownText.INSTANCE.fromWKT("POLYGON ((100.0 0.0, 101.0 0.0, 101.0 1.0, 100.0 1.0, 100.0 0.0))");
     }
 
-    private static Geometry randomGeometry(int size) throws IOException, ParseException {
+    private static Geometry randomGeometry(int size) {
         return RandomPicks.randomFrom(Randomness.get(), List.of(randomLine(size), randomMultiPoint(size), randomPoint()));
     }
 
-    public static GeometryCollection randomGeometryCollection(int maximum) throws IOException, ParseException {
+    public static GeometryCollection<Geometry> randomGeometryCollection(int maximum) {
         // Test at leaset 2 items in collection
         int size = OpenSearchTestCase.randomIntBetween(2, maximum);
-        List<Geometry> shapes = new ArrayList();
+        List<Geometry> shapes = new ArrayList<>();
         for (int count = 0; count < size; count++) {
             shapes.add(randomGeometry(size));
         }
-        return new GeometryCollection(shapes);
+        return new GeometryCollection<>(shapes);
     }
 
     public static Rectangle randomRectangle() {
-        double x[] = randomPointsForRectangle();
-        double y[] = randomPointsForRectangle();
+        double[] x = randomPointsForRectangle();
+        double[] y = randomPointsForRectangle();
         return new Rectangle(x[0], x[1], y[1], y[0]);
     }
 
@@ -136,7 +136,7 @@ public class ShapeObjectBuilder {
         while (first == second) {
             second = randomDouble();
         }
-        double vertex[] = new double[2];
+        double[] vertex = new double[2];
         vertex[0] = Math.min(first, second);
         vertex[1] = Math.max(first, second);
         return vertex;
