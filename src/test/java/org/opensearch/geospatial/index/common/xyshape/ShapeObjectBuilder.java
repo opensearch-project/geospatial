@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.opensearch.common.Randomness;
+import org.opensearch.common.geo.ShapeRelation;
 import org.opensearch.geo.GeometryTestUtils;
 import org.opensearch.geometry.Circle;
 import org.opensearch.geometry.Geometry;
@@ -93,6 +94,13 @@ public class ShapeObjectBuilder {
         return (MultiPolygon) RandomPicks.randomFrom(
             Randomness.get(),
             List.of(getMultiPolygon(), GeometryTestUtils.randomMultiPolygon(randomBoolean()))
+        );
+    }
+
+    public static ShapeRelation randomShapeRelation() {
+        return RandomPicks.randomFrom(
+            Randomness.get(),
+            List.of(ShapeRelation.CONTAINS, ShapeRelation.WITHIN, ShapeRelation.DISJOINT, ShapeRelation.INTERSECTS)
         );
     }
 

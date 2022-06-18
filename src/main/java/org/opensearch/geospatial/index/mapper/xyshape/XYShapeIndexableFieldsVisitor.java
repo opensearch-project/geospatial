@@ -7,6 +7,7 @@ package org.opensearch.geospatial.index.mapper.xyshape;
 
 import static org.opensearch.geometry.ShapeType.CIRCLE;
 import static org.opensearch.geometry.ShapeType.LINEARRING;
+import static org.opensearch.geospatial.index.common.xyshape.XYShapeConverter.toXYPoint;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +17,7 @@ import java.util.Objects;
 
 import org.apache.lucene.document.XYShape;
 import org.apache.lucene.geo.XYLine;
+import org.apache.lucene.geo.XYPoint;
 import org.apache.lucene.geo.XYPolygon;
 import org.apache.lucene.index.IndexableField;
 import org.opensearch.geometry.Circle;
@@ -89,9 +91,8 @@ public final class XYShapeIndexableFieldsVisitor implements GeometryVisitor<Inde
     @Override
     public IndexableField[] visit(Point point) {
         Objects.requireNonNull(point, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.POINT));
-        float x = Double.valueOf(point.getX()).floatValue();
-        float y = Double.valueOf(point.getY()).floatValue();
-        return XYShape.createIndexableFields(fieldName, x, y);
+        XYPoint xyPoint = toXYPoint(point);
+        return XYShape.createIndexableFields(fieldName, xyPoint.getX(), xyPoint.getY());
     }
 
     @Override
