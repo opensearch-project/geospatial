@@ -130,7 +130,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
 
     public void testQueryingCircle() {
         mockFieldType(VALID_FIELD_TYPE);
-        Circle circle = randomCircle();
+        Circle circle = randomCircle(randomBoolean());
         when(mockQueryVisitor.visit(circle)).thenReturn(List.of(mock(XYGeometry.class)));
         assertNotNull(
             "failed to convert to Query",
@@ -140,7 +140,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
     }
 
     public void testQueryingLinearRing() {
-        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES));
+        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES), randomBoolean());
         expectThrows(
             NullPointerException.class,
             () -> queryProcessor.shapeQuery(ring, fieldName, relation, mockQueryVisitor, mockQueryShardContext)
@@ -150,7 +150,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
     public void testQueryingLine() {
         mockFieldType(VALID_FIELD_TYPE);
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
-        Line geometry = randomLine(verticesLimit);
+        Line geometry = randomLine(verticesLimit, randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of(mock(XYGeometry.class)));
         assertNotNull(
             "failed to convert to Query",
@@ -163,7 +163,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
         mockFieldType(VALID_FIELD_TYPE);
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
         final int linesLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit);
+        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit, randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of(mock(XYGeometry.class)));
         assertNotNull(
             "failed to convert to Query",
@@ -174,7 +174,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
 
     public void testQueryingPoint() {
         mockFieldType(VALID_FIELD_TYPE);
-        Point geometry = randomPoint();
+        Point geometry = randomPoint(randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of(mock(XYGeometry.class)));
         assertNotNull(
             "failed to convert to Query",
@@ -186,7 +186,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
     public void testQueryingMultiPoint() {
         mockFieldType(VALID_FIELD_TYPE);
         int pointLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiPoint geometry = randomMultiPoint(pointLimit);
+        MultiPoint geometry = randomMultiPoint(pointLimit, randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of(mock(XYGeometry.class)));
         assertNotNull(
             "failed to convert to Query",
@@ -219,7 +219,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
 
     public void testQueryingGeometryCollection() throws IOException, ParseException {
         mockFieldType(VALID_FIELD_TYPE);
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of(mock(XYGeometry.class)));
         assertNotNull(
             "failed to convert to Query",
@@ -230,7 +230,7 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
 
     public void testQueryingEmptyGeometryCollection() throws IOException, ParseException {
         mockFieldType(VALID_FIELD_TYPE);
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of());
         final Query actualQuery = queryProcessor.shapeQuery(geometry, fieldName, relation, mockQueryVisitor, mockQueryShardContext);
         assertNotNull("failed to convert to Query", actualQuery);

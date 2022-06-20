@@ -5,7 +5,6 @@
 
 package org.opensearch.geospatial.index.common.xyshape;
 
-import static com.carrotsearch.randomizedtesting.RandomizedTest.randomBoolean;
 import static com.carrotsearch.randomizedtesting.RandomizedTest.randomDouble;
 
 import java.io.IOException;
@@ -37,6 +36,8 @@ import com.carrotsearch.randomizedtesting.generators.RandomPicks;
 // Class to build various Geometry shapes for unit tests.
 public class ShapeObjectBuilder {
 
+    public static final int BEGIN = 0;
+
     public static double[] generateRandomDoubleArray(int maxArraySize) {
         if (maxArraySize < 1) {
             throw new IllegalArgumentException("size cannot be less than 1");
@@ -44,41 +45,64 @@ public class ShapeObjectBuilder {
         return Randomness.get().doubles(maxArraySize).toArray();
     }
 
-    public static Circle randomCircle() {
-        return new Circle(randomDouble(), randomDouble(), randomDouble());
+    public static Circle randomCircle(boolean hasZCoords) {
+        double x = randomDouble();
+        double y = randomDouble();
+        double radius = randomDouble();
+        if (!hasZCoords) {
+            return new Circle(x, y, radius);
+        }
+        double z = randomDouble();
+        return new Circle(x, y, z, radius);
     }
 
-    public static LinearRing randomLinearRing(int size) {
+    public static LinearRing randomLinearRing(int size, boolean hasZCoords) {
         double[] x = generateRandomDoubleArray(size);
         x[0] = x[size - 1];
         double[] y = generateRandomDoubleArray(size);
         y[0] = y[size - 1];
+        if (!hasZCoords) {
+            return new LinearRing(x, y);
+        }
         double[] z = generateRandomDoubleArray(size);
         z[0] = z[size - 1];
         return new LinearRing(x, y, z);
     }
 
-    public static Point randomPoint() {
-        return new Point(randomDouble(), randomDouble(), randomDouble());
+    public static Point randomPoint(boolean hasZCoords) {
+        double x = randomDouble();
+        double y = randomDouble();
+        if (!hasZCoords) {
+            return new Point(x, y);
+        }
+        double z = randomDouble();
+        return new Point(x, y, z);
     }
 
-    public static MultiPoint randomMultiPoint(int maximumPoints) {
-        final List<Point> points = IntStream.range(0, maximumPoints).mapToObj(unUsed -> randomPoint()).collect(Collectors.toList());
+    public static MultiPoint randomMultiPoint(int maximumPoints, boolean hasZCoords) {
+        final List<Point> points = IntStream.range(BEGIN, maximumPoints)
+            .mapToObj(unUsed -> randomPoint(hasZCoords))
+            .collect(Collectors.toList());
         return new MultiPoint(points);
     }
 
-    public static Line randomLine(int size) {
+    public static Line randomLine(int size, boolean hasZCoords) {
         if (size < 2) {
             throw new IllegalArgumentException("atleast two points are required");
         }
         double[] x = generateRandomDoubleArray(size);
         double[] y = generateRandomDoubleArray(size);
+        if (!hasZCoords) {
+            return new Line(x, y);
+        }
         double[] z = generateRandomDoubleArray(size);
         return new Line(x, y, z);
     }
 
-    public static MultiLine randomMultiLine(int size, int maximumLines) {
-        final List<Line> lines = IntStream.range(0, maximumLines).mapToObj(unUsed -> randomLine(size)).collect(Collectors.toList());
+    public static MultiLine randomMultiLine(int size, int maximumLines, boolean hasZCoords) {
+        final List<Line> lines = IntStream.range(BEGIN, maximumLines)
+            .mapToObj(unUsed -> randomLine(size, hasZCoords))
+            .collect(Collectors.toList());
         return new MultiLine(lines);
     }
 
@@ -86,14 +110,16 @@ public class ShapeObjectBuilder {
     public static Polygon randomPolygon() throws IOException, ParseException {
         return (Polygon) RandomPicks.randomFrom(
             Randomness.get(),
-            List.of(getPolygonWithHoles(), getPolygonWithoutHoles(), GeometryTestUtils.randomPolygon(randomBoolean()))
+            // TODO: Support z coordinates to be added to polygon
+            List.of(getPolygonWithHoles(), getPolygonWithoutHoles(), GeometryTestUtils.randomPolygon(false))
         );
     }
 
     public static MultiPolygon randomMultiPolygon() throws IOException, ParseException {
         return (MultiPolygon) RandomPicks.randomFrom(
             Randomness.get(),
-            List.of(getMultiPolygon(), GeometryTestUtils.randomMultiPolygon(randomBoolean()))
+            // TODO: Support z coordinates to be added to Multi polygon
+            List.of(getMultiPolygon(), GeometryTestUtils.randomMultiPolygon(false))
         );
     }
 
@@ -118,16 +144,19 @@ public class ShapeObjectBuilder {
         return WellKnownText.INSTANCE.fromWKT("POLYGON ((100.0 0.0, 101.0 0.0, 101.0 1.0, 100.0 1.0, 100.0 0.0))");
     }
 
-    private static Geometry randomGeometry(int size) {
-        return RandomPicks.randomFrom(Randomness.get(), List.of(randomLine(size), randomMultiPoint(size), randomPoint()));
+    private static Geometry randomGeometry(int size, boolean hasZCoords) {
+        return RandomPicks.randomFrom(
+            Randomness.get(),
+            List.of(randomLine(size, hasZCoords), randomMultiPoint(size, hasZCoords), randomPoint(hasZCoords))
+        );
     }
 
-    public static GeometryCollection<Geometry> randomGeometryCollection(int maximum) {
+    public static GeometryCollection<Geometry> randomGeometryCollection(int maximum, boolean hasZCoords) {
         // Test at leaset 2 items in collection
         int size = OpenSearchTestCase.randomIntBetween(2, maximum);
         List<Geometry> shapes = new ArrayList<>();
         for (int count = 0; count < size; count++) {
-            shapes.add(randomGeometry(size));
+            shapes.add(randomGeometry(size, hasZCoords));
         }
         return new GeometryCollection<>(shapes);
     }

@@ -62,14 +62,14 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
     }
 
     public void testIndexingCircle() {
-        Circle circle = randomCircle();
+        Circle circle = randomCircle(randomBoolean());
         when(mockIndexableFieldVisitor.visit(circle)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, circle));
         verify(mockIndexableFieldVisitor).visit(circle);
     }
 
     public void testIndexingLinearRing() {
-        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES));
+        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES), randomBoolean());
         when(mockIndexableFieldVisitor.visit(ring)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, ring));
         verify(mockIndexableFieldVisitor).visit(ring);
@@ -77,7 +77,7 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
 
     public void testIndexingLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
-        Line geometry = randomLine(verticesLimit);
+        Line geometry = randomLine(verticesLimit, randomBoolean());
         when(mockIndexableFieldVisitor.visit(geometry)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, geometry));
         verify(mockIndexableFieldVisitor).visit(geometry);
@@ -86,14 +86,14 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
     public void testIndexingMultiLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
         final int linesLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit);
+        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit, randomBoolean());
         when(mockIndexableFieldVisitor.visit(geometry)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, geometry));
         verify(mockIndexableFieldVisitor).visit(geometry);
     }
 
     public void testIndexingPoint() {
-        Point geometry = randomPoint();
+        Point geometry = randomPoint(randomBoolean());
         when(mockIndexableFieldVisitor.visit(geometry)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, geometry));
         verify(mockIndexableFieldVisitor).visit(geometry);
@@ -101,7 +101,7 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
 
     public void testIndexingMultiPoint() {
         int pointLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiPoint geometry = randomMultiPoint(pointLimit);
+        MultiPoint geometry = randomMultiPoint(pointLimit, randomBoolean());
         when(mockIndexableFieldVisitor.visit(geometry)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, geometry));
         verify(mockIndexableFieldVisitor).visit(geometry);
@@ -122,7 +122,7 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
     }
 
     public void testIndexingGeometryCollection() {
-        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         when(mockIndexableFieldVisitor.visit(geometry)).thenReturn(new IndexableField[0]);
         assertNotNull("failed to index geometry", indexer.indexShape(parseContext, geometry));
         verify(mockIndexableFieldVisitor).visit(geometry);
@@ -136,20 +136,20 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
     }
 
     public void testPrepareIndexingCircle() {
-        Circle circle = randomCircle();
+        Circle circle = randomCircle(randomBoolean());
         indexer.prepareForIndexing(circle);
         verify(mockSupportVisitor).visit(circle);
     }
 
     public void testPrepareIndexingLinearRing() {
-        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES));
+        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES), randomBoolean());
         indexer.prepareForIndexing(ring);
         verify(mockSupportVisitor).visit(ring);
     }
 
     public void testPrepareIndexingLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
-        Line geometry = randomLine(verticesLimit);
+        Line geometry = randomLine(verticesLimit, randomBoolean());
         indexer.prepareForIndexing(geometry);
         verify(mockSupportVisitor).visit(geometry);
     }
@@ -157,20 +157,20 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
     public void testPrepareIndexingMultiLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
         final int linesLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit);
+        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit, randomBoolean());
         indexer.prepareForIndexing(geometry);
         verify(mockSupportVisitor).visit(geometry);
     }
 
     public void testPrepareIndexingPoint() {
-        Point geometry = randomPoint();
+        Point geometry = randomPoint(randomBoolean());
         indexer.prepareForIndexing(geometry);
         verify(mockSupportVisitor).visit(geometry);
     }
 
     public void testPrepareIndexingMultiPoint() {
         int pointLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiPoint geometry = randomMultiPoint(pointLimit);
+        MultiPoint geometry = randomMultiPoint(pointLimit, randomBoolean());
         indexer.prepareForIndexing(geometry);
         verify(mockSupportVisitor).visit(geometry);
     }
@@ -188,7 +188,7 @@ public class XYShapeIndexerTests extends OpenSearchTestCase {
     }
 
     public void testPrepareIndexingGeometryCollection() {
-        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         indexer.prepareForIndexing(geometry);
         verify(mockSupportVisitor).visit(geometry);
     }

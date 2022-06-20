@@ -63,20 +63,20 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
     }
 
     public void testIndexingCircle() {
-        Circle circle = randomCircle();
+        Circle circle = randomCircle(randomBoolean());
         IllegalArgumentException exception = expectThrows(IllegalArgumentException.class, () -> visitor.visit(circle));
         assertEquals("invalid shape type found [ CIRCLE ] while indexing shape", exception.getMessage());
     }
 
     public void testIndexingLinearRing() {
-        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES));
+        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES), randomBoolean());
         IllegalArgumentException exception = expectThrows(IllegalArgumentException.class, () -> visitor.visit(ring));
         assertEquals("invalid shape type found [ LINEARRING ] while indexing shape", exception.getMessage());
     }
 
     public void testIndexingLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
-        Line geometry = randomLine(verticesLimit);
+        Line geometry = randomLine(verticesLimit, randomBoolean());
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         int expectedTrianglesSize = numberOfTrianglesFromLine(verticesLimit);
@@ -86,7 +86,7 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
     public void testIndexingMultiLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
         final int linesLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit);
+        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit, randomBoolean());
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         int expectedTrianglesSize = linesLimit * numberOfTrianglesFromLine(verticesLimit);
@@ -94,7 +94,7 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
     }
 
     public void testIndexingPoint() {
-        Point geometry = randomPoint();
+        Point geometry = randomPoint(randomBoolean());
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         assertEquals("indexing is incomplete", numberOfTrianglesFromPoint(), indexableFields.length);
@@ -102,7 +102,7 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
 
     public void testIndexingMultiPoint() {
         int pointLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiPoint geometry = randomMultiPoint(pointLimit);
+        MultiPoint geometry = randomMultiPoint(pointLimit, randomBoolean());
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         int expectedTrianglesSize = pointLimit * numberOfTrianglesFromPoint();
@@ -124,7 +124,7 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
     }
 
     public void testIndexingGeometryCollection() {
-        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         assertTrue("indexing is incomplete", indexableFields.length >= geometry.size());
