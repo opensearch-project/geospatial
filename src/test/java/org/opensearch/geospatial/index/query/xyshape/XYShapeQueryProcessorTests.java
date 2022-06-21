@@ -252,7 +252,14 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
     private void mockFieldType(boolean success) {
         if (success) {
             when(mockQueryShardContext.fieldMapper(fieldName)).thenReturn(
-                new XYShapeFieldMapper.XYShapeFieldType(fieldName, randomBoolean(), randomBoolean(), randomBoolean(), emptyMap())
+                new XYShapeFieldMapper.XYShapeFieldType(
+                    fieldName,
+                    randomBoolean(),
+                    randomBoolean(),
+                    randomBoolean(),
+                    emptyMap(),
+                    mock(XYShapeQueryProcessor.class)
+                )
             );
             return;
         }

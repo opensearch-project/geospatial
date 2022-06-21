@@ -7,18 +7,25 @@ package org.opensearch.geospatial.index.mapper.xyshape;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.lucene.document.FieldType;
+import org.apache.lucene.geo.XYGeometry;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.search.Query;
 import org.opensearch.common.Explicit;
 import org.opensearch.common.geo.GeometryParser;
+import org.opensearch.common.geo.ShapeRelation;
 import org.opensearch.geometry.Geometry;
 import org.opensearch.geometry.GeometryVisitor;
+import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryProcessor;
+import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryVisitor;
 import org.opensearch.index.mapper.AbstractShapeGeometryFieldMapper;
 import org.opensearch.index.mapper.GeoShapeParser;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.mapper.ParseContext;
+import org.opensearch.index.query.QueryShardContext;
 
 /**
  *  FieldMapper for indexing {@link org.apache.lucene.document.XYShape}s.
@@ -113,7 +120,15 @@ public class XYShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geometr
         }
 
         private XYShapeFieldType buildShapeFieldType(BuilderContext context) {
-            XYShapeFieldType fieldType = new XYShapeFieldType(buildFullName(context), indexed, this.fieldType.stored(), hasDocValues, meta);
+            XYShapeQueryProcessor processor = new XYShapeQueryProcessor();
+            XYShapeFieldType fieldType = new XYShapeFieldType(
+                buildFullName(context),
+                indexed,
+                this.fieldType.stored(),
+                hasDocValues,
+                meta,
+                processor
+            );
             GeometryParser geometryParser = new GeometryParser(
                 orientation().value().getAsBoolean(),
                 coerce().value(),
@@ -130,15 +145,31 @@ public class XYShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geometr
         }
     }
 
-    public static class XYShapeFieldType extends AbstractShapeGeometryFieldType<Geometry, Geometry> {
+    public static class XYShapeFieldType extends AbstractShapeGeometryFieldType<Geometry, Geometry> implements XYShapeQueryable {
 
-        public XYShapeFieldType(String name, boolean indexed, boolean stored, boolean hasDocValues, Map<String, String> meta) {
+        private final XYShapeQueryProcessor queryProcessor;
+
+        public XYShapeFieldType(
+            String name,
+            boolean indexed,
+            boolean stored,
+            boolean hasDocValues,
+            Map<String, String> meta,
+            XYShapeQueryProcessor processor
+        ) {
             super(name, indexed, stored, hasDocValues, false, meta);
+            this.queryProcessor = Objects.requireNonNull(processor, "query processor cannot be null");
         }
 
         @Override
         public String typeName() {
             return CONTENT_TYPE;
+        }
+
+        @Override
+        public Query shapeQuery(Geometry geometry, String fieldName, ShapeRelation relation, QueryShardContext context) {
+            GeometryVisitor<List<XYGeometry>, RuntimeException> visitor = new XYShapeQueryVisitor(fieldName, context);
+            return this.queryProcessor.shapeQuery(geometry, fieldName, relation, visitor, context);
         }
 
     }

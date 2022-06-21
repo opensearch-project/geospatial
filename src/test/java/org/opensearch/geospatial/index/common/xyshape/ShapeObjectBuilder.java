@@ -6,6 +6,7 @@
 package org.opensearch.geospatial.index.common.xyshape;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.randomDouble;
+import static com.carrotsearch.randomizedtesting.RandomizedTest.randomIntBetween;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -37,6 +38,9 @@ import com.carrotsearch.randomizedtesting.generators.RandomPicks;
 public class ShapeObjectBuilder {
 
     public static final int BEGIN = 0;
+    private static final int MIN_VERTEX = 3;
+    private static final int MAX_TOTAL_VERTEX = 10;
+    public static final int MAX_ATTEMPT_TO_RETURN_GEOMETRY = 5;
 
     public static double[] generateRandomDoubleArray(int maxArraySize) {
         if (maxArraySize < 1) {
@@ -177,6 +181,36 @@ public class ShapeObjectBuilder {
         vertex[0] = Math.min(first, second);
         vertex[1] = Math.max(first, second);
         return vertex;
+    }
+
+    public static Geometry randomGeometryWithXYCoordinates() {
+        boolean hasZCoords = false;
+        int size = randomIntBetween(MIN_VERTEX, MIN_VERTEX + MAX_TOTAL_VERTEX);
+        Geometry randomGeometry = null;
+        int attempt = 0;
+        while (randomGeometry == null && attempt++ < MAX_ATTEMPT_TO_RETURN_GEOMETRY) {
+            try {
+                randomGeometry = RandomPicks.randomFrom(
+                    Randomness.get(),
+                    List.of(
+                        randomLine(size, hasZCoords),
+                        randomMultiPoint(size, hasZCoords),
+                        randomPoint(hasZCoords),
+                        randomPolygon(),
+                        randomMultiPolygon(),
+                        randomMultiPoint(size, hasZCoords),
+                        randomRectangle()
+                    )
+                );
+            } catch (IOException | ParseException e) {
+                continue;
+            }
+        }
+        if (randomGeometry != null) {
+            return randomGeometry;
+        }
+        throw new RuntimeException("failed to generate random geometry");
+
     }
 
 }

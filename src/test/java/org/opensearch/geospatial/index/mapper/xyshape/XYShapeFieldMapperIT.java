@@ -21,7 +21,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
     private static final String FIELD_COORDINATES_KEY = "coordinates";
 
     private String getDocumentWithGeoJSONValueForXYShape(String fieldName, Point point) throws IOException {
-        return indexContentAsString(build -> {
+        return buildContentAsString(build -> {
             build.startObject(fieldName);
             build.field(FIELD_TYPE_KEY, GeoJson.getGeoJsonName(point));
             build.field(FIELD_COORDINATES_KEY, new double[] { point.getX(), point.getY() });
@@ -30,7 +30,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
     }
 
     private String getDocumentWithWKTValueForXYShape(String fieldName, Geometry geometry) throws IOException {
-        return indexContentAsString(build -> build.field(fieldName, geometry.toString()));
+        return buildContentAsString(build -> build.field(fieldName, geometry.toString()));
     }
 
     public void testMappingWithXYShapeField() throws IOException {
