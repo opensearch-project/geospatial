@@ -48,7 +48,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYShapeFieldMapper.CONTENT_TYPE));
-        final Point point = ShapeObjectBuilder.randomPoint();
+        final Point point = ShapeObjectBuilder.randomPoint(randomBoolean());
         String docID = indexDocument(indexName, getDocumentWithWKTValueForXYShape(fieldName, point));
         assertTrue("failed to index document", getIndexDocumentCount(indexName) > 0);
         final Map<String, Object> document = getDocument(docID, indexName);
@@ -61,7 +61,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYShapeFieldMapper.CONTENT_TYPE));
-        final Point point = ShapeObjectBuilder.randomPoint();
+        final Point point = ShapeObjectBuilder.randomPoint(randomBoolean());
         String docID = indexDocument(indexName, getDocumentWithGeoJSONValueForXYShape(fieldName, point));
         assertTrue("failed to index document", getIndexDocumentCount(indexName) > 0);
         final Map<String, Object> document = getDocument(docID, indexName);

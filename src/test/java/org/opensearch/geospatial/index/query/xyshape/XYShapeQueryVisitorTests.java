@@ -62,7 +62,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
     }
 
     public void testQueryingCircle() {
-        Circle circle = randomCircle();
+        Circle circle = randomCircle(randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(circle);
         assertNotNull("failed to convert to XYCircle", geometries);
         assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
@@ -70,14 +70,14 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
     }
 
     public void testQueryingLinearRing() {
-        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES));
+        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES), randomBoolean());
         QueryShardException exception = expectThrows(QueryShardException.class, () -> queryVisitor.visit(ring));
         assertEquals("Field [" + fieldName + "] found an unsupported shape LinearRing", exception.getMessage());
     }
 
     public void testQueryingLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
-        Line geometry = randomLine(verticesLimit);
+        Line geometry = randomLine(verticesLimit, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(geometry);
         assertNotNull("Query geometries cannot be null", geometries);
         assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
@@ -87,7 +87,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
     public void testQueryingMultiLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
         final int linesLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiLine multiLine = randomMultiLine(verticesLimit, linesLimit);
+        MultiLine multiLine = randomMultiLine(verticesLimit, linesLimit, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(multiLine);
         assertNotNull("Query geometries cannot be null", geometries);
         assertEquals("Unexpected number of geomteries found", geometries.size(), multiLine.size());
@@ -97,7 +97,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
     }
 
     public void testQueryingPoint() {
-        Point geometry = randomPoint();
+        Point geometry = randomPoint(randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(geometry);
         assertNotNull("Query geometries cannot be null", geometries);
         assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
@@ -107,7 +107,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
 
     public void testQueryingMultiPoint() {
         int pointLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiPoint multiPoint = randomMultiPoint(pointLimit);
+        MultiPoint multiPoint = randomMultiPoint(pointLimit, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(multiPoint);
         assertNotNull("Query geometries cannot be null", geometries);
         assertEquals("Unexpected number of geomteries found", geometries.size(), multiPoint.size());
@@ -135,7 +135,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
     }
 
     public void testQueryingGeometryCollection() throws IOException, ParseException {
-        GeometryCollection<?> collection = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        GeometryCollection<?> collection = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(collection);
         assertNotNull("Query geometries cannot be null", geometries);
         assertTrue("Some geometries are not processed", geometries.size() >= collection.size());

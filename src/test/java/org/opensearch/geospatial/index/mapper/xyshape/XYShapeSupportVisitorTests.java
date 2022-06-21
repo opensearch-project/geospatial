@@ -46,37 +46,40 @@ public class XYShapeSupportVisitorTests extends OpenSearchTestCase {
     }
 
     public void testPrepareForIndexingCircle() {
-        UnsupportedOperationException exception = expectThrows(UnsupportedOperationException.class, () -> visitor.visit(randomCircle()));
+        UnsupportedOperationException exception = expectThrows(
+            UnsupportedOperationException.class,
+            () -> visitor.visit(randomCircle(randomBoolean()))
+        );
         assertEquals("CIRCLE is not supported", exception.getMessage());
     }
 
     public void testPrepareForIndexingLinearRing() {
-        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES));
+        LinearRing ring = randomLinearRing(randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES), randomBoolean());
         UnsupportedOperationException exception = expectThrows(UnsupportedOperationException.class, () -> visitor.visit(ring));
         assertEquals("cannot index LINEARRING [ " + ring + " ] directly", exception.getMessage());
     }
 
     public void testPrepareForIndexingLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
-        Line geometry = randomLine(verticesLimit);
+        Line geometry = randomLine(verticesLimit, randomBoolean());
         assertEquals(geometry, visitor.visit(geometry));
     }
 
     public void testPrepareForIndexingMultiLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
         final int linesLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit);
+        MultiLine geometry = randomMultiLine(verticesLimit, linesLimit, randomBoolean());
         assertEquals(geometry, visitor.visit(geometry));
     }
 
     public void testPrepareForIndexingPoint() {
-        Point geometry = randomPoint();
+        Point geometry = randomPoint(randomBoolean());
         assertEquals(geometry, visitor.visit(geometry));
     }
 
     public void testPrepareForIndexingMultiPoint() {
         int pointLimit = atLeast(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
-        MultiPoint geometry = randomMultiPoint(pointLimit);
+        MultiPoint geometry = randomMultiPoint(pointLimit, randomBoolean());
         assertEquals(geometry, visitor.visit(geometry));
     }
 
@@ -91,7 +94,7 @@ public class XYShapeSupportVisitorTests extends OpenSearchTestCase {
     }
 
     public void testPrepareForIndexingGeometryCollection() {
-        GeometryCollection<Geometry> collection = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS);
+        GeometryCollection<Geometry> collection = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         assertEquals(collection, visitor.visit(collection));
     }
 

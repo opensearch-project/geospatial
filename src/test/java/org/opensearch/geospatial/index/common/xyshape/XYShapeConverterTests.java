@@ -34,7 +34,7 @@ public class XYShapeConverterTests extends OpenSearchTestCase {
 
     public void testXYLine() {
         int verticesLimit = randomIntBetween(MIN_NUMBER_OF_VERTICES, MAX_NUMBER_OF_VERTICES);
-        Line line = randomLine(verticesLimit);
+        Line line = randomLine(verticesLimit, randomBoolean());
         final XYLine xyLine = XYShapeConverter.toXYLine(line);
         assertArrayEquals("not matching x coords", line.getX(), toDoubleArray(xyLine.getX()), DELTA_ERROR);
         assertArrayEquals("not matching y coords", line.getY(), toDoubleArray(xyLine.getY()), DELTA_ERROR);
@@ -87,7 +87,7 @@ public class XYShapeConverterTests extends OpenSearchTestCase {
     }
 
     public void testXYPoint() {
-        Point point = randomPoint();
+        Point point = randomPoint(randomBoolean());
         final XYPoint xyPoint = XYShapeConverter.toXYPoint(point);
         assertArrayEquals(
             "Coordinates didn't match",
