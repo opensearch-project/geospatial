@@ -13,6 +13,9 @@ import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import org.apache.lucene.geo.XYCircle;
 import org.apache.lucene.geo.XYLine;
 import org.apache.lucene.geo.XYPoint;
@@ -28,6 +31,7 @@ import org.opensearch.geometry.ShapeType;
 /**
  * Utility class to convert compatible shapes from opensearch to Lucene
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class XYShapeConverter {
 
     /**
