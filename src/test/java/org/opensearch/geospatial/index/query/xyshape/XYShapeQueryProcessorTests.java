@@ -56,7 +56,6 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
     private final static Integer MIN_NUMBER_OF_VERTICES = 2;
     private final static Integer MIN_NUMBER_OF_GEOMETRY_OBJECTS = 10;
     private GeometryVisitor<List<XYGeometry>, RuntimeException> mockQueryVisitor;
-    private GeometryVisitor<Geometry, RuntimeException> mockSupportVisitor;
     private XYShapeQueryProcessor queryProcessor;
     private QueryShardContext mockQueryShardContext;
     private String fieldName;
@@ -217,9 +216,9 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
         verify(mockQueryVisitor).visit(geometry);
     }
 
-    public void testQueryingGeometryCollection() throws IOException, ParseException {
+    public void testQueryingGeometryCollection() {
         mockFieldType(VALID_FIELD_TYPE);
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of(mock(XYGeometry.class)));
         assertNotNull(
             "failed to convert to Query",
@@ -228,9 +227,9 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
         verify(mockQueryVisitor).visit(geometry);
     }
 
-    public void testQueryingEmptyGeometryCollection() throws IOException, ParseException {
+    public void testQueryingEmptyGeometryCollection() {
         mockFieldType(VALID_FIELD_TYPE);
-        GeometryCollection geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
+        GeometryCollection<Geometry> geometry = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         when(mockQueryVisitor.visit(geometry)).thenReturn(List.of());
         final Query actualQuery = queryProcessor.shapeQuery(geometry, fieldName, relation, mockQueryVisitor, mockQueryShardContext);
         assertNotNull("failed to convert to Query", actualQuery);

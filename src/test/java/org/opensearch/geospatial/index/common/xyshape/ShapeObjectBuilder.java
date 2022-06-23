@@ -186,11 +186,10 @@ public class ShapeObjectBuilder {
     public static Geometry randomGeometryWithXYCoordinates() {
         boolean hasZCoords = false;
         int size = randomIntBetween(MIN_VERTEX, MIN_VERTEX + MAX_TOTAL_VERTEX);
-        Geometry randomGeometry = null;
         int attempt = 0;
-        while (randomGeometry == null && attempt++ < MAX_ATTEMPT_TO_RETURN_GEOMETRY) {
+        while (attempt++ < MAX_ATTEMPT_TO_RETURN_GEOMETRY) {
             try {
-                randomGeometry = RandomPicks.randomFrom(
+                return RandomPicks.randomFrom(
                     Randomness.get(),
                     List.of(
                         randomLine(size, hasZCoords),
@@ -203,14 +202,10 @@ public class ShapeObjectBuilder {
                     )
                 );
             } catch (IOException | ParseException e) {
-                continue;
+                // if for some reason we failed to generate geometry, try till we reach max attempt
             }
         }
-        if (randomGeometry != null) {
-            return randomGeometry;
-        }
         throw new RuntimeException("failed to generate random geometry");
-
     }
 
 }

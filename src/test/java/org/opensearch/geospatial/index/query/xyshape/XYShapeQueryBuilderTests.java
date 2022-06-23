@@ -94,9 +94,8 @@ public class XYShapeQueryBuilderTests extends AbstractQueryTestCase<XYShapeQuery
             new CompressedXContent(
                 Strings.toString(
                     PutMappingRequest.simpleMapping(
-                        new String[] {
-                            XY_SHAPE_FIELD_NAME,
-                            String.format(Locale.getDefault(), "%s=%s", MAPPING_FIELD_TYPE_KEY, XYShapeQueryBuilder.NAME) }
+                        XY_SHAPE_FIELD_NAME,
+                        String.format(Locale.getDefault(), "%s=%s", MAPPING_FIELD_TYPE_KEY, XYShapeQueryBuilder.NAME)
                     )
                 )
             ),
@@ -203,7 +202,7 @@ public class XYShapeQueryBuilderTests extends AbstractQueryTestCase<XYShapeQuery
         MatcherAssert.assertThat(query, instanceOf(MatchNoDocsQuery.class));
     }
 
-    public void testIgnoreUnmappedWithFailingQB() throws IOException {
+    public void testIgnoreUnmappedWithFailingQB() {
         Geometry shape = ShapeObjectBuilder.randomGeometryWithXYCoordinates();
         final XYShapeQueryBuilder failingQueryBuilder = new XYShapeQueryBuilder("unmapped", shape);
         failingQueryBuilder.ignoreUnmapped(false);

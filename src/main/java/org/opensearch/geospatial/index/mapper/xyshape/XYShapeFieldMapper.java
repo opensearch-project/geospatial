@@ -17,6 +17,7 @@ import org.apache.lucene.search.Query;
 import org.opensearch.common.Explicit;
 import org.opensearch.common.geo.GeometryParser;
 import org.opensearch.common.geo.ShapeRelation;
+import org.opensearch.common.geo.builders.ShapeBuilder;
 import org.opensearch.geometry.Geometry;
 import org.opensearch.geometry.GeometryVisitor;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryProcessor;
@@ -47,10 +48,10 @@ public class XYShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geometr
         String simpleName,
         FieldType fieldType,
         MappedFieldType mappedFieldType,
-        Explicit ignoreMalformed,
-        Explicit coerce,
-        Explicit ignoreZValue,
-        Explicit orientation,
+        Explicit<Boolean> ignoreMalformed,
+        Explicit<Boolean> coerce,
+        Explicit<Boolean> ignoreZValue,
+        Explicit<ShapeBuilder.Orientation> orientation,
         MultiFields multiFields,
         CopyTo copyTo
     ) {
