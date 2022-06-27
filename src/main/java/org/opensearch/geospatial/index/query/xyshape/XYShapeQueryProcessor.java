@@ -32,6 +32,7 @@ public class XYShapeQueryProcessor {
      * @param geometry OpenSearch {@link Geometry} as an input
      * @param fieldName Lucene field of type {@link XYShape}
      * @param relation Relation to be used to get all shapes from given Geometry
+     * @param visitor {@link GeometryVisitor} to convert geometry to List of XYGeometry
      * @param context QueryShardContext instance
      * @return {@link Query} instance from XYShape.newGeometryQuery
      */

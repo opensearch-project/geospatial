@@ -134,7 +134,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         }
     }
 
-    public void testQueryingGeometryCollection() throws IOException, ParseException {
+    public void testQueryingGeometryCollection() {
         GeometryCollection<?> collection = randomGeometryCollection(MIN_NUMBER_OF_GEOMETRY_OBJECTS, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(collection);
         assertNotNull("Query geometries cannot be null", geometries);

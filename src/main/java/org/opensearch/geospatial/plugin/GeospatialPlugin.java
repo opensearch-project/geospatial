@@ -29,6 +29,7 @@ import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
+import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
@@ -41,6 +42,7 @@ import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.IngestPlugin;
 import org.opensearch.plugins.MapperPlugin;
 import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.rest.RestController;
 import org.opensearch.rest.RestHandler;
@@ -52,7 +54,7 @@ import org.opensearch.watcher.ResourceWatcherService;
  * Entry point for Geospatial features. It provides additional Processors, Actions
  * to interact with Cluster.
  */
-public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin {
+public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin {
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
@@ -104,5 +106,11 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     @Override
     public Map<String, Mapper.TypeParser> getMappers() {
         return Map.of(XYShapeFieldMapper.CONTENT_TYPE, new XYShapeFieldTypeParser());
+    }
+
+    @Override
+    public List<QuerySpec<?>> getQueries() {
+        // Register XYShapeQuery Builder to be delegated for query type: xy_shape
+        return List.of(new QuerySpec<>(XYShapeQueryBuilder.NAME, XYShapeQueryBuilder::new, XYShapeQueryBuilder::fromXContent));
     }
 }
