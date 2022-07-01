@@ -12,6 +12,8 @@
 package org.opensearch.geospatial.rest.action.upload.geojson;
 
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
+import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseStringWithSuffix;
+import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,7 +31,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPostMethod() throws IOException {
 
-        final String index = randomLowerCaseString();
+        final String index = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
         assertIndexNotExists(index);
         Response response = uploadGeoJSONFeatures(NUMBER_OF_FEATURES_TO_ADD, index, null);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -39,7 +41,8 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadFailIndexExists() throws IOException {
 
-        String index = randomLowerCaseString();
+        String index = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
+        ;
         String geoFieldName = randomLowerCaseString();
         Map<String, String> geoFields = new HashMap<>();
         geoFields.put(geoFieldName, "geo_shape");
@@ -54,7 +57,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONUploadSuccessPutMethod() throws IOException {
 
-        String index = randomLowerCaseString();
+        String index = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
         Response response = uploadGeoJSONFeaturesIntoExistingIndex(NUMBER_OF_FEATURES_TO_ADD, index, null);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
         assertIndexExists(index);
@@ -63,7 +66,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public void testGeoJSONPutMethodUploadIndexExists() throws IOException {
 
-        String index = randomLowerCaseString();
+        String index = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
         String geoFieldName = randomLowerCaseString();
         Response response = uploadGeoJSONFeaturesIntoExistingIndex(NUMBER_OF_FEATURES_TO_ADD, index, geoFieldName);
         assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
