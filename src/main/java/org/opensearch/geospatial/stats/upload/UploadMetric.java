@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 
+import lombok.Getter;
+
 import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
@@ -19,6 +21,7 @@ import org.opensearch.common.xcontent.XContentBuilder;
 /**
  * UploadMetric stores metric for an upload API
  */
+@Getter
 public final class UploadMetric implements ToXContentFragment, Writeable {
 
     public enum FIELDS {
@@ -35,12 +38,30 @@ public final class UploadMetric implements ToXContentFragment, Writeable {
         }
     }
 
+    /**
+     * Total time spent in milliseconds to upload, this includes both succeeded and failed time
+     */
     private final long duration;
+    /**
+     * Total number of documents that are failed to upload
+     */
     private final long failedCount;
+    /**
+     * Metric's Identifier
+     */
     private final String metricID;
+    /**
+     * Total number of documents that are successfully uploaded
+     */
     private final long successCount;
+    /**
+     * Total number of documents to be uploaded
+     */
     private final long uploadCount;
 
+    /**
+     * Geospatial object's type
+     */
     private final String type;
 
     private UploadMetric(UploadMetricBuilder builder) {
@@ -50,49 +71,6 @@ public final class UploadMetric implements ToXContentFragment, Writeable {
         this.failedCount = builder.failedCount;
         this.duration = builder.duration;
         this.type = builder.type;
-    }
-
-    /**
-     * @return Total number of documents that are failed to upload
-     */
-    public long getFailedCount() {
-        return failedCount;
-    }
-
-    /**
-     * @return Total number of documents that are successfully uploaded
-     */
-    public long getSuccessCount() {
-        return successCount;
-    }
-
-    /**
-     * @return Total number of documents to be uploaded
-     */
-    public long getUploadCount() {
-        return uploadCount;
-    }
-
-    /**
-     * @return Metric's Identifier
-     */
-    public String getMetricID() {
-        return metricID;
-    }
-
-    /**
-     * @return Total time spent in milliseconds to upload, this includes both
-     * succeeded and failed time
-     */
-    public long getDuration() {
-        return duration;
-    }
-
-    /**
-     * @return Geospatial object's type
-     */
-    public String getType() {
-        return type;
     }
 
     @Override

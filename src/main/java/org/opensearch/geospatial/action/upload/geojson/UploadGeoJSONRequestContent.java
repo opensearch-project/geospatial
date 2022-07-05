@@ -12,12 +12,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
 import org.opensearch.common.ParseField;
 import org.opensearch.common.Strings;
 
 /**
  * UploadGeoJSONRequestContent is the Data model for UploadGeoJSONRequest's body
  */
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class UploadGeoJSONRequestContent {
 
     public static final String GEOSPATIAL_DEFAULT_FIELD_NAME = "location";
@@ -30,13 +34,6 @@ public final class UploadGeoJSONRequestContent {
     private final String fieldName;
     private final String fieldType;
     private final List<Object> data;
-
-    private UploadGeoJSONRequestContent(String indexName, String fieldName, String fieldType, List<Object> data) {
-        this.indexName = indexName;
-        this.fieldName = fieldName;
-        this.fieldType = fieldType;
-        this.data = data;
-    }
 
     /**
      * Creates UploadGeoJSONRequestContent from the user input

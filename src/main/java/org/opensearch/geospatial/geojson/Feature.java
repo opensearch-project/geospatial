@@ -8,9 +8,12 @@ package org.opensearch.geospatial.geojson;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.Getter;
+
 /**
  * Feature object represents GEOJSON of type Feature.
  */
+@Getter
 public class Feature {
     public static final String TYPE = "Feature";
     public static final String GEOMETRY_KEY = "geometry";
@@ -23,24 +26,6 @@ public class Feature {
         this.geometry = new HashMap<>();
         this.geometry.putAll(geometry);
         this.properties = new HashMap<>();
-    }
-
-    /**
-     * Gets the geometry value of this Feature
-     *
-     * @return Feature's Geometry as Map
-     */
-    public Map<String, Object> getGeometry() {
-        return geometry;
-    }
-
-    /**
-     * Gets the properties of this Feature
-     *
-     * @return Feature's properties as Map
-     */
-    public Map<String, Object> getProperties() {
-        return properties;
     }
 
     /**
