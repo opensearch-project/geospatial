@@ -6,11 +6,12 @@
 package org.opensearch.geospatial.action.upload.geojson;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.function.Supplier;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import lombok.extern.log4j.Log4j2;
+
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.ingest.DeletePipelineRequest;
@@ -27,19 +28,12 @@ import org.opensearch.ingest.Pipeline;
 /**
  * PipelineManager is responsible for managing pipeline operations like create and delete
  */
+@AllArgsConstructor
+@Log4j2
 public class PipelineManager {
 
-    private static final Logger LOGGER = LogManager.getLogger(PipelineManager.class);
-
+    @NonNull
     private final ClusterAdminClient client;
-
-    /**
-     * Pipeline operations are cluster operations, hence we need {@link ClusterAdminClient} to manage
-     * @param client {@link ClusterAdminClient}
-     */
-    public PipelineManager(ClusterAdminClient client) {
-        this.client = Objects.requireNonNull(client, "Cluster admin client cannot be null");
-    }
 
     /**
      * Creates a new pipeline with GeoJSON Feature Processor
@@ -69,7 +63,7 @@ public class PipelineManager {
         final DeletePipelineRequest pipelineRequest = new DeletePipelineRequest(pipeline);
         client.deletePipeline(pipelineRequest, ActionListener.wrap(acknowledgedResponse -> {
             StringBuilder message = new StringBuilder("Deleted pipeline: ").append(pipeline);
-            LOGGER.info(message.toString());
+            log.info(message.toString());
             deletePipelineStep.onResponse(supplier.get());
         }, deletePipelineRequestFailed -> {
             StringBuilder message = new StringBuilder("Failed to delete the pipeline: ").append(pipeline)
@@ -100,7 +94,7 @@ public class PipelineManager {
         final PutPipelineRequest pipelineRequest = new PutPipelineRequest(pipelineID, pipelineRequestBodyBytes, XContentType.JSON);
         client.putPipeline(pipelineRequest, ActionListener.wrap(acknowledgedResponse -> {
             StringBuilder pipelineMessage = new StringBuilder("Created pipeline: ").append(pipelineID);
-            LOGGER.info(pipelineMessage.toString());
+            log.info(pipelineMessage.toString());
             createPipelineStep.onResponse(pipelineID);
         }, putPipelineRequestFailedException -> {
             StringBuilder message = new StringBuilder("Failed to create the pipeline: ").append(pipelineID)

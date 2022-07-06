@@ -9,7 +9,8 @@ import static org.opensearch.geospatial.GeospatialParser.toStringObjectMap;
 import static org.opensearch.geospatial.geojson.Feature.TYPE;
 
 import java.util.Map;
-import java.util.Objects;
+
+import lombok.NonNull;
 
 import org.opensearch.geospatial.geojson.Feature.FeatureBuilder;
 
@@ -26,9 +27,8 @@ public class FeatureFactory {
      * @throws NullPointerException if input is null
      * @throws IllegalArgumentException if input doesn't have valid arguments
      */
-    public static Feature create(Map<String, Object> input) {
-        Objects.requireNonNull(input, "input cannot be null");
-        Object geoJSONType = input.get(Feature.TYPE_KEY);
+    public static Feature create(@NonNull Map<String, Object> input) {
+        var geoJSONType = input.get(Feature.TYPE_KEY);
         if (geoJSONType == null) {
             throw new IllegalArgumentException(Feature.TYPE_KEY + " cannot be null");
         }
@@ -49,7 +49,7 @@ public class FeatureFactory {
             );
         }
         Map<String, Object> geometryMap = toStringObjectMap(geometry);
-        FeatureBuilder featureBuilder = new FeatureBuilder(geometryMap);
+        var featureBuilder = new FeatureBuilder(geometryMap);
         Object properties = input.get(Feature.PROPERTIES_KEY);
         if (properties == null) {
             return featureBuilder;

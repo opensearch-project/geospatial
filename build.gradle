@@ -88,6 +88,13 @@ repositories {
     maven { url "https://plugins.gradle.org/m2/" }
 }
 
+compileJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+compileTestJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+
 test {
     include '**/*Tests.class'
     systemProperty 'tests.security.manager', 'false'
