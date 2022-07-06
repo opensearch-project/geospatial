@@ -121,20 +121,9 @@ public class XYShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geometr
         }
 
         private XYShapeFieldType buildShapeFieldType(BuilderContext context) {
-            XYShapeQueryProcessor processor = new XYShapeQueryProcessor();
-            XYShapeFieldType fieldType = new XYShapeFieldType(
-                buildFullName(context),
-                indexed,
-                this.fieldType.stored(),
-                hasDocValues,
-                meta,
-                processor
-            );
-            GeometryParser geometryParser = new GeometryParser(
-                orientation().value().getAsBoolean(),
-                coerce().value(),
-                ignoreZValue().value()
-            );
+            var processor = new XYShapeQueryProcessor();
+            var fieldType = new XYShapeFieldType(buildFullName(context), indexed, this.fieldType.stored(), hasDocValues, meta, processor);
+            var geometryParser = new GeometryParser(orientation().value().getAsBoolean(), coerce().value(), ignoreZValue().value());
             fieldType.setGeometryParser(new GeoShapeParser(geometryParser));
             GeometryVisitor<IndexableField[], RuntimeException> xyShapeIndexableVisitor = new XYShapeIndexableFieldsVisitor(
                 fieldType.name()

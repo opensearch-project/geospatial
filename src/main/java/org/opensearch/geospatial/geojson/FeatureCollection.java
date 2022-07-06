@@ -51,7 +51,7 @@ public final class FeatureCollection {
      * @throws IllegalArgumentException if input doesn't have valid arguments
      */
     public static FeatureCollection create(@NonNull final Map<String, Object> input) {
-        Object geoJSONType = input.get(TYPE_KEY);
+        var geoJSONType = input.get(TYPE_KEY);
         if (geoJSONType == null) {
             throw new IllegalArgumentException(TYPE_KEY + " cannot be null");
         }
@@ -62,8 +62,8 @@ public final class FeatureCollection {
     }
 
     private static FeatureCollection extract(Map<String, Object> input) {
-        FeatureCollection collection = new FeatureCollection();
-        Object featureObject = input.get(FEATURES_KEY);
+        var collection = new FeatureCollection();
+        var featureObject = input.get(FEATURES_KEY);
         if (featureObject == null) { // empty features are valid based on definition
             return collection;
         }

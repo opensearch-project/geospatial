@@ -74,8 +74,8 @@ public class XYShapeConverter {
      */
     public static XYPolygon toXYPolygon(@NonNull Polygon polygon) {
         XYPolygon[] holes = extractXYPolygonsFromHoles(polygon);
-        Line line = polygon.getPolygon();
-        XYLine polygonLine = toXYLine(line);
+        var line = polygon.getPolygon();
+        var polygonLine = toXYLine(line);
         return new XYPolygon(polygonLine.getX(), polygonLine.getY(), holes);
     }
 
