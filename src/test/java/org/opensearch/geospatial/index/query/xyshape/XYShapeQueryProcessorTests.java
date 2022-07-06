@@ -78,28 +78,25 @@ public class XYShapeQueryProcessorTests extends OpenSearchTestCase {
     }
 
     public void testQueryingNullFieldName() {
-        NullPointerException exception = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> queryProcessor.shapeQuery(randomPolygon(), null, relation, mockQueryVisitor, mockQueryShardContext)
         );
-        assertEquals("Unexpected error message", "Field name cannot be null", exception.getMessage());
     }
 
     public void testQueryingNullQueryContext() {
-        NullPointerException exception = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> queryProcessor.shapeQuery(randomPolygon(), fieldName, relation, mockQueryVisitor, null)
         );
-        assertEquals("Unexpected error message", "QueryShardContext cannot be null", exception.getMessage());
     }
 
     public void testQueryingNullShapeRelation() {
         mockFieldType(VALID_FIELD_TYPE);
-        NullPointerException exception = assertThrows(
+        assertThrows(
             NullPointerException.class,
             () -> queryProcessor.shapeQuery(randomPolygon(), fieldName, null, mockQueryVisitor, mockQueryShardContext)
         );
-        assertEquals("Unexpected error message", "ShapeRelation cannot be null", exception.getMessage());
     }
 
     public void testQueryingEmptyGeometry() {

@@ -36,7 +36,7 @@ public class XYShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geometr
     public static final String CONTENT_TYPE = "xy_shape";
     private static final FieldType FIELD_TYPE = new FieldType();
     // Similar to geo_shape, this field is indexed by encoding it as triangular mesh
-    // and index each traingle as 7 dimension point in BKD Tree
+    // and index each triangle as 7 dimension point in BKD Tree
     static {
         FIELD_TYPE.setDimensions(7, 4, Integer.BYTES);
         FIELD_TYPE.setIndexOptions(IndexOptions.DOCS);

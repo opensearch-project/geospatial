@@ -7,14 +7,13 @@ package org.opensearch.geospatial.index.common.xyshape;
 
 import static org.apache.commons.lang3.ArrayUtils.toPrimitive;
 
-import java.util.Locale;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 import org.apache.lucene.geo.XYCircle;
 import org.apache.lucene.geo.XYLine;
@@ -26,7 +25,6 @@ import org.opensearch.geometry.Line;
 import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
-import org.opensearch.geometry.ShapeType;
 
 /**
  * Utility class to convert compatible shapes from opensearch to Lucene
@@ -39,8 +37,7 @@ public class XYShapeConverter {
      * @param line of type {@link Line}
      * @return {@link XYLine} instance
      */
-    public static XYLine toXYLine(Line line) {
-        Objects.requireNonNull(line, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.LINESTRING));
+    public static XYLine toXYLine(@NonNull Line line) {
         float[] x = toFloatArray(line.getX());
         float[] y = toFloatArray(line.getY());
         return new XYLine(x, y);
@@ -51,8 +48,7 @@ public class XYShapeConverter {
      * @param rectangle of type {@link Rectangle}
      * @return {@link XYPolygon} instance
      */
-    public static XYPolygon toXYPolygon(Rectangle rectangle) {
-        Objects.requireNonNull(rectangle, "Rectangle cannot be null");
+    public static XYPolygon toXYPolygon(@NonNull Rectangle rectangle) {
         // build polygon by assigning points in Counter Clock Wise direction (default for polygon) and end at where
         // you started since it has to be linear ring
         // (minX,minY) -> (maxX, minY) -> (maxX, maxY) -> (minX, maxY) -> (minX, minY)
@@ -76,8 +72,7 @@ public class XYShapeConverter {
      * @param polygon of type {@link Polygon}
      * @return {@link XYPolygon} instance
      */
-    public static XYPolygon toXYPolygon(Polygon polygon) {
-        Objects.requireNonNull(polygon, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.POLYGON));
+    public static XYPolygon toXYPolygon(@NonNull Polygon polygon) {
         XYPolygon[] holes = extractXYPolygonsFromHoles(polygon);
         Line line = polygon.getPolygon();
         XYLine polygonLine = toXYLine(line);
@@ -89,7 +84,7 @@ public class XYShapeConverter {
      * @param circle of type {@link Circle}
      * @return {@link XYCircle} instance
      */
-    public static XYCircle toXYCircle(Circle circle) {
+    public static XYCircle toXYCircle(@NonNull Circle circle) {
         return new XYCircle(
             Double.valueOf(circle.getX()).floatValue(),
             Double.valueOf(circle.getY()).floatValue(),
@@ -102,7 +97,7 @@ public class XYShapeConverter {
      * @param point of type {@link Point}
      * @return {@link XYPoint} instance
      */
-    public static XYPoint toXYPoint(Point point) {
+    public static XYPoint toXYPoint(@NonNull Point point) {
         float x = Double.valueOf(point.getX()).floatValue();
         float y = Double.valueOf(point.getY()).floatValue();
         return new XYPoint(x, y);
@@ -113,7 +108,7 @@ public class XYShapeConverter {
      * @param rectangle of type {@link Rectangle}
      * @return {@link XYRectangle} instance
      */
-    public static XYRectangle toXYRectangle(Rectangle rectangle) {
+    public static XYRectangle toXYRectangle(@NonNull Rectangle rectangle) {
         float minX = Double.valueOf(rectangle.getMinX()).floatValue();
         float maxX = Double.valueOf(rectangle.getMaxX()).floatValue();
         float minY = Double.valueOf(rectangle.getMinY()).floatValue();

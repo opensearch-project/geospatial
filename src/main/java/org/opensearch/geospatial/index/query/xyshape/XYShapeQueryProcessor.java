@@ -7,7 +7,8 @@ package org.opensearch.geospatial.index.query.xyshape;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
+
+import lombok.NonNull;
 
 import org.apache.lucene.document.ShapeField;
 import org.apache.lucene.document.XYShape;
@@ -38,22 +39,17 @@ public class XYShapeQueryProcessor {
      */
     public Query shapeQuery(
         Geometry geometry,
-        String fieldName,
-        ShapeRelation relation,
-        GeometryVisitor<List<XYGeometry>, RuntimeException> visitor,
-        QueryShardContext context
+        @NonNull String fieldName,
+        @NonNull ShapeRelation relation,
+        @NonNull GeometryVisitor<List<XYGeometry>, RuntimeException> visitor,
+        @NonNull QueryShardContext context
     ) {
         // if no input is parsed from input, return no documents should be matched from index,
         // this is similar to geo_shape field type
         if (geometry == null || geometry.isEmpty()) {
             return new MatchNoDocsQuery();
         }
-
-        Objects.requireNonNull(fieldName, "Field name cannot be null");
-        Objects.requireNonNull(context, "QueryShardContext cannot be null");
         validateIsXYShapeFieldType(fieldName, context);
-
-        Objects.requireNonNull(relation, "ShapeRelation cannot be null");
         return getQueryFromGeometry(geometry, fieldName, relation.getLuceneRelation(), visitor);
     }
 
