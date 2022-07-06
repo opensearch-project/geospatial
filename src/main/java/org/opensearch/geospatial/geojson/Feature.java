@@ -8,12 +8,12 @@ package org.opensearch.geospatial.geojson;
 import java.util.HashMap;
 import java.util.Map;
 
-import lombok.Getter;
+import lombok.Value;
 
 /**
  * Feature object represents GEOJSON of type Feature.
  */
-@Getter
+@Value
 public class Feature {
     public static final String TYPE = "Feature";
     public static final String GEOMETRY_KEY = "geometry";

@@ -39,7 +39,7 @@ public class FeatureFactory {
     }
 
     private static FeatureBuilder extractFeature(Map<String, Object> input) {
-        var geometry = input.get(Feature.GEOMETRY_KEY);
+        Object geometry = input.get(Feature.GEOMETRY_KEY);
         if (geometry == null) {
             throw new IllegalArgumentException("key: " + Feature.GEOMETRY_KEY + " cannot be null");
         }
@@ -48,9 +48,9 @@ public class FeatureFactory {
                 "key: " + Feature.GEOMETRY_KEY + " is not an instance of type Map but of type [ " + geometry.getClass().getName() + " ]"
             );
         }
-        var geometryMap = toStringObjectMap(geometry);
+        Map<String, Object> geometryMap = toStringObjectMap(geometry);
         var featureBuilder = new FeatureBuilder(geometryMap);
-        var properties = input.get(Feature.PROPERTIES_KEY);
+        Object properties = input.get(Feature.PROPERTIES_KEY);
         if (properties == null) {
             return featureBuilder;
         }

@@ -38,8 +38,8 @@ public class XYShapeConverter {
      * @return {@link XYLine} instance
      */
     public static XYLine toXYLine(@NonNull Line line) {
-        float[] x = toFloatArray(line.getX());
-        float[] y = toFloatArray(line.getY());
+        var x = toFloatArray(line.getX());
+        var y = toFloatArray(line.getY());
         return new XYLine(x, y);
     }
 
@@ -52,18 +52,8 @@ public class XYShapeConverter {
         // build polygon by assigning points in Counter Clock Wise direction (default for polygon) and end at where
         // you started since it has to be linear ring
         // (minX,minY) -> (maxX, minY) -> (maxX, maxY) -> (minX, maxY) -> (minX, minY)
-        double[] x = new double[] {
-            rectangle.getMinX(),
-            rectangle.getMaxX(),
-            rectangle.getMaxX(),
-            rectangle.getMinX(),
-            rectangle.getMinX() };
-        double[] y = new double[] {
-            rectangle.getMinY(),
-            rectangle.getMinY(),
-            rectangle.getMaxY(),
-            rectangle.getMaxY(),
-            rectangle.getMinY() };
+        var x = new double[] { rectangle.getMinX(), rectangle.getMaxX(), rectangle.getMaxX(), rectangle.getMinX(), rectangle.getMinX() };
+        var y = new double[] { rectangle.getMinY(), rectangle.getMinY(), rectangle.getMaxY(), rectangle.getMaxY(), rectangle.getMinY() };
         return new XYPolygon(toFloatArray(x), toFloatArray(y));
     }
 
@@ -74,8 +64,8 @@ public class XYShapeConverter {
      */
     public static XYPolygon toXYPolygon(@NonNull Polygon polygon) {
         XYPolygon[] holes = extractXYPolygonsFromHoles(polygon);
-        var line = polygon.getPolygon();
-        var polygonLine = toXYLine(line);
+        Line line = polygon.getPolygon();
+        XYLine polygonLine = toXYLine(line);
         return new XYPolygon(polygonLine.getX(), polygonLine.getY(), holes);
     }
 
@@ -98,8 +88,8 @@ public class XYShapeConverter {
      * @return {@link XYPoint} instance
      */
     public static XYPoint toXYPoint(@NonNull Point point) {
-        float x = Double.valueOf(point.getX()).floatValue();
-        float y = Double.valueOf(point.getY()).floatValue();
+        var x = Double.valueOf(point.getX()).floatValue();
+        var y = Double.valueOf(point.getY()).floatValue();
         return new XYPoint(x, y);
     }
 
@@ -109,10 +99,10 @@ public class XYShapeConverter {
      * @return {@link XYRectangle} instance
      */
     public static XYRectangle toXYRectangle(@NonNull Rectangle rectangle) {
-        float minX = Double.valueOf(rectangle.getMinX()).floatValue();
-        float maxX = Double.valueOf(rectangle.getMaxX()).floatValue();
-        float minY = Double.valueOf(rectangle.getMinY()).floatValue();
-        float maxY = Double.valueOf(rectangle.getMaxY()).floatValue();
+        var minX = Double.valueOf(rectangle.getMinX()).floatValue();
+        var maxX = Double.valueOf(rectangle.getMaxX()).floatValue();
+        var minY = Double.valueOf(rectangle.getMinY()).floatValue();
+        var maxY = Double.valueOf(rectangle.getMaxY()).floatValue();
         return new XYRectangle(minX, maxX, minY, maxY);
     }
 
@@ -129,7 +119,7 @@ public class XYShapeConverter {
     }
 
     private static float[] toFloatArray(double[] input) {
-        final Float[] floats = DoubleStream.of(input).boxed().map(Double::floatValue).toArray(Float[]::new);
-        return toPrimitive(floats);
+        final var floatRefArray = DoubleStream.of(input).boxed().map(Double::floatValue).toArray(Float[]::new);
+        return toPrimitive(floatRefArray);
     }
 }

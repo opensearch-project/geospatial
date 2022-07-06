@@ -7,7 +7,9 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
+
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,15 +23,13 @@ import org.opensearch.common.xcontent.XContentFactory;
 /**
  * IndexManager is responsible for managing index operations like create, delete, etc...
  */
+@AllArgsConstructor
 public class IndexManager {
     public static final String FIELD_TYPE_KEY = "type";
     public static final String MAPPING_PROPERTIES_KEY = "properties";
     private static final Logger LOGGER = LogManager.getLogger(IndexManager.class);
+    @NonNull
     private final IndicesAdminClient client;
-
-    public IndexManager(final IndicesAdminClient client) {
-        this.client = Objects.requireNonNull(client, "Index admin client cannot be null");
-    }
 
     /**
      * Creates an index and notifies the listener on status of action.

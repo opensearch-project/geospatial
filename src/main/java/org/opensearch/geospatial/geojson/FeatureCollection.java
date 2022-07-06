@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import lombok.Getter;
 import lombok.NonNull;
+import lombok.Value;
 
 import org.opensearch.geospatial.GeospatialParser;
 
@@ -19,7 +19,7 @@ import org.opensearch.geospatial.GeospatialParser;
  * with the name "features".  The value of "features" is a List.
  * and it is possible for this list to be empty, if {@link FeatureCollection} has no Features.
  */
-@Getter
+@Value
 public final class FeatureCollection {
     public static final String TYPE = "FeatureCollection";
     public static final String FEATURES_KEY = "features";
@@ -51,7 +51,7 @@ public final class FeatureCollection {
      * @throws IllegalArgumentException if input doesn't have valid arguments
      */
     public static FeatureCollection create(@NonNull final Map<String, Object> input) {
-        var geoJSONType = input.get(TYPE_KEY);
+        Object geoJSONType = input.get(TYPE_KEY);
         if (geoJSONType == null) {
             throw new IllegalArgumentException(TYPE_KEY + " cannot be null");
         }
@@ -63,7 +63,7 @@ public final class FeatureCollection {
 
     private static FeatureCollection extract(Map<String, Object> input) {
         var collection = new FeatureCollection();
-        var featureObject = input.get(FEATURES_KEY);
+        Object featureObject = input.get(FEATURES_KEY);
         if (featureObject == null) { // empty features are valid based on definition
             return collection;
         }
