@@ -5,12 +5,11 @@
 
 package org.opensearch.geospatial.rest.action.upload.geojson;
 
-import static java.util.Collections.unmodifiableList;
-import static org.opensearch.geospatial.plugin.GeospatialPlugin.URL_DELIMITER;
+import static org.opensearch.geospatial.shared.URLBuilder.URL_DELIMITER;
+import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 import static org.opensearch.rest.RestRequest.Method.POST;
 import static org.opensearch.rest.RestRequest.Method.PUT;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
@@ -19,7 +18,6 @@ import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequest;
-import org.opensearch.geospatial.plugin.GeospatialPlugin;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
@@ -76,12 +74,12 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
      * }
      * The difference between PUT and POST is how index existence is tolerated.
      * For POST, index should not exist, if found exists, operation will fail.
-     * For PUT, index existence doesn't matter, it will create if it doesn't exists.
+     * For PUT, index existence doesn't matter, it will create if it doesn't exist.
      */
     @Override
     public List<Route> routes() {
-        String path = String.join(URL_DELIMITER, GeospatialPlugin.getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
-        return unmodifiableList(Arrays.asList(new Route(POST, path), new Route(PUT, path)));
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), ACTION_OBJECT, ACTION_UPLOAD);
+        return List.of(new Route(POST, path), new Route(PUT, path));
     }
 
     @Override

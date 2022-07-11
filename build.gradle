@@ -8,8 +8,10 @@ import org.opensearch.gradle.test.RestIntegTestTask
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
+apply plugin: 'opensearch.pluginzip'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'jacoco'
+apply plugin: 'io.freefair.lombok'
 
 def pluginName = 'opensearch-geospatial'
 def pluginDescription = 'OpenSearch Geospatial plugin to host geospatial features'
@@ -43,7 +45,7 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch.version", "2.1.0-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "3.0.0-SNAPSHOT")
         version_qualifier = System.getProperty("build.version_qualifier", "")
         opensearch_group = "org.opensearch"
     }
@@ -58,6 +60,7 @@ buildscript {
     dependencies {
         classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
         classpath "com.diffplug.spotless:spotless-plugin-gradle:5.6.1"
+        classpath "io.freefair.gradle:lombok-plugin:6.4.3"
     }
 }
 apply plugin: "com.diffplug.spotless"
@@ -85,9 +88,39 @@ repositories {
     maven { url "https://plugins.gradle.org/m2/" }
 }
 
+compileJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+compileTestJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+
 test {
     include '**/*Tests.class'
     systemProperty 'tests.security.manager', 'false'
+}
+
+publishing {
+    publications {
+        pluginZip(MavenPublication) { publication ->
+            pom {
+                name = pluginName
+                description = pluginDescription
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        name = "OpenSearch"
+                        url = "https://github.com/opensearch-project/geospatial"
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -98,6 +131,9 @@ dependencies {
     yamlRestTestRuntimeOnly "org.apache.logging.log4j:log4j-core:${versions.log4j}"
     testImplementation "org.hamcrest:hamcrest:${versions.hamcrest}"
     testImplementation 'org.json:json:20211205'
+    implementation "org.apache.commons:commons-lang3:3.12.0"
+    implementation "org.locationtech.spatial4j:spatial4j:${versions.spatial4j}"
+    implementation "org.locationtech.jts:jts-core:${versions.jts}"
 }
 
 licenseHeaders.enabled = true
@@ -115,9 +151,32 @@ task integTest(type: RestIntegTestTask) {
 }
 tasks.named("check").configure { dependsOn(integTest) }
 
+def _numNodes = findProperty('numNodes') as Integer ?: 1
+
 integTest {
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'java.io.tmpdir', opensearch_tmp_dir.absolutePath
+    // allows integration test classes to access test resource from project root path
+    systemProperty('project.root', project.rootDir.absolutePath)
+
+    systemProperty "https", System.getProperty("https")
+    systemProperty "user", System.getProperty("user")
+    systemProperty "password", System.getProperty("password")
+
+    doFirst {
+        // Tell the test JVM if the cluster JVM is running under a debugger so that tests can
+        // use longer timeouts for requests.
+        def isDebuggingCluster = getDebug() || System.getProperty("test.debug") != null
+        systemProperty 'cluster.debug', isDebuggingCluster
+        // Set number of nodes system property to be used in tests
+        systemProperty 'cluster.number_of_nodes', "${_numNodes}"
+        // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
+        // not being written, the waitForAllConditions ensures it's written
+        getClusters().forEach { cluster ->
+            cluster.waitForAllConditions()
+        }
+    }
+
     // The --debug-jvm command-line option makes the cluster debuggable; this makes the tests debuggable
     if (System.getProperty("test.debug") != null) {
         jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
@@ -129,6 +188,18 @@ testClusters.integTest {
 
     // This installs our plugin into the testClusters
     plugin(project.tasks.bundlePlugin.archiveFile)
+    // Cluster shrink exception thrown if we try to set numberOfNodes to 1, so only apply if > 1
+    if (_numNodes > 1) numberOfNodes = _numNodes
+    // When running integration tests it doesn't forward the --debug-jvm to the cluster anymore
+    // i.e. we have to use a custom property to flag when we want to debug opensearch JVM
+    // since we also support multi node integration tests we increase debugPort per node
+    if (System.getProperty("cluster.debug") != null) {
+        def debugPort = 5005
+        nodes.forEach { node ->
+            node.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=${debugPort}")
+            debugPort += 1
+        }
+    }
 }
 
 run {

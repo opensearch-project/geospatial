@@ -14,6 +14,10 @@ package org.opensearch.geospatial.action.upload.geojson;
 import java.io.IOException;
 import java.util.Objects;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NonNull;
+
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.common.bytes.BytesReference;
@@ -21,34 +25,23 @@ import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.rest.RestRequest;
 
+@AllArgsConstructor
+@Getter
 public class UploadGeoJSONRequest extends ActionRequest {
 
+    /**
+     * Request method type. This will be useful to decide whether new index should
+     * be created for upload request or not.
+     */
+    @NonNull
     private final RestRequest.Method method;
+    @NonNull
     private final BytesReference content;
-
-    public UploadGeoJSONRequest(RestRequest.Method method, BytesReference content) {
-        super();
-        this.method = Objects.requireNonNull(method, "method cannot be null");
-        this.content = Objects.requireNonNull(content, "content cannot be null");
-    }
 
     public UploadGeoJSONRequest(StreamInput in) throws IOException {
         super(in);
         this.content = Objects.requireNonNull(in.readBytesReference(), "data is missing");
         this.method = Objects.requireNonNull(in.readEnum(RestRequest.Method.class), "RestRequest Method is missing");
-    }
-
-    public BytesReference getContent() {
-        return content;
-    }
-
-    /**
-     * getter for Request method type. This will be useful to decide whether new index should
-     * be created for upload request or not.
-     * @return RestRequest.Method either PUT or POST
-     */
-    public RestRequest.Method getMethod() {
-        return method;
     }
 
     @Override

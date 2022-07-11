@@ -15,7 +15,7 @@ import org.opensearch.action.ActionType;
 
 public class UploadGeoJSONAction extends ActionType<UploadGeoJSONResponse> {
 
-    public static UploadGeoJSONAction INSTANCE = new UploadGeoJSONAction();
+    public static final UploadGeoJSONAction INSTANCE = new UploadGeoJSONAction();
     public static final String NAME = "cluster:admin/upload_geojson_action";
 
     private UploadGeoJSONAction() {

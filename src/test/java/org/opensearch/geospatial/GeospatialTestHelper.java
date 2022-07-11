@@ -12,8 +12,11 @@
 package org.opensearch.geospatial;
 
 import static org.apache.lucene.tests.util.LuceneTestCase.random;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
+import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.ACCEPTED_INDEX_SUFFIX_PATH;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 import static org.opensearch.test.OpenSearchTestCase.randomBoolean;
 import static org.opensearch.test.OpenSearchTestCase.randomIntBetween;
@@ -39,16 +42,20 @@ import org.opensearch.common.UUIDs;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.geospatial.action.upload.geojson.ContentBuilder;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
+import org.opensearch.geospatial.stats.upload.UploadMetric;
 import org.opensearch.index.shard.ShardId;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.RandomObjects;
 
 public class GeospatialTestHelper {
 
+    public static final String GEOJSON = "geojson";
     public static final int MAX_SEQ_NO = 10000;
     public static final int MAX_PRIMARY_TERM = 10000;
     public static final int MAX_VERSION = 10000;
     public static final int MAX_SHARD_ID = 100;
+
+    private static final int MINIMUM_UPLOAD_DOCUMENT_COUNT = 1;
 
     public static final int RANDOM_STRING_MIN_LENGTH = 2;
     public static final int RANDOM_STRING_MAX_LENGTH = 16;
@@ -58,11 +65,14 @@ public class GeospatialTestHelper {
         if (Randomness.get().nextBoolean()) {
             contents.put(ContentBuilder.GEOJSON_FEATURE_ID_FIELD, randomLowerCaseString());
         }
-        contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), randomLowerCaseString());
+        contents.put(
+            UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(),
+            randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH)
+        );
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), randomLowerCaseString());
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName(), "geo_shape");
         JSONArray values = new JSONArray();
-        IntStream.range(0, featureCount).forEach(notUsed -> { values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()))); });
+        IntStream.range(0, featureCount).forEach(notUsed -> values.put(randomGeoJSONFeature(buildProperties(Collections.emptyMap()))));
         contents.put(FIELD_DATA.getPreferredName(), values);
         return contents.toMap();
     }
@@ -75,9 +85,13 @@ public class GeospatialTestHelper {
         return randomString().toLowerCase(Locale.getDefault());
     }
 
+    public static String randomLowerCaseStringWithSuffix(String suffix) {
+        return String.format(Locale.getDefault(), "%s%s", randomString().toLowerCase(Locale.getDefault()), suffix);
+    }
+
     /**
-     * Returns random @link IndexResponse}s by generating inputs using random functions.
-     * It is not guaranted to generate every possible values, and it is not required since
+     * Returns random {@link IndexResponse} by generating inputs using random functions.
+     * It is not guaranteed to generate every possible values, and it is not required since
      * it is used by the unit test and will not be validated by the cluster.
      */
     private static IndexResponse randomIndexResponse() {
@@ -117,7 +131,39 @@ public class GeospatialTestHelper {
             );
             items.add(new BulkItemResponse(randomIntBetween(0, MAX_SHARD_ID), DocWriteRequest.OpType.CREATE, failedToIndex));
         }
-        return new BulkResponse(items.stream().toArray(BulkItemResponse[]::new), took, ingestTook);
+        return new BulkResponse(items.toArray(BulkItemResponse[]::new), took, ingestTook);
+    }
+
+    public static UploadMetric generateRandomUploadMetric() {
+        int uploadCount = randomIntBetween(MINIMUM_UPLOAD_DOCUMENT_COUNT, Integer.MAX_VALUE);
+        int successCount = randomIntBetween(MINIMUM_UPLOAD_DOCUMENT_COUNT, uploadCount);
+        int failedCount = uploadCount - successCount;
+
+        UploadMetric.UploadMetricBuilder builder = new UploadMetric.UploadMetricBuilder(randomLowerCaseString(), GEOJSON);
+        builder.uploadCount(uploadCount);
+        builder.successCount(successCount);
+        builder.failedCount(failedCount);
+        builder.duration(randomNonNegativeLong());
+        return builder.build();
+    }
+
+    public static StringBuilder buildFieldNameValuePair(Object field, Object value) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("\"").append(field).append("\":");
+        if (!(value instanceof String)) {
+            return builder.append(value);
+        }
+        return builder.append("\"").append(value).append("\"");
+    }
+
+    public static String removeStartAndEndObject(String content) {
+        assertNotNull(content);
+        assertTrue("content length should be at least 2", content.length() > 1);
+        return content.substring(1, content.length() - 1);
+    }
+
+    public static double[] toDoubleArray(float[] input) {
+        return IntStream.range(0, input.length).mapToDouble(i -> input[i]).toArray();
     }
 
 }

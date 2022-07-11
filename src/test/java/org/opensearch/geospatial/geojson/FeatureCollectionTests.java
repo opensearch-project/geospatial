@@ -38,8 +38,7 @@ public class FeatureCollectionTests extends OpenSearchTestCase {
     }
 
     public void testCreateFeatureCollectionInvalidInput() {
-        NullPointerException ex = assertThrows(NullPointerException.class, () -> FeatureCollection.create(null));
-        assertTrue(ex.getMessage().equals("input cannot be null"));
+        assertThrows(NullPointerException.class, () -> FeatureCollection.create(null));
     }
 
     public void testCreateFeatureCollectionTypeMissing() {
