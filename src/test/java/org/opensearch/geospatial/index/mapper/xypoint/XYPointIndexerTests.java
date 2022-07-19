@@ -8,7 +8,6 @@ package org.opensearch.geospatial.index.mapper.xypoint;
 import static org.mockito.Mockito.mock;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.getRandomXYPoints;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,6 +20,8 @@ public class XYPointIndexerTests extends OpenSearchTestCase {
     private XYPointIndexer indexer;
     private ParseContext parseContext;
     private final static String fieldName = "geometry";
+    private final static Integer MIN_NUM_POINTS = 1;
+    private final static Integer MAX_NUM_POINTS = 10;
 
     @Override
     public void setUp() throws Exception {
@@ -38,25 +39,15 @@ public class XYPointIndexerTests extends OpenSearchTestCase {
     }
 
     public void testPrepareIndexing() {
-        ParsedXYPoint parsedXYPoint = mock(ParsedXYPoint.class);
-        ArrayList<ParsedXYPoint> points = new ArrayList<>();
-        points.add(parsedXYPoint);
-        assertNotNull(indexer.prepareForIndexing(points));
+        var point = mock(org.opensearch.geospatial.index.mapper.xypoint.XYPoint.class);
+        List<org.opensearch.geospatial.index.mapper.xypoint.XYPoint> points = List.of(point);
+        assertNotNull("failed to convert xypoints from opensearch to lucene type", indexer.prepareForIndexing(points));
     }
 
     public void testIndexShape() {
-        int numOfPoints = 1;
+        int numOfPoints = randomIntBetween(MIN_NUM_POINTS, MAX_NUM_POINTS);
         List<XYPoint> xyPoints = getRandomXYPoints(numOfPoints, randomBoolean());
         List<IndexableField> indexableFields = indexer.indexShape(parseContext, xyPoints);
-        assertNotNull(indexableFields.get(0));
-    }
-
-    public void testIndexShapeMultiPoints() {
-        int numOfPoints = 3;
-        List<XYPoint> xyPoints = getRandomXYPoints(numOfPoints, randomBoolean());
-        List<IndexableField> indexableFields = indexer.indexShape(parseContext, xyPoints);
-        assertNotNull(indexableFields.get(0));
-        assertNotNull(indexableFields.get(1));
-        assertNotNull(indexableFields.get(2));
+        assertEquals("failed to index xypoints", numOfPoints, indexableFields.size());
     }
 }
