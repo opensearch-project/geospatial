@@ -243,7 +243,7 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
             final IndexableField actualFieldValue = doc.rootDoc().getField(FIELD_NAME);
             assertNotNull("failed to ignore z value even if [ignore_z_value] is [true]", actualFieldValue);
         } else {
-            Exception exception = expectThrows(
+            MapperParsingException exception = expectThrows(
                 MapperParsingException.class,
                 () -> mapper.parse(
                     source(builder -> builder.field(FIELD_NAME, randomDouble() + "," + randomDouble() + "," + randomDouble()))
@@ -274,7 +274,7 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
             );
             assertTrue(
                 "failed to throw exception even if [ignore_malformed] is [false]",
-                exception.getCause().getMessage().contains("y must be a number")
+                exception.getCause().getMessage().contains("[y] must be a number")
             );
         }
     }

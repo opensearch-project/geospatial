@@ -31,10 +31,16 @@ public class XYPointParsingTests extends OpenSearchTestCase {
 
     public void testResetFromWKTInvalid() {
         XYPoint point = new XYPoint();
-        Exception e = expectThrows(OpenSearchParseException.class, () -> point.resetFromString("NOT A POINT(1 2)", randomBoolean()));
-        assertEquals("Validation failed for Invalid WKT", "Invalid WKT format", e.getMessage());
+        OpenSearchParseException e = expectThrows(
+            OpenSearchParseException.class,
+            () -> point.resetFromString("NOT A POINT(1 2)", randomBoolean())
+        );
+        assertEquals("Validation failed for Invalid WKT", "Invalid WKT format, [NOT A POINT(1 2)]", e.getMessage());
 
-        Exception e2 = expectThrows(OpenSearchParseException.class, () -> point.resetFromString("MULTIPOINT(1 2, 3 4)", randomBoolean()));
+        OpenSearchParseException e2 = expectThrows(
+            OpenSearchParseException.class,
+            () -> point.resetFromString("MULTIPOINT(1 2, 3 4)", randomBoolean())
+        );
         assertEquals(
             "Validation failed for invalid WKT primitive",
             "[xy_point] supports only POINT among WKT primitives, but found [MULTIPOINT]",
@@ -44,39 +50,45 @@ public class XYPointParsingTests extends OpenSearchTestCase {
 
     public void testResetFromCoordinatesInvalid() {
         XYPoint point = new XYPoint();
-        Exception e = expectThrows(
+        OpenSearchParseException e = expectThrows(
             OpenSearchParseException.class,
             () -> point.resetFromString("20.4, 50.6, 70.8, -200.6", randomBoolean())
         );
         assertEquals("Validation failed for checking count of coordinates", "expected 2 or 3 coordinates, but found: [4]", e.getMessage());
 
-        Exception e2 = expectThrows(OpenSearchParseException.class, () -> point.resetFromString("20.4, 50.6, 70.8", false));
+        OpenSearchParseException e2 = expectThrows(OpenSearchParseException.class, () -> point.resetFromString("20.4, 50.6, 70.8", false));
         assertEquals(
             "Validation failed for [ignore_z_value] parameter",
             "Exception parsing coordinates: found Z value [70.8] but [ignore_z_value] parameter is [false]",
             e2.getMessage()
         );
 
-        Exception e3 = expectThrows(OpenSearchParseException.class, () -> point.resetFromString("abcd, 50.6", randomBoolean()));
-        assertEquals("Validation failed even if x is not a number", "x must be a number", e3.getMessage());
+        OpenSearchParseException e3 = expectThrows(
+            OpenSearchParseException.class,
+            () -> point.resetFromString("abcd, 50.6", randomBoolean())
+        );
+        assertEquals("Validation failed even if x is not a number", "[x] must be a number", e3.getMessage());
 
-        Exception e4 = expectThrows(OpenSearchParseException.class, () -> point.resetFromString("50.6, abcd", randomBoolean()));
-        assertEquals("Validation failed even if y is not a number", "y must be a number", e4.getMessage());
+        OpenSearchParseException e4 = expectThrows(
+            OpenSearchParseException.class,
+            () -> point.resetFromString("50.6, abcd", randomBoolean())
+        );
+        assertEquals("Validation failed even if y is not a number", "[y] must be a number", e4.getMessage());
     }
 
     public void testXYPointParsing() throws IOException {
         XYPoint randomXYPoint = new XYPoint(randomDouble(), randomDouble());
 
-        XYPoint point = XYPointParser.parseXYPoint(xyAsObject(randomXYPoint.getX(), randomXYPoint.getY()), new XYPoint(), randomBoolean());
+        XYPoint point = XYPointParser.parseXYPoint(xyAsObject(randomXYPoint.getX(), randomXYPoint.getY()), randomBoolean());
         assertEquals("Parsing XYPoint as an object failed", randomXYPoint, point);
 
-        XYPoint point2 = XYPointParser.parseXYPoint(xyAsString(randomXYPoint.getX(), randomXYPoint.getY()), new XYPoint(), randomBoolean());
+        XYPoint point2 = XYPointParser.parseXYPoint(xyAsString(randomXYPoint.getX(), randomXYPoint.getY()), randomBoolean());
         assertEquals("Parsing XYPoint as a string failed", randomXYPoint, point2);
 
-        XYPoint point3 = XYPointParser.parseXYPoint(xyAsArray(randomXYPoint.getX(), randomXYPoint.getY()), new XYPoint(), randomBoolean());
+        XYPoint point3 = XYPointParser.parseXYPoint(xyAsArray(randomXYPoint.getX(), randomXYPoint.getY()), randomBoolean());
         assertEquals("Parsing XYPoint as an array failed", randomXYPoint, point3);
 
-        XYPoint point4 = XYPointParser.parseXYPoint(xyAsWKT(randomXYPoint.getX(), randomXYPoint.getY()), new XYPoint(), randomBoolean());
+        XYPoint point4 = XYPointParser.parseXYPoint(xyAsWKT(randomXYPoint.getX(), randomXYPoint.getY()), randomBoolean());
         assertEquals("Parsing XYPoint as a WKT failed", randomXYPoint, point4);
     }
 
@@ -88,9 +100,9 @@ public class XYPointParsingTests extends OpenSearchTestCase {
 
         try (XContentParser parser = createParser(JsonXContent.jsonXContent, BytesReference.bytes(content))) {
             parser.nextToken();
-            Exception e = expectThrows(
+            OpenSearchParseException e = expectThrows(
                 OpenSearchParseException.class,
-                () -> XYPointParser.parseXYPoint(parser, new XYPoint(), randomBoolean())
+                () -> XYPointParser.parseXYPoint(parser, randomBoolean())
             );
             assertEquals("Validation for invalid fields failed", "field must be either [x] or [y]", e.getMessage());
         }
@@ -104,11 +116,11 @@ public class XYPointParsingTests extends OpenSearchTestCase {
         content.endObject();
         XContentParser parser = createParser(JsonXContent.jsonXContent, BytesReference.bytes(content));
         parser.nextToken();
-        Exception e = expectThrows(
+        OpenSearchParseException e = expectThrows(
             OpenSearchParseException.class,
-            () -> XYPointParser.parseXYPoint(parser, new XYPoint(), randomBoolean())
+            () -> XYPointParser.parseXYPoint(parser, randomBoolean())
         );
-        assertEquals("Validation failed for invalid x and y values", "[x] and [y] must be valid double values", e.getMessage());
+        assertEquals("Validation failed for invalid x and y values", "[y] must be valid double value", e.getMessage());
 
         // Skip the 'y' field and y coordinate
         XContentBuilder content1 = JsonXContent.contentBuilder();
@@ -117,9 +129,9 @@ public class XYPointParsingTests extends OpenSearchTestCase {
         content1.endObject();
         XContentParser parser1 = createParser(JsonXContent.jsonXContent, BytesReference.bytes(content1));
         parser1.nextToken();
-        Exception e1 = expectThrows(
+        OpenSearchParseException e1 = expectThrows(
             OpenSearchParseException.class,
-            () -> XYPointParser.parseXYPoint(parser1, new XYPoint(), randomBoolean())
+            () -> XYPointParser.parseXYPoint(parser1, randomBoolean())
         );
         assertEquals("Validation failed even if field [y] is missing", "field [y] missing", e1.getMessage());
 
@@ -130,9 +142,9 @@ public class XYPointParsingTests extends OpenSearchTestCase {
         content2.endObject();
         XContentParser parser2 = createParser(JsonXContent.jsonXContent, BytesReference.bytes(content2));
         parser2.nextToken();
-        Exception e2 = expectThrows(
+        OpenSearchParseException e2 = expectThrows(
             OpenSearchParseException.class,
-            () -> XYPointParser.parseXYPoint(parser2, new XYPoint(), randomBoolean())
+            () -> XYPointParser.parseXYPoint(parser2, randomBoolean())
         );
         assertEquals("Validation failed even if field [x] is missing", "field [x] missing", e2.getMessage());
 

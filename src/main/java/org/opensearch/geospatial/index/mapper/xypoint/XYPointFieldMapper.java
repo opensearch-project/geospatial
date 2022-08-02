@@ -21,8 +21,6 @@ import org.opensearch.index.mapper.ParseContext;
 
 /**
  *  FieldMapper for indexing {@link XYPoint} points
- *
- * @author Naveen Tatikonda
  */
 public class XYPointFieldMapper extends AbstractPointGeometryFieldMapper<
     List<org.opensearch.geospatial.index.mapper.xypoint.XYPoint>,
@@ -93,6 +91,9 @@ public class XYPointFieldMapper extends AbstractPointGeometryFieldMapper<
         /**
          * Set the GeometryParser and GeometryIndexer for XYPointFieldType and create an instance of XYPointFieldMapper
          *
+         * The point {@link org.opensearch.geospatial.index.mapper.xypoint.XYPoint} sent as a parameter by
+         * {@link AbstractPointGeometryFieldMapper} to PointParser is of no use and can be ignored.
+         *
          * @param context  BuilderContext
          * @param simpleName  field name
          * @param fieldType  indicates the kind of data the field contains
@@ -124,7 +125,7 @@ public class XYPointFieldMapper extends AbstractPointGeometryFieldMapper<
 
             xyPointFieldType.setGeometryParser(
                 new PointParser<>(name, org.opensearch.geospatial.index.mapper.xypoint.XYPoint::new, (parser, point) -> {
-                    XYPointParser.parseXYPoint(parser, point, ignoreZValue().value());
+                    XYPointParser.parseXYPoint(parser, ignoreZValue().value());
                     return point;
                 }, (org.opensearch.geospatial.index.mapper.xypoint.XYPoint) nullValue, ignoreZValue.value(), ignoreMalformed.value())
             );
