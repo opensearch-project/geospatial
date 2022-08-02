@@ -8,6 +8,7 @@ import org.opensearch.gradle.test.RestIntegTestTask
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
+apply plugin: 'opensearch.pluginzip'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'jacoco'
 
@@ -88,6 +89,29 @@ repositories {
 test {
     include '**/*Tests.class'
     systemProperty 'tests.security.manager', 'false'
+}
+
+publishing {
+    publications {
+        pluginZip(MavenPublication) { publication ->
+            pom {
+                name = pluginName
+                description = pluginDescription
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        name = "OpenSearch"
+                        url = "https://github.com/opensearch-project/geospatial"
+                    }
+                }
+            }
+        }
+    }
 }
 
 
