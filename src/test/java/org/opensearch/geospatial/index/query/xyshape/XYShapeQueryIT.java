@@ -30,46 +30,32 @@ import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
+import org.opensearch.geospatial.index.query.GeospatialQueryTestHelperIT;
 import org.opensearch.search.SearchHit;
 
 public class XYShapeQueryIT extends GeospatialRestTestCase {
-
-    private static final String INDEXED_SHAPE_FIELD = "indexed_shape";
-    private static final String SHAPE_INDEX_FIELD = "index";
-    private static final String SHAPE_ID_FIELD = "id";
-    private static final String SHAPE_INDEX_PATH_FIELD = "path";
     private String indexName;
     private String xyShapeFieldName;
+    private GeospatialQueryTestHelperIT geospatialQueryTestHelperIT;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
         indexName = randomLowerCaseString();
         xyShapeFieldName = randomLowerCaseString();
+        geospatialQueryTestHelperIT = new GeospatialQueryTestHelperIT();
     }
 
     public void testNullShape() throws Exception {
-        createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
-        String body = buildContentAsString(builder -> builder.field(xyShapeFieldName, (String) null));
-        String docID = indexDocument(indexName, body);
-
-        final Map<String, Object> document = getDocument(docID, indexName);
-        assertTrue("failed to index document with type", document.containsKey(xyShapeFieldName));
-        assertNull("failed to accept null value", document.get(xyShapeFieldName));
-
-        deleteIndex(indexName);
+        geospatialQueryTestHelperIT.queryTestUsingNullShape(indexName, xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE);
 
     }
 
     public void testIndexPointsFilterRectangleWithDefaultRelation() throws Exception {
         createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
         // Will index two points and search with envelope that will intersect only one point
-        final String firstDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-30 -30)");
-        final String firstDocumentID = indexDocument(indexName, firstDocument);
-
-        Point point = new Point(-45, -50);
-        final String secondDocument = buildDocumentWithGeoJSON(xyShapeFieldName, point);
-        indexDocument(indexName, secondDocument);
+        final String firstDocumentID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-30 -30)");
+        geospatialQueryTestHelperIT.indexDocumentUsingGeoJSON(indexName, xyShapeFieldName, new Point(-45, -50));
 
         Rectangle rectangle = new Rectangle(-45, 45, 45, -45);
         String searchEntity = buildSearchBodyAsString(builder -> {
@@ -87,21 +73,16 @@ public class XYShapeQueryIT extends GeospatialRestTestCase {
 
     public void testIndexPointsFilterRectangleWithIntersectsRelation() throws Exception {
         createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
-
-        final String firstDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-30 -30)");
-        final String firstDocumentID = indexDocument(indexName, firstDocument);
-
-        final String secondDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-45 -50)");
-        indexDocument(indexName, secondDocument);
+        final String firstDocumentID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-30 -30)");
+        geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-45 -50)");
 
         Rectangle rectangle = new Rectangle(-45, 45, 45, -45);
-        String searchEntity = buildSearchBodyAsString(builder -> {
-            builder.field(DEFAULT_SHAPE_FIELD_NAME);
-            GeoJson.toXContent(rectangle, builder, EMPTY_PARAMS);
-            builder.field("relation", ShapeRelation.INTERSECTS.getRelationName());
-        }, XYShapeQueryBuilder.NAME, xyShapeFieldName);
-
-        final SearchResponse searchResponse = searchIndex(indexName, searchEntity);
+        final SearchResponse searchResponse = geospatialQueryTestHelperIT.searchUsingShapeRelation(
+            indexName,
+            xyShapeFieldName,
+            rectangle,
+            ShapeRelation.INTERSECTS
+        );
         assertSearchResponse(searchResponse);
         assertHitCount(searchResponse, 1);
         MatcherAssert.assertThat(searchResponse.getHits().getAt(0).getId(), equalTo(firstDocumentID));
@@ -112,20 +93,17 @@ public class XYShapeQueryIT extends GeospatialRestTestCase {
     public void testIndexPointsCircle() throws Exception {
         createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
 
-        final String firstDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-131 -30)");
-        indexDocument(indexName, firstDocument);
-
-        final String secondDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-45 -50)");
-        final String secondDocumentID = indexDocument(indexName, secondDocument);
+        geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-131 -30)");
+        final String secondDocumentID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-45 -50)");
 
         Circle circle = new Circle(-30, -30, 100);
-        String searchEntity = buildSearchBodyAsString(builder -> {
-            builder.field(DEFAULT_SHAPE_FIELD_NAME);
-            GeoJson.toXContent(circle, builder, EMPTY_PARAMS);
-            builder.field("relation", ShapeRelation.INTERSECTS.getRelationName());
-        }, XYShapeQueryBuilder.NAME, xyShapeFieldName);
 
-        final SearchResponse searchResponse = searchIndex(indexName, searchEntity);
+        final SearchResponse searchResponse = geospatialQueryTestHelperIT.searchUsingShapeRelation(
+            indexName,
+            xyShapeFieldName,
+            circle,
+            ShapeRelation.INTERSECTS
+        );
         assertSearchResponse(searchResponse);
         assertHitCount(searchResponse, 1);
         MatcherAssert.assertThat(searchResponse.getHits().getAt(0).getId(), equalTo(secondDocumentID));
@@ -136,23 +114,20 @@ public class XYShapeQueryIT extends GeospatialRestTestCase {
     public void testIndexPointsPolygon() throws Exception {
         createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
 
-        final String firstDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-30 -30)");
-        final String firstDocumentID = indexDocument(indexName, firstDocument);
-
-        final String secondDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-45 -50)");
-        indexDocument(indexName, secondDocument);
+        final String firstDocumentID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-30 -30)");
+        geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-45 -50)");
 
         double[] x = new double[] { -35, -35, -25, -25, -35 };
         double[] y = new double[] { -35, -25, -25, -35, -35 };
         LinearRing ring = new LinearRing(x, y);
         Polygon polygon = new Polygon(ring);
-        String searchEntity = buildSearchBodyAsString(builder -> {
-            builder.field(DEFAULT_SHAPE_FIELD_NAME);
-            GeoJson.toXContent(polygon, builder, EMPTY_PARAMS);
-            builder.field("relation", ShapeRelation.INTERSECTS.getRelationName());
-        }, XYShapeQueryBuilder.NAME, xyShapeFieldName);
 
-        final SearchResponse searchResponse = searchIndex(indexName, searchEntity);
+        final SearchResponse searchResponse = geospatialQueryTestHelperIT.searchUsingShapeRelation(
+            indexName,
+            xyShapeFieldName,
+            polygon,
+            ShapeRelation.INTERSECTS
+        );
         assertSearchResponse(searchResponse);
         assertHitCount(searchResponse, 1);
         MatcherAssert.assertThat(searchResponse.getHits().getAt(0).getId(), equalTo(firstDocumentID));
@@ -164,14 +139,13 @@ public class XYShapeQueryIT extends GeospatialRestTestCase {
 
         createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
 
-        final String firstDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-30 -30)");
-        final String firstDocumentID = indexDocument(indexName, firstDocument);
-
-        final String secondDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-40 -40)");
-        indexDocument(indexName, secondDocument);
-
-        final String thirdDocument = buildDocumentWithGeoJSON(xyShapeFieldName, new Point(-50, -50));
-        final String thirdDocumentId = indexDocument(indexName, thirdDocument);
+        final String firstDocumentID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-30 -30)");
+        geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-40 -40)");
+        final String thirdDocumentId = geospatialQueryTestHelperIT.indexDocumentUsingGeoJSON(
+            indexName,
+            xyShapeFieldName,
+            new Point(-50, -50)
+        );
 
         LinearRing ring1 = new LinearRing(new double[] { -35, -35, -25, -25, -35 }, new double[] { -35, -25, -25, -35, -35 });
         Polygon polygon1 = new Polygon(ring1);
@@ -180,13 +154,13 @@ public class XYShapeQueryIT extends GeospatialRestTestCase {
         Polygon polygon2 = new Polygon(ring2);
 
         MultiPolygon multiPolygon = new MultiPolygon(List.of(polygon1, polygon2));
-        String searchEntity = buildSearchBodyAsString(builder -> {
-            builder.field(DEFAULT_SHAPE_FIELD_NAME);
-            GeoJson.toXContent(multiPolygon, builder, EMPTY_PARAMS);
-            builder.field("relation", ShapeRelation.INTERSECTS.getRelationName());
-        }, XYShapeQueryBuilder.NAME, xyShapeFieldName);
         List<String> expectedDocIDs = List.of(firstDocumentID, thirdDocumentId);
-        final SearchResponse searchResponse = searchIndex(indexName, searchEntity);
+        final SearchResponse searchResponse = geospatialQueryTestHelperIT.searchUsingShapeRelation(
+            indexName,
+            xyShapeFieldName,
+            multiPolygon,
+            ShapeRelation.INTERSECTS
+        );
         assertSearchResponse(searchResponse);
         assertHitCount(searchResponse, expectedDocIDs.size());
         List<String> actualDocIDS = new ArrayList<>();
@@ -200,31 +174,31 @@ public class XYShapeQueryIT extends GeospatialRestTestCase {
 
         createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
         // Will index two points and search with envelope that will intersect only one point
-        final String firstDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-30 -30)");
-        indexDocument(indexName, firstDocument);
-
-        Point point = new Point(-45, -50);
-        final String secondDocument = buildDocumentWithGeoJSON(xyShapeFieldName, point);
-        final String secondDocumentID = indexDocument(indexName, secondDocument);
+        geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-30 -30)");
+        final String secondDocumentID = geospatialQueryTestHelperIT.indexDocumentUsingGeoJSON(
+            indexName,
+            xyShapeFieldName,
+            new Point(-45, -50)
+        );
 
         // create an index to insert shape
         String indexedShapeIndex = randomLowerCaseString();
         String indexedShapePath = randomLowerCaseString();
         createIndex(indexedShapeIndex, Settings.EMPTY, Map.of(indexedShapePath, XYShapeFieldMapper.CONTENT_TYPE));
 
-        final String indexedRefDoc1 = buildDocumentWithWKT(indexedShapePath, "BBOX(-50, -40, -45, -55)");
-        final String shape = indexDocument(indexedShapeIndex, indexedRefDoc1);
+        final String shapeDocID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(
+            indexedShapeIndex,
+            indexedShapePath,
+            "BBOX(-50, -40, -45, -55)"
+        );
 
-        String searchEntity = buildSearchBodyAsString(builder -> {
-            builder.startObject(INDEXED_SHAPE_FIELD);
-            builder.field(SHAPE_INDEX_FIELD, indexedShapeIndex);
-            builder.field(SHAPE_ID_FIELD, shape);
-            builder.field(SHAPE_INDEX_PATH_FIELD, indexedShapePath);
-            builder.endObject();
-        }, XYShapeQueryBuilder.NAME, xyShapeFieldName);
-
-        final SearchResponse searchResponse = searchIndex(indexName, searchEntity);
-
+        final SearchResponse searchResponse = geospatialQueryTestHelperIT.searchUsingIndexedShapeIndex(
+            indexName,
+            indexedShapeIndex,
+            indexedShapePath,
+            shapeDocID,
+            xyShapeFieldName
+        );
         assertSearchResponse(searchResponse);
         assertHitCount(searchResponse, 1);
         MatcherAssert.assertThat(searchResponse.getHits().getAt(0).getId(), equalTo(secondDocumentID));
@@ -237,30 +211,26 @@ public class XYShapeQueryIT extends GeospatialRestTestCase {
 
         createIndex(indexName, Settings.EMPTY, Map.of(xyShapeFieldName, XYShapeFieldMapper.CONTENT_TYPE));
         // Will index two points and search with envelope that will intersect only one point
-        final String firstDocument = buildDocumentWithWKT(xyShapeFieldName, "POINT(-30 -30)");
-        indexDocument(indexName, firstDocument);
-
-        Point point = new Point(-45, -50);
-        final String secondDocument = buildDocumentWithGeoJSON(xyShapeFieldName, point);
-        indexDocument(indexName, secondDocument);
+        geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyShapeFieldName, "POINT(-30 -30)");
+        geospatialQueryTestHelperIT.indexDocumentUsingGeoJSON(indexName, xyShapeFieldName, new Point(-45, -50));
 
         // create an index to insert shape
         String indexedShapeIndex = randomLowerCaseString();
         String indexedShapePath = randomLowerCaseString();
         createIndex(indexedShapeIndex, Settings.EMPTY, Map.of(indexedShapePath, XYShapeFieldMapper.CONTENT_TYPE));
+        final String shapeDocID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(
+            indexedShapeIndex,
+            indexedShapePath,
+            "BBOX(-60, -50, -50, -60)"
+        );
 
-        final String indexedRefDoc2 = buildDocumentWithWKT(indexedShapePath, "BBOX(-60, -50, -50, -60)");
-        final String shape = indexDocument(indexedShapeIndex, indexedRefDoc2);
-
-        String searchEntity = buildSearchBodyAsString(builder -> {
-            builder.startObject(INDEXED_SHAPE_FIELD);
-            builder.field(SHAPE_INDEX_FIELD, indexedShapeIndex);
-            builder.field(SHAPE_ID_FIELD, shape);
-            builder.field(SHAPE_INDEX_PATH_FIELD, indexedShapePath);
-            builder.endObject();
-        }, XYShapeQueryBuilder.NAME, xyShapeFieldName);
-
-        final SearchResponse searchResponse = searchIndex(indexName, searchEntity);
+        final SearchResponse searchResponse = geospatialQueryTestHelperIT.searchUsingIndexedShapeIndex(
+            indexName,
+            indexedShapeIndex,
+            indexedShapePath,
+            shapeDocID,
+            xyShapeFieldName
+        );
 
         assertSearchResponse(searchResponse);
         assertHitCount(searchResponse, 0);
