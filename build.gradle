@@ -199,6 +199,26 @@ tasks.withType(RestIntegTestTask)*.configure {
     classpath += files(project.configurations.runtimeClasspath.findAll { it.name.contains("log4j-core") })
 }
 
+task integTestRemote(type: RestIntegTestTask) {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    systemProperty "https", System.getProperty("https")
+    systemProperty "user", System.getProperty("user")
+    systemProperty "password", System.getProperty("password")
+
+    systemProperty 'cluster.number_of_nodes', "${_numNodes}"
+
+    systemProperty 'tests.security.manager', 'false'
+
+    // Run tests with remote cluster only if rest case is defined
+    if (System.getProperty("tests.rest.cluster") != null) {
+        filter {
+            includeTestsMatching "org.opensearch.geospatial.*IT"
+        }
+    }
+}
+
 spotless {
     java {
         removeUnusedImports()
