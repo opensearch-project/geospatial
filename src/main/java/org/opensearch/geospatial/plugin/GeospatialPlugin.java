@@ -27,6 +27,8 @@ import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
+import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldMapper;
+import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldTypeParser;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
@@ -105,7 +107,12 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
 
     @Override
     public Map<String, Mapper.TypeParser> getMappers() {
-        return Map.of(XYShapeFieldMapper.CONTENT_TYPE, new XYShapeFieldTypeParser());
+        return Map.of(
+            XYShapeFieldMapper.CONTENT_TYPE,
+            new XYShapeFieldTypeParser(),
+            XYPointFieldMapper.CONTENT_TYPE,
+            new XYPointFieldTypeParser()
+        );
     }
 
     @Override
