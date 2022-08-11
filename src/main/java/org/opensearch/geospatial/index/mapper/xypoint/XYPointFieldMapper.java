@@ -123,7 +123,7 @@ public class XYPointFieldMapper extends AbstractPointGeometryFieldMapper<
             CopyTo copyTo
         ) {
             var processor = new XYPointQueryProcessor();
-            XYPointFieldType xyPointFieldType = new XYPointFieldType(
+            var xyPointFieldType = new XYPointFieldType(
                 buildFullName(context),
                 indexed,
                 this.fieldType.stored(),

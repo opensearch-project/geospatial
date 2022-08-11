@@ -6,6 +6,7 @@
 package org.opensearch.geospatial.index.query.xypoint;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomCircle;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomGeometryCollection;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomLine;
@@ -19,6 +20,7 @@ import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.lucene.search.MatchNoDocsQuery;
@@ -49,13 +51,15 @@ public class XYPointQueryVisitorTests extends OpenSearchTestCase {
     private GeometryVisitor<Query, RuntimeException> queryVisitor;
     private String fieldName;
 
+    private MappedFieldType fieldType;
+
     @Override
     public void setUp() throws Exception {
         super.setUp();
         QueryShardContext context = mock(QueryShardContext.class);
-        MappedFieldType fieldType = mock(XYPointFieldMapper.XYPointFieldType.class);
+        fieldType = mock(XYPointFieldMapper.XYPointFieldType.class);
         fieldName = GeospatialTestHelper.randomLowerCaseString();
-        queryVisitor = new XYPointQueryVisitor(context, fieldType, fieldName);
+        queryVisitor = new XYPointQueryVisitor(fieldName, fieldType, context);
     }
 
     public void testQueryingLinearRing() {
@@ -107,29 +111,50 @@ public class XYPointQueryVisitorTests extends OpenSearchTestCase {
         );
     }
 
+    public void testQueryingCircleAsNull() {
+        NullPointerException nullPointerException = expectThrows(NullPointerException.class, () -> queryVisitor.visit((Circle) null));
+        assertEquals("Circle cannot be null", nullPointerException.getMessage());
+    }
+
+    public void testQueryingRectangleAsNull() {
+        NullPointerException nullPointerException = expectThrows(NullPointerException.class, () -> queryVisitor.visit((Rectangle) null));
+        assertEquals("Rectangle cannot be null", nullPointerException.getMessage());
+    }
+
+    public void testQueryingPolygonAsNull() {
+        NullPointerException nullPointerException = expectThrows(NullPointerException.class, () -> queryVisitor.visit((Polygon) null));
+        assertEquals("Polygon cannot be null", nullPointerException.getMessage());
+    }
+
+    public void testQueryingMultiPolygonAsNull() {
+        NullPointerException nullPointerException = expectThrows(NullPointerException.class, () -> queryVisitor.visit((MultiPolygon) null));
+        assertEquals("Multi Polygon cannot be null", nullPointerException.getMessage());
+    }
+
     public void testQueryingCircle() {
         Circle circle = randomCircle(randomBoolean());
-        QueryShardException exception = expectThrows(QueryShardException.class, () -> circle.visit(queryVisitor));
-        assertEquals(
-            String.format(Locale.ROOT, "Field [%s] found an unsupported shape [%s]", fieldName, ShapeType.CIRCLE.name()),
-            exception.getMessage()
-        );
+        when(fieldType.hasDocValues()).thenReturn(randomBoolean());
+        Query query = circle.visit(queryVisitor);
+        assertNotNull("failed to convert to Query", query);
     }
 
     public void testQueryingRectangle() {
         Rectangle rectangle = randomRectangle();
+        when(fieldType.hasDocValues()).thenReturn(randomBoolean());
         Query query = rectangle.visit(queryVisitor);
         assertNotNull("failed to convert to Query", query);
     }
 
     public void testQueryingPolygon() throws IOException, ParseException {
         Polygon polygon = randomPolygon();
+        when(fieldType.hasDocValues()).thenReturn(randomBoolean());
         Query query = polygon.visit(queryVisitor);
         assertNotNull("failed to convert to Query", query);
     }
 
     public void testQueryingMultiPolygon() throws IOException, ParseException {
         MultiPolygon multiPolygon = randomMultiPolygon();
+        when(fieldType.hasDocValues()).thenReturn(randomBoolean());
         Query query = multiPolygon.visit(queryVisitor);
         assertNotNull("failed to convert to Query", query);
     }
@@ -148,5 +173,12 @@ public class XYPointQueryVisitorTests extends OpenSearchTestCase {
             "Validation failed for unsupported geometries",
             exception.getMessage().contains(String.format(Locale.ROOT, "Field [%s] found an unsupported shape", fieldName))
         );
+    }
+
+    public void testQueryingGeometryCollection() throws IOException, ParseException {
+        GeometryCollection<?> collection = new GeometryCollection<>(List.of(randomPolygon(), randomRectangle()));
+        when(fieldType.hasDocValues()).thenReturn(randomBoolean());
+        Query query = collection.visit(queryVisitor);
+        assertNotNull("failed to convert to Query", query);
     }
 }

@@ -5,6 +5,7 @@
 
 package org.opensearch.geospatial.index.query.xypoint;
 
+import static org.opensearch.geospatial.index.common.xyshape.XYShapeConverter.toXYCircle;
 import static org.opensearch.geospatial.index.common.xyshape.XYShapeConverter.toXYPolygon;
 import static org.opensearch.geospatial.index.common.xyshape.XYShapeConverter.toXYRectangle;
 
@@ -16,6 +17,7 @@ import lombok.AllArgsConstructor;
 
 import org.apache.lucene.document.XYDocValuesField;
 import org.apache.lucene.document.XYPointField;
+import org.apache.lucene.geo.XYCircle;
 import org.apache.lucene.geo.XYPolygon;
 import org.apache.lucene.geo.XYRectangle;
 import org.apache.lucene.search.BooleanClause;
@@ -46,9 +48,9 @@ import org.opensearch.index.query.QueryShardException;
  */
 @AllArgsConstructor
 public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeException> {
-    QueryShardContext context;
-    MappedFieldType fieldType;
-    String fieldName;
+    private final String fieldName;
+    private final MappedFieldType fieldType;
+    private final QueryShardContext context;
 
     /**
      * @param line  input geometry {@link Line}
@@ -57,10 +59,7 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
      */
     @Override
     public Query visit(Line line) {
-        throw new QueryShardException(
-            context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, ShapeType.LINESTRING.name())
-        );
+        return geometryNotSupported(ShapeType.LINESTRING);
     }
 
     /**
@@ -70,10 +69,7 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
      */
     @Override
     public Query visit(LinearRing ring) {
-        throw new QueryShardException(
-            context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, ShapeType.LINEARRING.name())
-        );
+        return geometryNotSupported(ShapeType.LINEARRING);
     }
 
     /**
@@ -83,10 +79,7 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
      */
     @Override
     public Query visit(MultiLine multiLine) {
-        throw new QueryShardException(
-            context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, ShapeType.MULTILINESTRING)
-        );
+        return geometryNotSupported(ShapeType.MULTILINESTRING);
     }
 
     /**
@@ -96,10 +89,7 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
      */
     @Override
     public Query visit(MultiPoint multiPoint) {
-        throw new QueryShardException(
-            context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, ShapeType.MULTIPOINT)
-        );
+        return geometryNotSupported(ShapeType.MULTIPOINT);
     }
 
     /**
@@ -109,10 +99,7 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
      */
     @Override
     public Query visit(Point point) {
-        throw new QueryShardException(
-            context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, ShapeType.POINT)
-        );
+        return geometryNotSupported(ShapeType.POINT);
     }
 
     /**
@@ -122,10 +109,15 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
      */
     @Override
     public Query visit(Circle circle) throws RuntimeException {
-        throw new QueryShardException(
-            context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, ShapeType.CIRCLE)
-        );
+        Objects.requireNonNull(circle, "Circle cannot be null");
+        XYCircle xyCircle = toXYCircle(circle);
+        var query = XYPointField.newDistanceQuery(fieldName, xyCircle.getX(), xyCircle.getY(), xyCircle.getRadius());
+        if (!fieldType.hasDocValues()) {
+            return query;
+        }
+
+        var dvQuery = XYDocValuesField.newSlowDistanceQuery(fieldName, xyCircle.getX(), xyCircle.getY(), xyCircle.getRadius());
+        return new IndexOrDocValuesQuery(query, dvQuery);
     }
 
     /**
@@ -136,18 +128,13 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
     public Query visit(Rectangle rectangle) {
         Objects.requireNonNull(rectangle, "Rectangle cannot be null");
         XYRectangle xyRectangle = toXYRectangle(rectangle);
-        Query query = XYPointField.newBoxQuery(fieldName, xyRectangle.minX, xyRectangle.maxX, xyRectangle.minY, xyRectangle.maxY);
-        if (fieldType.hasDocValues()) {
-            Query dvQuery = XYDocValuesField.newSlowBoxQuery(
-                fieldName,
-                xyRectangle.minX,
-                xyRectangle.maxX,
-                xyRectangle.minY,
-                xyRectangle.maxY
-            );
-            query = new IndexOrDocValuesQuery(query, dvQuery);
+        var query = XYPointField.newBoxQuery(fieldName, xyRectangle.minX, xyRectangle.maxX, xyRectangle.minY, xyRectangle.maxY);
+        if (!fieldType.hasDocValues()) {
+            return query;
         }
-        return query;
+
+        var dvQuery = XYDocValuesField.newSlowBoxQuery(fieldName, xyRectangle.minX, xyRectangle.maxX, xyRectangle.minY, xyRectangle.maxY);
+        return new IndexOrDocValuesQuery(query, dvQuery);
     }
 
     /**
@@ -179,15 +166,15 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
         if (collection.isEmpty()) {
             return new MatchNoDocsQuery();
         }
-        BooleanQuery.Builder bqb = new BooleanQuery.Builder();
-        visit(bqb, collection);
-        return bqb.build();
+        var booleanQueryBuilder = new BooleanQuery.Builder();
+        visit(booleanQueryBuilder, collection);
+        return booleanQueryBuilder.build();
     }
 
-    private void visit(BooleanQuery.Builder bqb, GeometryCollection<?> collection) {
-        BooleanClause.Occur occur = BooleanClause.Occur.FILTER;
+    private void visit(BooleanQuery.Builder booleanQueryBuilder, GeometryCollection<?> collection) {
+        var occur = BooleanClause.Occur.FILTER;
         for (Geometry shape : collection) {
-            bqb.add(shape.visit(this), occur);
+            booleanQueryBuilder.add(shape.visit(this), occur);
         }
     }
 
@@ -195,16 +182,25 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
         if (collection.isEmpty()) {
             return new MatchNoDocsQuery();
         }
+
         XYPolygon[] xyPolygons = new XYPolygon[collection.size()];
         for (int i = 0; i < collection.size(); i++) {
             xyPolygons[i] = toXYPolygon(collection.get(i));
         }
-        Query query = XYPointField.newPolygonQuery(fieldName, xyPolygons);
-        if (fieldType.hasDocValues()) {
-            Query dvQuery = XYDocValuesField.newSlowPolygonQuery(fieldName, xyPolygons);
-            query = new IndexOrDocValuesQuery(query, dvQuery);
+
+        var query = XYPointField.newPolygonQuery(fieldName, xyPolygons);
+        if (!fieldType.hasDocValues()) {
+            return query;
         }
-        return query;
+
+        var dvQuery = XYDocValuesField.newSlowPolygonQuery(fieldName, xyPolygons);
+        return new IndexOrDocValuesQuery(query, dvQuery);
     }
 
+    private Query geometryNotSupported(ShapeType shapeType) {
+        throw new QueryShardException(
+            context,
+            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, shapeType.name())
+        );
+    }
 }

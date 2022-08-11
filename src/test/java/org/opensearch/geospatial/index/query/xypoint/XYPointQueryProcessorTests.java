@@ -20,6 +20,7 @@ import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Locale;
 
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
@@ -62,13 +63,13 @@ public class XYPointQueryProcessorTests extends OpenSearchTestCase {
         queryProcessor = new XYPointQueryProcessor();
     }
 
-    public void testInvalidRelation() throws IOException, ParseException {
+    public void testInvalidRelation() {
         mockFieldType(VALID_FIELD_TYPE);
         QueryShardException exception = expectThrows(
             QueryShardException.class,
             () -> queryProcessor.shapeQuery(randomPolygon(), fieldName, ShapeRelation.CONTAINS, context)
         );
-        assertTrue(exception.getMessage().contains("CONTAINS query relation not supported"));
+        assertTrue(exception.getMessage().contains("[CONTAINS] query relation not supported"));
     }
 
     public void testQueryingNullFieldName() {
@@ -85,8 +86,7 @@ public class XYPointQueryProcessorTests extends OpenSearchTestCase {
             QueryShardException.class,
             () -> queryProcessor.shapeQuery(randomPolygon(), fieldName, null, context)
         );
-        assertTrue(exception.getMessage().contains("null query relation not supported"));
-        // assertEquals("", exception.getMessage());
+        assertTrue(exception.getMessage().contains("[null] query relation not supported"));
     }
 
     public void testQueryingNullGeometry() {
@@ -108,7 +108,12 @@ public class XYPointQueryProcessorTests extends OpenSearchTestCase {
         );
         assertEquals(
             "wrong exception message",
-            "Expected xy_point field type for Field [" + fieldName + "] but found geo_point",
+            String.format(
+                Locale.ROOT,
+                "Expected [%s] field type for Field [%s] but found [geo_point]",
+                XYPointFieldMapper.CONTENT_TYPE,
+                fieldName
+            ),
             exception.getMessage()
         );
     }
@@ -150,7 +155,7 @@ public class XYPointQueryProcessorTests extends OpenSearchTestCase {
     public void testQueryingCircle() {
         mockFieldType(VALID_FIELD_TYPE);
         Circle circle = randomCircle(randomBoolean());
-        expectThrows(QueryShardException.class, () -> queryProcessor.shapeQuery(circle, fieldName, relation, context));
+        assertNotNull("failed to convert to Query", queryProcessor.shapeQuery(circle, fieldName, relation, context));
     }
 
     public void testQueryingRectangle() {
@@ -177,6 +182,12 @@ public class XYPointQueryProcessorTests extends OpenSearchTestCase {
         final Query actualQuery = queryProcessor.shapeQuery(geometry, fieldName, relation, context);
         assertNotNull("failed to convert to Query", actualQuery);
         assertEquals("MatchNoDocs query should be returned", new MatchNoDocsQuery(), actualQuery);
+    }
+
+    public void testGetVectorQueryFromShape() {
+        mockFieldType(VALID_FIELD_TYPE);
+        Circle circle = randomCircle(randomBoolean());
+        assertNotNull("failed to convert to Query", queryProcessor.shapeQuery(circle, fieldName, relation, context));
     }
 
     private void mockFieldType(boolean success) {

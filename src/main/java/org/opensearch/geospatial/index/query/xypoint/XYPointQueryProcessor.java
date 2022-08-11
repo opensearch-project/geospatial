@@ -5,11 +5,12 @@
 
 package org.opensearch.geospatial.index.query.xypoint;
 
+import java.util.Locale;
+
 import org.apache.lucene.search.Query;
 import org.opensearch.common.geo.ShapeRelation;
 import org.opensearch.geometry.Geometry;
 import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldMapper;
-import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.index.query.QueryShardException;
 
@@ -28,27 +29,37 @@ public class XYPointQueryProcessor {
      */
     public Query shapeQuery(Geometry shape, String fieldName, ShapeRelation relation, QueryShardContext context) {
         validateIsXYPointFieldType(fieldName, context);
-        // XYPoint only support "intersects"
+        // XYPoint only support "intersects" spatial relation which returns points that are on the edge and inside the given geometry
         if (relation != ShapeRelation.INTERSECTS) {
-            throw new QueryShardException(context, relation + " query relation not supported for Field [" + fieldName + "].");
+            throw new QueryShardException(
+                context,
+                String.format(Locale.ROOT, "[%s] query relation not supported for Field [%s]", relation, fieldName)
+            );
         }
 
         return getVectorQueryFromShape(shape, fieldName, context);
     }
 
     private void validateIsXYPointFieldType(String fieldName, QueryShardContext context) {
-        MappedFieldType fieldType = context.fieldMapper(fieldName);
+        var fieldType = context.fieldMapper(fieldName);
         if (fieldType instanceof XYPointFieldMapper.XYPointFieldType) {
             return;
         }
+
         throw new QueryShardException(
             context,
-            "Expected " + XYPointFieldMapper.CONTENT_TYPE + " field type for Field [" + fieldName + "] but found " + fieldType.typeName()
+            String.format(
+                Locale.ROOT,
+                "Expected [%s] field type for Field [%s] but found [%s]",
+                XYPointFieldMapper.CONTENT_TYPE,
+                fieldName,
+                fieldType.typeName()
+            )
         );
     }
 
     protected Query getVectorQueryFromShape(Geometry queryShape, String fieldName, QueryShardContext context) {
-        XYPointQueryVisitor xyPointQueryVisitor = new XYPointQueryVisitor(context, context.fieldMapper(fieldName), fieldName);
+        var xyPointQueryVisitor = new XYPointQueryVisitor(fieldName, context.fieldMapper(fieldName), context);
         return queryShape.visit(xyPointQueryVisitor);
     }
 }

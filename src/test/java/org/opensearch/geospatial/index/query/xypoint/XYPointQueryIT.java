@@ -20,6 +20,7 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.ResponseException;
 import org.opensearch.common.geo.ShapeRelation;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.geometry.Circle;
 import org.opensearch.geometry.LinearRing;
 import org.opensearch.geometry.MultiPolygon;
 import org.opensearch.geometry.Polygon;
@@ -78,7 +79,7 @@ public class XYPointQueryIT extends GeospatialRestTestCase {
             ResponseException.class,
             () -> geospatialQueryTestHelperIT.searchUsingShapeRelation(indexName, xyPointFieldName, rectangle, ShapeRelation.CONTAINS)
         );
-        assertTrue(exception.getMessage().contains("CONTAINS query relation not supported"));
+        assertTrue(exception.getMessage().contains("[CONTAINS] query relation not supported"));
 
         deleteIndex(indexName);
     }
@@ -114,6 +115,27 @@ public class XYPointQueryIT extends GeospatialRestTestCase {
 
         deleteIndex(indexName);
         deleteIndex(indexedShapeIndex);
+    }
+
+    public void testIndexPointsCircle() throws Exception {
+        createIndex(indexName, Settings.EMPTY, Map.of(xyPointFieldName, XYPointFieldMapper.CONTENT_TYPE));
+
+        geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyPointFieldName, "POINT(-131 -30)");
+        final String secondDocumentID = geospatialQueryTestHelperIT.indexDocumentUsingWKT(indexName, xyPointFieldName, "POINT(-45 -50)");
+
+        Circle circle = new Circle(-30, -30, 100);
+
+        final SearchResponse searchResponse = geospatialQueryTestHelperIT.searchUsingShapeRelation(
+            indexName,
+            xyPointFieldName,
+            circle,
+            ShapeRelation.INTERSECTS
+        );
+        assertSearchResponse(searchResponse);
+        assertHitCount(searchResponse, 1);
+        MatcherAssert.assertThat(searchResponse.getHits().getAt(0).getId(), equalTo(secondDocumentID));
+
+        deleteIndex(indexName);
     }
 
     public void testIndexPointsPolygon() throws Exception {
