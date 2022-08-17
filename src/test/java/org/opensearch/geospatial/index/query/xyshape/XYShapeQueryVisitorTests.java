@@ -65,7 +65,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         Circle circle = randomCircle(randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(circle);
         assertNotNull("failed to convert to XYCircle", geometries);
-        assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
+        assertEquals("Unexpected number of geometries found", SIZE, geometries.size());
         assertTrue("invalid object found", geometries.get(FIRST_GEOMETRY) instanceof XYCircle);
     }
 
@@ -80,7 +80,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         Line geometry = randomLine(verticesLimit, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(geometry);
         assertNotNull("Query geometries cannot be null", geometries);
-        assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
+        assertEquals("Unexpected number of geometries found", SIZE, geometries.size());
         assertTrue("invalid object found ", geometries.get(FIRST_GEOMETRY) instanceof XYLine);
     }
 
@@ -90,7 +90,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         MultiLine multiLine = randomMultiLine(verticesLimit, linesLimit, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(multiLine);
         assertNotNull("Query geometries cannot be null", geometries);
-        assertEquals("Unexpected number of geomteries found", geometries.size(), multiLine.size());
+        assertEquals("Unexpected number of geometries found", geometries.size(), multiLine.size());
         for (XYGeometry geometry : geometries) {
             assertTrue("invalid object found", geometry instanceof XYLine);
         }
@@ -100,7 +100,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         Point geometry = randomPoint(randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(geometry);
         assertNotNull("Query geometries cannot be null", geometries);
-        assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
+        assertEquals("Unexpected number of geometries found", SIZE, geometries.size());
         assertTrue("invalid object found", geometries.get(FIRST_GEOMETRY) instanceof XYPoint);
 
     }
@@ -110,7 +110,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         MultiPoint multiPoint = randomMultiPoint(pointLimit, randomBoolean());
         final List<XYGeometry> geometries = queryVisitor.visit(multiPoint);
         assertNotNull("Query geometries cannot be null", geometries);
-        assertEquals("Unexpected number of geomteries found", geometries.size(), multiPoint.size());
+        assertEquals("Unexpected number of geometries found", geometries.size(), multiPoint.size());
         for (XYGeometry geometry : geometries) {
             assertTrue("invalid object found", geometry instanceof XYPoint);
         }
@@ -120,7 +120,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         Polygon geometry = randomPolygon();
         final List<XYGeometry> geometries = queryVisitor.visit(geometry);
         assertNotNull("Query geometries cannot be null", geometries);
-        assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
+        assertEquals("Unexpected number of geometries found", SIZE, geometries.size());
         assertTrue("invalid object found", geometries.get(FIRST_GEOMETRY) instanceof XYPolygon);
     }
 
@@ -128,7 +128,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         MultiPolygon multiPolygon = randomMultiPolygon();
         final List<XYGeometry> geometries = queryVisitor.visit(multiPolygon);
         assertNotNull("Query geometries cannot be null", geometries);
-        assertEquals("Unexpected number of geomteries found", geometries.size(), multiPolygon.size());
+        assertEquals("Unexpected number of geometries found", geometries.size(), multiPolygon.size());
         for (XYGeometry geometry : geometries) {
             assertTrue("invalid object found", geometry instanceof XYPolygon);
         }
@@ -145,7 +145,7 @@ public class XYShapeQueryVisitorTests extends OpenSearchTestCase {
         Rectangle geometry = randomRectangle();
         final List<XYGeometry> geometries = queryVisitor.visit(geometry);
         assertNotNull("Query geometries cannot be null", geometries);
-        assertEquals("Unexpected number of geomteries found", SIZE, geometries.size());
+        assertEquals("Unexpected number of geometries found", SIZE, geometries.size());
         assertTrue("invalid object found", geometries.get(FIRST_GEOMETRY) instanceof XYRectangle);
     }
 }

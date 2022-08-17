@@ -241,7 +241,7 @@ public class XYShapeQueryBuilderTests extends AbstractQueryTestCase<XYShapeQuery
         Geometry geometry = ShapeObjectBuilder.randomGeometryWithXYCoordinates();
         XYShapeQueryBuilder builder = new XYShapeQueryBuilder(XY_SHAPE_FIELD_NAME, geometry);
         builder.ignoreUnmapped(randomBoolean());
-        return setRelationBasedonType(geometry.type(), builder);
+        return setRelationBasedOnType(geometry.type(), builder);
     }
 
     private XYShapeQueryBuilder createQueryBuilderFromIndexedShape() {
@@ -262,10 +262,10 @@ public class XYShapeQueryBuilderTests extends AbstractQueryTestCase<XYShapeQuery
             builder.indexedShapeRouting(indexedShapeRouting);
         }
         builder.ignoreUnmapped(randomBoolean());
-        return setRelationBasedonType(indexedShapeToReturn.type(), builder);
+        return setRelationBasedOnType(indexedShapeToReturn.type(), builder);
     }
 
-    private XYShapeQueryBuilder setRelationBasedonType(ShapeType shapeType, XYShapeQueryBuilder builder) {
+    private XYShapeQueryBuilder setRelationBasedOnType(ShapeType shapeType, XYShapeQueryBuilder builder) {
         if (shapeType == ShapeType.LINESTRING || shapeType == ShapeType.MULTILINESTRING) {
             return builder.relation(randomFrom(ShapeRelation.DISJOINT, ShapeRelation.INTERSECTS, ShapeRelation.CONTAINS));
         }
