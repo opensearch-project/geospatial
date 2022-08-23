@@ -7,6 +7,7 @@ package org.opensearch.geospatial.index.mapper.xypoint;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StoredField;
@@ -14,10 +15,16 @@ import org.apache.lucene.document.XYDocValuesField;
 import org.apache.lucene.geo.XYPoint;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.search.Query;
 import org.opensearch.common.Explicit;
+import org.opensearch.common.geo.ShapeRelation;
+import org.opensearch.geometry.Geometry;
+import org.opensearch.geospatial.index.mapper.xyshape.XYShapeQueryable;
+import org.opensearch.geospatial.index.query.xypoint.XYPointQueryProcessor;
 import org.opensearch.index.mapper.AbstractPointGeometryFieldMapper;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.mapper.ParseContext;
+import org.opensearch.index.query.QueryShardContext;
 
 /**
  *  FieldMapper for indexing {@link XYPoint} points
@@ -115,19 +122,25 @@ public class XYPointFieldMapper extends AbstractPointGeometryFieldMapper<
             ParsedPoint nullValue,
             CopyTo copyTo
         ) {
-            XYPointFieldType xyPointFieldType = new XYPointFieldType(
+            var processor = new XYPointQueryProcessor();
+            var xyPointFieldType = new XYPointFieldType(
                 buildFullName(context),
                 indexed,
                 this.fieldType.stored(),
                 hasDocValues,
-                meta
+                meta,
+                processor
             );
 
             xyPointFieldType.setGeometryParser(
-                new PointParser<>(name, org.opensearch.geospatial.index.mapper.xypoint.XYPoint::new, (parser, point) -> {
-                    XYPointParser.parseXYPoint(parser, ignoreZValue().value());
-                    return point;
-                }, (org.opensearch.geospatial.index.mapper.xypoint.XYPoint) nullValue, ignoreZValue.value(), ignoreMalformed.value())
+                new PointParser<>(
+                    name,
+                    org.opensearch.geospatial.index.mapper.xypoint.XYPoint::new,
+                    (parser, point) -> XYPointParser.parseXYPoint(parser, ignoreZValue().value()),
+                    (org.opensearch.geospatial.index.mapper.xypoint.XYPoint) nullValue,
+                    ignoreZValue.value(),
+                    ignoreMalformed.value()
+                )
             );
             xyPointFieldType.setGeometryIndexer(new XYPointIndexer(xyPointFieldType.name()));
             return new XYPointFieldMapper(name, fieldType, xyPointFieldType, multiFields, ignoreMalformed, ignoreZValue, nullValue, copyTo);
@@ -139,15 +152,39 @@ public class XYPointFieldMapper extends AbstractPointGeometryFieldMapper<
      */
     public static class XYPointFieldType extends AbstractPointGeometryFieldType<
         List<org.opensearch.geospatial.index.mapper.xypoint.XYPoint>,
-        List<? extends XYPoint>> {
+        List<? extends XYPoint>> implements XYShapeQueryable {
+        private final XYPointQueryProcessor queryProcessor;
 
-        public XYPointFieldType(String name, boolean indexed, boolean stored, boolean hasDocValues, Map<String, String> meta) {
+        public XYPointFieldType(
+            String name,
+            boolean indexed,
+            boolean stored,
+            boolean hasDocValues,
+            Map<String, String> meta,
+            XYPointQueryProcessor processor
+        ) {
             super(name, indexed, stored, hasDocValues, meta);
+            this.queryProcessor = Objects.requireNonNull(processor, "query processor cannot be null");
         }
 
         @Override
         public String typeName() {
             return CONTENT_TYPE;
+        }
+
+        /**
+         * Finds all previously indexed shapes that comply the given {@link ShapeRelation} with
+         * the specified {@link Geometry}.
+         *
+         * @param geometry  query parameter to search indexed points
+         * @param fieldName field name that contains indexed points
+         * @param relation  relation between search shape and indexed points
+         * @param context   instance of {@link QueryShardContext}
+         * @return Lucene {@link Query} to find indexed points based on given geometry
+         */
+        @Override
+        public Query shapeQuery(Geometry geometry, String fieldName, ShapeRelation relation, QueryShardContext context) {
+            return queryProcessor.shapeQuery(geometry, fieldName, relation, context);
         }
     }
 }
