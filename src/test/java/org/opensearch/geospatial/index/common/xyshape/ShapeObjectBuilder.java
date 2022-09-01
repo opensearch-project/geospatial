@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.lucene.geo.XYPoint;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.geo.ShapeRelation;
 import org.opensearch.geo.GeometryTestUtils;
@@ -206,6 +207,17 @@ public class ShapeObjectBuilder {
             }
         }
         throw new RuntimeException("failed to generate random geometry");
+    }
+
+    public static List<XYPoint> getRandomXYPoints(int size, boolean hasZCoords) {
+        List<XYPoint> xyPoints = new ArrayList<>();
+
+        for (int i = 0; i < size; i++) {
+            Point point = randomPoint(hasZCoords);
+            XYPoint xyPoint = new XYPoint((float) point.getX(), (float) point.getY());
+            xyPoints.add(xyPoint);
+        }
+        return xyPoints;
     }
 
 }

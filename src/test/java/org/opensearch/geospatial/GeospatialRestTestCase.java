@@ -14,6 +14,7 @@ import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseStri
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.ACCEPTED_INDEX_SUFFIX_PATH;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
+import static org.opensearch.index.query.AbstractGeometryQueryBuilder.DEFAULT_SHAPE_FIELD_NAME;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import org.opensearch.common.CheckedConsumer;
 import org.opensearch.common.Strings;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.geo.GeoJson;
+import org.opensearch.common.geo.ShapeRelation;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -42,6 +44,8 @@ import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.geometry.Geometry;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
+import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
+import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.ingest.Pipeline;
@@ -61,6 +65,11 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
     public static final String FIELD_COUNT_KEY = "count";
     public static final String PARAM_REFRESH_KEY = "refresh";
     public static final String SEARCH = "_search";
+    public static final String SHAPE_RELATION = "relation";
+    public static final String INDEXED_SHAPE_FIELD = "indexed_shape";
+    public static final String SHAPE_INDEX_FIELD = "index";
+    public static final String SHAPE_ID_FIELD = "id";
+    public static final String SHAPE_INDEX_PATH_FIELD = "path";
 
     private static String buildPipelinePath(String name) {
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
@@ -277,6 +286,51 @@ public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
             GeoJson.toXContent(geometry, builder, EMPTY_PARAMS);
         });
         return document;
+    }
+
+    public String indexDocumentUsingWKT(String indexName, String fieldName, String wktFormat) throws IOException {
+        final String document = buildDocumentWithWKT(fieldName, wktFormat);
+        return indexDocument(indexName, document);
+    }
+
+    public String indexDocumentUsingGeoJSON(String indexName, String fieldName, Geometry geometry) throws IOException {
+        final String document = buildDocumentWithGeoJSON(fieldName, geometry);
+        return indexDocument(indexName, document);
+    }
+
+    public SearchResponse searchUsingShapeRelation(String indexName, String fieldName, Geometry geometry, ShapeRelation shapeRelation)
+        throws IOException {
+        String searchEntity = buildSearchBodyAsString(builder -> {
+            builder.field(DEFAULT_SHAPE_FIELD_NAME);
+            GeoJson.toXContent(geometry, builder, EMPTY_PARAMS);
+            builder.field(SHAPE_RELATION, shapeRelation.getRelationName());
+        }, XYShapeQueryBuilder.NAME, fieldName);
+
+        return searchIndex(indexName, searchEntity);
+    }
+
+    public void createIndexedShapeIndex() throws IOException {
+        String indexedShapeIndex = randomLowerCaseString();
+        String indexedShapePath = randomLowerCaseString();
+        createIndex(indexedShapeIndex, Settings.EMPTY, Map.of(indexedShapePath, XYShapeFieldMapper.CONTENT_TYPE));
+    }
+
+    public SearchResponse searchUsingIndexedShapeIndex(
+        String indexName,
+        String indexedShapeIndex,
+        String indexedShapePath,
+        String docId,
+        String fieldName
+    ) throws IOException {
+        String searchEntity = buildSearchBodyAsString(builder -> {
+            builder.startObject(INDEXED_SHAPE_FIELD);
+            builder.field(SHAPE_INDEX_FIELD, indexedShapeIndex);
+            builder.field(SHAPE_ID_FIELD, docId);
+            builder.field(SHAPE_INDEX_PATH_FIELD, indexedShapePath);
+            builder.endObject();
+        }, XYShapeQueryBuilder.NAME, fieldName);
+
+        return searchIndex(indexName, searchEntity);
     }
 
 }
