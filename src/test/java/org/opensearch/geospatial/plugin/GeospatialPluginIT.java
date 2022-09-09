@@ -10,10 +10,10 @@ import java.io.IOException;
 import org.apache.http.util.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
+import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.rest.RestStatus;
-import org.opensearch.test.rest.OpenSearchRestTestCase;
 
-public class GeospatialPluginIT extends OpenSearchRestTestCase {
+public class GeospatialPluginIT extends GeospatialRestTestCase {
 
     /**
      * Tests whether plugin is installed or not
