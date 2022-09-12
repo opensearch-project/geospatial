@@ -50,9 +50,8 @@ import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.ingest.Pipeline;
 import org.opensearch.rest.RestStatus;
-import org.opensearch.test.rest.OpenSearchRestTestCase;
 
-public abstract class GeospatialRestTestCase extends OpenSearchRestTestCase {
+public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCase {
 
     public static final String SOURCE = "_source";
     public static final String DOC = "_doc";
