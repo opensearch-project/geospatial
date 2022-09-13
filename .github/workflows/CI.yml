@@ -4,10 +4,12 @@ on:
     branches:
       - "*"
       - "feature/**"
+      - "backport/**"
   pull_request:
     branches:
       - "*"
       - "feature/**"
+      - "backport/**"
 
 jobs:
   Build:
