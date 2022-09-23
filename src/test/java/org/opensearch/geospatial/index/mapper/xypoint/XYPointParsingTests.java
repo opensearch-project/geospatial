@@ -170,7 +170,7 @@ public class XYPointParsingTests extends OpenSearchTestCase {
 
     private XContentParser xyAsArray(double x, double y) throws IOException {
         XContentBuilder content = JsonXContent.contentBuilder();
-        content.startArray().value(y).value(x).endArray();
+        content.startArray().value(x).value(y).endArray();
         XContentParser parser = createParser(JsonXContent.jsonXContent, BytesReference.bytes(content));
         parser.nextToken();
         return parser;
@@ -178,7 +178,7 @@ public class XYPointParsingTests extends OpenSearchTestCase {
 
     private XContentParser xyAsWKT(double x, double y) throws IOException {
         XContentBuilder content = JsonXContent.contentBuilder();
-        content.value("POINT (" + y + " " + x + ")");
+        content.value("POINT (" + x + " " + y + ")");
         XContentParser parser = createParser(JsonXContent.jsonXContent, BytesReference.bytes(content));
         parser.nextToken();
         return parser;
