@@ -160,7 +160,7 @@ public class XYPoint implements AbstractPointGeometryFieldMapper.ParsedPoint, To
             throw new OpenSearchParseException("[xy_point] supports only POINT among WKT primitives, but found [{}]", geometry.type());
         }
         Point point = (Point) geometry;
-        return reset(point.getY(), point.getX());
+        return reset(point.getX(), point.getY());
     }
 
     /**
