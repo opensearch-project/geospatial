@@ -157,9 +157,9 @@ public class XYPointParser {
             }
             element++;
             if (element == 1) {
-                y = subParser.doubleValue();
-            } else if (element == 2) {
                 x = subParser.doubleValue();
+            } else if (element == 2) {
+                y = subParser.doubleValue();
             } else if (element == 3) {
                 XYPoint.assertZValue(ignoreZValue, subParser.doubleValue());
             } else {
