@@ -29,6 +29,10 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
     private static final String FIELD_NAME = "field";
     private static final String FIELD_X_KEY = "x";
     private static final String FIELD_Y_KEY = "y";
+
+    private static final String FIELD_GEOJSON_TYPE_KEY = "type";
+    private static final String FIELD_GEOJSON_TYPE_VALUE = "Point";
+    private static final String FIELD_GEOJSON_COORDINATES_KEY = "coordinates";
     private final static Integer MIN_NUM_POINTS = 1;
     private final static Integer MAX_NUM_POINTS = 10;
 
@@ -167,6 +171,21 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
         assertNotNull("FieldValue is null", actualFieldValue);
     }
 
+    public void testIndexAsGeoJson() throws IOException {
+        DocumentMapper mapper = createDocumentMapper(fieldMapping(this::minimalMapping));
+        ParsedDocument doc = mapper.parse(
+            source(
+                builder -> builder.startObject(FIELD_NAME)
+                    .field(FIELD_GEOJSON_TYPE_KEY, FIELD_GEOJSON_TYPE_VALUE)
+                    .array(FIELD_GEOJSON_COORDINATES_KEY, new double[] { randomDouble(), randomDouble() })
+                    .endObject()
+            )
+        );
+        final IndexableField[] actualFieldValues = doc.rootDoc().getFields(FIELD_NAME);
+        assertNotNull("FieldValue is null", actualFieldValues);
+        assertEquals("mismatch in field values count", 2, actualFieldValues.length);
+    }
+
     public void testIndexAsArrayMultiPoints() throws IOException {
         int numOfPoints = randomIntBetween(MIN_NUM_POINTS, MAX_NUM_POINTS);
         DocumentMapper mapper = createDocumentMapper(fieldMapping(this::minimalMapping));
@@ -220,6 +239,24 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
             builder.startArray(FIELD_NAME);
             for (int i = 0; i < numOfPoints; i++) {
                 builder.value("POINT (" + randomDouble() + " " + randomDouble() + ")");
+            }
+            builder.endArray();
+        }));
+        final IndexableField[] actualFieldValues = doc.rootDoc().getFields(FIELD_NAME);
+        assertNotNull("FieldValue is null", actualFieldValues);
+        assertEquals("mismatch in field values count", 2 * numOfPoints, actualFieldValues.length);
+    }
+
+    public void testIndexAsGeoJsonMultiPoints() throws IOException {
+        int numOfPoints = randomIntBetween(MIN_NUM_POINTS, MAX_NUM_POINTS);
+        DocumentMapper mapper = createDocumentMapper(fieldMapping(this::minimalMapping));
+        ParsedDocument doc = mapper.parse(source(builder -> {
+            builder.startArray(FIELD_NAME);
+            for (int i = 0; i < numOfPoints; i++) {
+                builder.startObject()
+                    .field(FIELD_GEOJSON_TYPE_KEY, FIELD_GEOJSON_TYPE_VALUE)
+                    .array(FIELD_GEOJSON_COORDINATES_KEY, new double[] { randomDouble(), randomDouble() })
+                    .endObject();
             }
             builder.endArray();
         }));

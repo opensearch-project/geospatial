@@ -19,6 +19,9 @@ import org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder;
 public class XYPointFieldMapperIT extends GeospatialRestTestCase {
     private static final String FIELD_X_KEY = "x";
     private static final String FIELD_Y_KEY = "y";
+    private static final String FIELD_GEOJSON_TYPE_KEY = "type";
+    private static final String FIELD_GEOJSON_TYPE_VALUE = "Point";
+    private static final String FIELD_GEOJSON_COORDINATES_KEY = "coordinates";
 
     public void testMappingWithXYPointField() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
@@ -85,6 +88,20 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
+    public void testIndexWithXYPointFieldAsGeoJsonFormat() throws Exception {
+        String indexName = GeospatialTestHelper.randomLowerCaseString();
+        String fieldName = GeospatialTestHelper.randomLowerCaseString();
+        createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
+        final Point point = ShapeObjectBuilder.randomPoint(randomBoolean());
+        String docID = indexDocument(indexName, getDocumentWithObjectValueForXYPoint(fieldName, point));
+        assertTrue("failed to index document", getIndexDocumentCount(indexName) > 0);
+        final Map<String, Object> document = getDocument(docID, indexName);
+        assertNotNull("failed to get indexed document", document);
+        String expectedValue = String.format(Locale.ROOT, "{x=%s, y=%s}", point.getX(), point.getY());
+        assertEquals("failed to index xy_point", expectedValue, document.get(fieldName).toString());
+        deleteIndex(indexName);
+    }
+
     private String getDocumentWithWKTValueForXYPoint(String fieldName, Geometry geometry) throws Exception {
         return buildContentAsString(build -> build.field(fieldName, geometry.toString()));
     }
@@ -102,6 +119,15 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
             build.startObject(fieldName);
             build.field(FIELD_X_KEY, point.getX());
             build.field(FIELD_Y_KEY, point.getY());
+            build.endObject();
+        });
+    }
+
+    private String getDocumentWithGeoJsonValueForXYPoint(String fieldName, Point point) throws Exception {
+        return buildContentAsString(build -> {
+            build.startObject(fieldName);
+            build.field(FIELD_GEOJSON_TYPE_KEY, FIELD_GEOJSON_TYPE_VALUE);
+            build.array(FIELD_GEOJSON_COORDINATES_KEY, new double[] { point.getX(), point.getY() });
             build.endObject();
         });
     }

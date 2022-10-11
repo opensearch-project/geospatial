@@ -5,6 +5,8 @@
 
 package org.opensearch.geospatial.index.mapper.xypoint;
 
+import static org.opensearch.common.xcontent.XContentFactory.jsonBuilder;
+
 import java.io.IOException;
 
 import org.opensearch.OpenSearchParseException;
@@ -14,7 +16,7 @@ import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.test.OpenSearchTestCase;
 
-public class XYPointParsingTests extends OpenSearchTestCase {
+public class XYPointParserTests extends OpenSearchTestCase {
     private static final String FIELD_X_KEY = "x";
     private static final String FIELD_Y_KEY = "y";
 
@@ -104,7 +106,7 @@ public class XYPointParsingTests extends OpenSearchTestCase {
                 OpenSearchParseException.class,
                 () -> XYPointParser.parseXYPoint(parser, randomBoolean())
             );
-            assertEquals("Validation for invalid fields failed", "field must be either [x] or [y]", e.getMessage());
+            assertEquals("Validation for invalid fields failed", "field must be either [x|y], or [type|coordinates]", e.getMessage());
         }
     }
 
@@ -120,7 +122,7 @@ public class XYPointParsingTests extends OpenSearchTestCase {
             OpenSearchParseException.class,
             () -> XYPointParser.parseXYPoint(parser, randomBoolean())
         );
-        assertEquals("Validation failed for invalid x and y values", "[y] must be valid double value", e.getMessage());
+        assertEquals("Validation failed for invalid x and y values", "[x] and [y] must be valid double values", e.getMessage());
 
         // Skip the 'y' field and y coordinate
         XContentBuilder content1 = JsonXContent.contentBuilder();
@@ -182,5 +184,72 @@ public class XYPointParsingTests extends OpenSearchTestCase {
         XContentParser parser = createParser(JsonXContent.jsonXContent, BytesReference.bytes(content));
         parser.nextToken();
         return parser;
+    }
+
+    public void testParserGeoPointGeoJson() throws IOException {
+        XYPoint xyPoint = new XYPoint(randomDouble(), randomDouble());
+        double[] coordinates = { xyPoint.getX(), xyPoint.getY() };
+        XContentBuilder json1 = jsonBuilder().startObject().field("type", "Point").array("coordinates", coordinates).endObject();
+        try (XContentParser parser = createParser(json1)) {
+            parser.nextToken();
+            XYPoint paredPoint = XYPointParser.parseXYPoint(parser, randomBoolean());
+            assertEquals(xyPoint, paredPoint);
+        }
+
+        XContentBuilder json2 = jsonBuilder().startObject().field("type", "PoInT").array("coordinates", coordinates).endObject();
+        try (XContentParser parser = createParser(json2)) {
+            parser.nextToken();
+            XYPoint paredPoint = XYPointParser.parseXYPoint(parser, randomBoolean());
+            assertEquals(xyPoint, paredPoint);
+        }
+    }
+
+    public void testParserGeoPointGeoJsonMissingField() throws IOException {
+        XYPoint xyPoint = new XYPoint(randomDouble(), randomDouble());
+        double[] coordinates = { xyPoint.getX(), xyPoint.getY() };
+        XContentBuilder missingType = jsonBuilder().startObject().array("coordinates", coordinates).endObject();
+        expectParseException(missingType, "field [type] missing");
+
+        XContentBuilder missingCoordinates = jsonBuilder().startObject().field("type", "Point").endObject();
+        expectParseException(missingCoordinates, "field [coordinates] missing");
+    }
+
+    public void testParserGeoPointGeoJsonUnknownField() throws IOException {
+        XYPoint xyPoint = new XYPoint(randomDouble(), randomDouble());
+        double[] coordinates = { xyPoint.getX(), xyPoint.getY() };
+        XContentBuilder unknownField = jsonBuilder().startObject()
+            .field("type", "Point")
+            .array("coordinates", coordinates)
+            .field("unknown", "value")
+            .endObject();
+        expectParseException(unknownField, "field must be either [x|y], or [type|coordinates]");
+    }
+
+    public void testParserGeoPointGeoJsonInvalidValue() throws IOException {
+        XYPoint xyPoint = new XYPoint(randomDouble(), randomDouble());
+        double[] coordinates = { xyPoint.getX(), xyPoint.getY() };
+        XContentBuilder invalidGeoJsonType = jsonBuilder().startObject()
+            .field("type", "invalid")
+            .array("coordinates", coordinates)
+            .endObject();
+        expectParseException(invalidGeoJsonType, "type must be Point");
+
+        String[] coordinatesInString = { String.valueOf(xyPoint.getX()), String.valueOf(xyPoint.getY()) };
+        XContentBuilder invalideCoordinatesType = jsonBuilder().startObject()
+            .field("type", "Point")
+            .array("coordinates", coordinatesInString)
+            .endObject();
+        expectParseException(invalideCoordinatesType, "numeric value expected");
+    }
+
+    private void expectParseException(XContentBuilder content, String errMsg) throws IOException {
+        try (XContentParser parser = createParser(content)) {
+            parser.nextToken();
+            OpenSearchParseException ex = expectThrows(
+                OpenSearchParseException.class,
+                () -> XYPointParser.parseXYPoint(parser, randomBoolean())
+            );
+            assertEquals(errMsg, ex.getMessage());
+        }
     }
 }
