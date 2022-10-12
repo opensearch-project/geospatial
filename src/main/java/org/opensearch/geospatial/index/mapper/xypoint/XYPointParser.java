@@ -8,10 +8,10 @@ package org.opensearch.geospatial.index.mapper.xypoint;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import org.opensearch.OpenSearchParseException;
-import org.opensearch.common.geo.GeoPoint;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.NamedXContentRegistry;
 import org.opensearch.common.xcontent.XContentParser;
@@ -40,7 +40,7 @@ public class XYPointParser {
      * @return {@link XYPoint} after setting the x and y coordinates parsed from the parse
      * @throws OpenSearchParseException
      */
-    public static XYPoint parseXYPoint(Object value, final boolean ignoreZValue) throws OpenSearchParseException {
+    public static XYPoint parseXYPoint(final Object value, final boolean ignoreZValue) throws OpenSearchParseException {
         Objects.requireNonNull(value, "input value which needs to be parsed should not be null");
 
         try (
@@ -76,7 +76,8 @@ public class XYPointParser {
      * @throws IOException
      * @throws OpenSearchParseException
      */
-    public static XYPoint parseXYPoint(XContentParser parser, final boolean ignoreZValue) throws IOException, OpenSearchParseException {
+    public static XYPoint parseXYPoint(final XContentParser parser, final boolean ignoreZValue) throws IOException,
+        OpenSearchParseException {
         Objects.requireNonNull(parser, "parser should not be null");
         XYPoint point = new XYPoint();
         switch (parser.currentToken()) {
@@ -91,11 +92,22 @@ public class XYPointParser {
                 point.resetFromString(val, ignoreZValue);
                 break;
             default:
-                throw new OpenSearchParseException("xy_point expected");
+                throw new OpenSearchParseException("expecting xy_point as an array, a string, or an object format");
         }
         return point;
     }
 
+    /**
+     * Parse point in either basic object format or GeoJson format
+     *
+     * Parser is expected to be pointing the start of the object.
+     * ex) Parser is pointing { in {"x": 12.3, "y": 45.6}
+     *
+     * @param parser  {@link XContentParser} to parse the value from
+     * @param point {@link XYPoint} to be returned after setting the x and y coordinates parsed from the parse
+     * @return {@link XYPoint} after setting the x and y coordinates parsed from the parse
+     * @throws IOException
+     */
     private static XYPoint parseXYPointObject(final XContentParser parser, final XYPoint point, final boolean ignoreZValue)
         throws IOException {
         try (XContentSubParser subParser = new XContentSubParser(parser)) {
@@ -105,7 +117,7 @@ public class XYPointParser {
 
             String field = subParser.currentName();
             if (X_PARAMETER.equals(field) || Y_PARAMETER.equals(field)) {
-                parseGeoPointObjectBasicFields(subParser, point);
+                parseXYPointObjectBasicFields(subParser, point);
             } else if (GEOJSON_TYPE.equals(field) || GEOJSON_COORDS.equals(field)) {
                 parseGeoJsonFields(subParser, point, ignoreZValue);
             } else {
@@ -120,9 +132,20 @@ public class XYPointParser {
         }
     }
 
-    private static XYPoint parseGeoPointObjectBasicFields(final XContentParser parser, final XYPoint point) throws IOException {
+    /**
+     * Parse point in basic object format
+     *
+     * Parser is expected to be pointing the first field of the object.
+     * ex) Parser is pointing x in {"x": 12.3, "y": 45.6}
+     *
+     * @param parser  {@link XContentParser} to parse the value from
+     * @param point {@link XYPoint} to be returned after setting the x and y coordinates parsed from the parse
+     * @return {@link XYPoint} after setting the x and y coordinates parsed from the parse
+     * @throws IOException
+     */
+    private static XYPoint parseXYPointObjectBasicFields(final XContentParser parser, final XYPoint point) throws IOException {
         final int numberOfFields = 2;
-        HashMap<String, Double> data = new HashMap<>();
+        Map<String, Double> data = new HashMap<>();
         for (int i = 0; i < numberOfFields; i++) {
             if (i != 0) {
                 parser.nextToken();
@@ -160,6 +183,18 @@ public class XYPointParser {
         return point.reset(data.get(X_PARAMETER), data.get(Y_PARAMETER));
     }
 
+    /**
+     * Parse point in GeoJson format
+     *
+     * Parser is expected to be pointing the first field of the object.
+     * ex) Parser is pointing type in {"type": "Point", "coordinates": [12.3, 45.6]}
+     *
+     * @param parser  {@link XContentParser} to parse the value from
+     * @param point {@link XYPoint} to be returned after setting the x and y coordinates parsed from the parse
+     * @param ignoreZValue  boolean parameter which decides if third coordinate needs to be ignored or not
+     * @return {@link XYPoint} after setting the x and y coordinates parsed from the parse
+     * @throws IOException
+     */
     private static XYPoint parseGeoJsonFields(final XContentParser parser, final XYPoint point, final boolean ignoreZValue)
         throws IOException {
         final int numberOfFields = 2;
@@ -203,6 +238,18 @@ public class XYPointParser {
         return point;
     }
 
+    /**
+     * Parse point in an array format
+     *
+     * Parser is expected to be pointing the start of the array.
+     * ex) Parser is pointing [ in [12.3, 45.6]
+     *
+     * @param parser  {@link XContentParser} to parse the value from
+     * @param point {@link XYPoint} to be returned after setting the x and y coordinates parsed from the parse
+     * @param ignoreZValue  boolean parameter which decides if third coordinate needs to be ignored or not
+     * @return {@link XYPoint} after setting the x and y coordinates parsed from the parse
+     * @throws IOException
+     */
     private static XYPoint parseXYPointArray(final XContentParser parser, final XYPoint point, final boolean ignoreZValue)
         throws IOException {
         try (XContentSubParser subParser = new XContentSubParser(parser)) {
@@ -220,7 +267,7 @@ public class XYPointParser {
                 } else if (element == 2) {
                     y = parser.doubleValue();
                 } else if (element == 3) {
-                    GeoPoint.assertZValue(ignoreZValue, parser.doubleValue());
+                    XYPoint.assertZValue(ignoreZValue, parser.doubleValue());
                 } else {
                     throw new OpenSearchParseException("[xy_point] field type does not accept more than 3 values");
                 }
