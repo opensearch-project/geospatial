@@ -35,6 +35,7 @@ import static java.lang.Math.toRadians;
  */
 public final class H3 {
 
+    public static int MIN_H3_RES = Constants.MIN_H3_RES;
     public static int MAX_H3_RES = Constants.MAX_H3_RES;
 
     /**
@@ -82,7 +83,7 @@ public final class H3 {
         }
 
         int res = H3Index.H3_get_resolution(h3);
-        if (res < 0 || res > Constants.MAX_H3_RES) {  // LCOV_EXCL_BR_LINE
+        if (res < Constants.MIN_H3_RES || res > Constants.MAX_H3_RES) {  // LCOV_EXCL_BR_LINE
             // Resolutions less than zero can not be represented in an index
             return false;
         }
