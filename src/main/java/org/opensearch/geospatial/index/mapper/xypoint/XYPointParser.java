@@ -121,8 +121,9 @@ public class XYPointParser {
     }
 
     private static XYPoint parseGeoPointObjectBasicFields(final XContentParser parser, final XYPoint point) throws IOException {
+        final int numberOfFields = 2;
         HashMap<String, Double> data = new HashMap<>();
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < numberOfFields; i++) {
             if (i != 0) {
                 parser.nextToken();
             }
@@ -161,9 +162,10 @@ public class XYPointParser {
 
     private static XYPoint parseGeoJsonFields(final XContentParser parser, final XYPoint point, final boolean ignoreZValue)
         throws IOException {
+        final int numberOfFields = 2;
         boolean hasTypePoint = false;
         boolean hasCoordinates = false;
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < numberOfFields; i++) {
             if (i != 0) {
                 parser.nextToken();
             }
