@@ -40,7 +40,7 @@ public class ParentChildNavigationTests extends OpenSearchTestCase {
         }
         h3Addresses = H3.h3ToChildren(h3Address);
         h3Address = RandomPicks.randomFrom(random(), h3Addresses);
-        for (int i = H3.MAX_H3_RES - 1; i >= 0; i--) {
+        for (int i = H3.MAX_H3_RES - 1; i >= H3.MIN_H3_RES; i--) {
             h3Address = H3.h3ToParent(h3Address);
             assertEquals(values[i], h3Address);
         }

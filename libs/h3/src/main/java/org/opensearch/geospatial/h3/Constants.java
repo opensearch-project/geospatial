@@ -35,7 +35,12 @@ final class Constants {
      */
     public static double M_SQRT3_2 = 0.8660254037844386467637231707529361834714;
     /**
-     * max H3 resolution; H3 version 1 has 16 resolutions, numbered 0 through 15
+     * H3 version 1 has 16 resolutions, numbered 0 through 15
+     * min H3 resolution
+     */
+    public static int MIN_H3_RES = 0;
+    /**
+     * max H3 resolution;
      */
     public static int MAX_H3_RES = 15;
     /**
