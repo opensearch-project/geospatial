@@ -29,7 +29,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 
     public static final int NUMBER_OF_FEATURES_TO_ADD = 3;
 
-    public void testGeoJSONUploadSuccessPostMethod() throws IOException {
+    public void testGeoJSONUploadSuccessPostMethod() throws Exception {
 
         final String index = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
         assertIndexNotExists(index);
@@ -55,7 +55,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
         assertTrue("Not an expected exception", responseException.getMessage().contains("resource_already_exists_exception"));
     }
 
-    public void testGeoJSONUploadSuccessPutMethod() throws IOException {
+    public void testGeoJSONUploadSuccessPutMethod() throws Exception {
 
         String index = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
         Response response = uploadGeoJSONFeaturesIntoExistingIndex(NUMBER_OF_FEATURES_TO_ADD, index, null);
@@ -64,7 +64,7 @@ public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
         assertEquals("failed to index documents", NUMBER_OF_FEATURES_TO_ADD, getIndexDocumentCount(index));
     }
 
-    public void testGeoJSONPutMethodUploadIndexExists() throws IOException {
+    public void testGeoJSONPutMethodUploadIndexExists() throws Exception {
 
         String index = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
         String geoFieldName = randomLowerCaseString();

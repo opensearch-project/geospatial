@@ -10,14 +10,13 @@ import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.json.JSONObject;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
@@ -27,7 +26,7 @@ import org.opensearch.rest.RestStatus;
 
 public class FeatureProcessorIT extends GeospatialRestTestCase {
 
-    public void testProcessorAvailable() throws IOException {
+    public void testProcessorAvailable() throws Exception {
         String nodeIngestURL = String.join("/", "_nodes", "ingest");
         String endpoint = nodeIngestURL + "?filter_path=nodes.*.ingest.processors&pretty";
         Request request = new Request("GET", endpoint);
@@ -39,7 +38,7 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
         assertTrue(responseBody.contains(FeatureProcessor.TYPE));
     }
 
-    public void testIndexGeoJSONSuccess() throws IOException {
+    public void testIndexGeoJSONSuccess() throws Exception {
 
         String indexName = randomLowerCaseString();
         String geoShapeField = randomLowerCaseString();
