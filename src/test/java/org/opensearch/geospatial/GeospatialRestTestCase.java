@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.json.JSONArray;
@@ -142,7 +142,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         return featureProcessor;
     }
 
-    public Map<String, Object> getDocument(String docID, String indexName) throws IOException {
+    public Map<String, Object> getDocument(String docID, String indexName) throws Exception {
         String path = String.join(URL_DELIMITER, indexName, DOC, docID);
         final Request request = new Request("GET", path);
         final Response response = client().performRequest(request);
@@ -187,7 +187,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
     /*
      Get index mapping as map
      */
-    protected Map<String, Object> getIndexMapping(String index) throws IOException {
+    protected Map<String, Object> getIndexMapping(String index) throws Exception {
         String indexMappingURL = String.join(URL_DELIMITER, index, MAPPING);
         Request request = new Request("GET", indexMappingURL);
         Response response = client().performRequest(request);
@@ -201,13 +201,13 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
     /*
         Get index mapping's properties as map
      */
-    protected Map<String, Object> getIndexProperties(String index) throws IOException {
+    protected Map<String, Object> getIndexProperties(String index) throws Exception {
         final Map<String, Object> indexMapping = getIndexMapping(index);
         MatcherAssert.assertThat("No properties found for index: " + index, indexMapping, Matchers.hasKey(MAPPING_PROPERTIES_KEY));
         return (Map<String, Object>) indexMapping.get(MAPPING_PROPERTIES_KEY);
     }
 
-    protected int getIndexDocumentCount(String index) throws IOException {
+    protected int getIndexDocumentCount(String index) throws Exception {
         String indexDocumentCountPath = String.join(URL_DELIMITER, index, COUNT);
         Request request = new Request("GET", indexDocumentCountPath);
         Response response = client().performRequest(request);
@@ -264,7 +264,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         });
     }
 
-    public SearchResponse searchIndex(String indexName, String entity) throws IOException {
+    public SearchResponse searchIndex(String indexName, String entity) throws Exception {
         String path = String.join(URL_DELIMITER, indexName, SEARCH);
         final Request request = new Request("GET", path);
         request.setJsonEntity(entity);
@@ -298,7 +298,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
     }
 
     public SearchResponse searchUsingShapeRelation(String indexName, String fieldName, Geometry geometry, ShapeRelation shapeRelation)
-        throws IOException {
+        throws Exception {
         String searchEntity = buildSearchBodyAsString(builder -> {
             builder.field(DEFAULT_SHAPE_FIELD_NAME);
             GeoJson.toXContent(geometry, builder, EMPTY_PARAMS);
@@ -320,7 +320,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         String indexedShapePath,
         String docId,
         String fieldName
-    ) throws IOException {
+    ) throws Exception {
         String searchEntity = buildSearchBodyAsString(builder -> {
             builder.startObject(INDEXED_SHAPE_FIELD);
             builder.field(SHAPE_INDEX_FIELD, indexedShapeIndex);

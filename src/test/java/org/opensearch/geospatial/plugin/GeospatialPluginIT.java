@@ -5,9 +5,7 @@
 
 package org.opensearch.geospatial.plugin;
 
-import java.io.IOException;
-
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.geospatial.GeospatialRestTestCase;
@@ -18,7 +16,7 @@ public class GeospatialPluginIT extends GeospatialRestTestCase {
     /**
      * Tests whether plugin is installed or not
      */
-    public void testPluginInstalled() throws IOException {
+    public void testPluginInstalled() throws Exception {
         String restURI = String.join("/", "_cat", "plugins");
 
         Request request = new Request("GET", restURI);

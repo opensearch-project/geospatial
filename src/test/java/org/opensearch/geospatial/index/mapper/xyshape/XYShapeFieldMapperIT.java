@@ -33,7 +33,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
         return buildContentAsString(build -> build.field(fieldName, geometry.toString()));
     }
 
-    public void testMappingWithXYShapeField() throws IOException {
+    public void testMappingWithXYShapeField() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYShapeFieldMapper.CONTENT_TYPE));
@@ -44,7 +44,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYShapeFieldAsWKTFormat() throws IOException {
+    public void testIndexWithXYShapeFieldAsWKTFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYShapeFieldMapper.CONTENT_TYPE));
@@ -57,7 +57,7 @@ public class XYShapeFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYShapeFieldAsGeoJSONFormat() throws IOException {
+    public void testIndexWithXYShapeFieldAsGeoJSONFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYShapeFieldMapper.CONTENT_TYPE));
