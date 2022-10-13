@@ -5,7 +5,6 @@
 
 package org.opensearch.geospatial.index.mapper.xypoint;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,7 +20,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
     private static final String FIELD_X_KEY = "x";
     private static final String FIELD_Y_KEY = "y";
 
-    public void testMappingWithXYPointField() throws IOException {
+    public void testMappingWithXYPointField() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -32,7 +31,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsWKTFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsWKTFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -45,7 +44,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsArrayFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsArrayFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -58,7 +57,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsStringFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsStringFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -72,7 +71,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsObjectFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsObjectFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -86,19 +85,19 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    private String getDocumentWithWKTValueForXYPoint(String fieldName, Geometry geometry) throws IOException {
+    private String getDocumentWithWKTValueForXYPoint(String fieldName, Geometry geometry) throws Exception {
         return buildContentAsString(build -> build.field(fieldName, geometry.toString()));
     }
 
-    private String getDocumentWithArrayValueForXYPoint(String fieldName, Point point) throws IOException {
+    private String getDocumentWithArrayValueForXYPoint(String fieldName, Point point) throws Exception {
         return buildContentAsString(build -> build.field(fieldName, new double[] { point.getY(), point.getX() }));
     }
 
-    private String getDocumentWithStringValueForXYPoint(String fieldName, String pointAsString) throws IOException {
+    private String getDocumentWithStringValueForXYPoint(String fieldName, String pointAsString) throws Exception {
         return buildContentAsString(build -> build.field(fieldName, pointAsString));
     }
 
-    private String getDocumentWithObjectValueForXYPoint(String fieldName, Point point) throws IOException {
+    private String getDocumentWithObjectValueForXYPoint(String fieldName, Point point) throws Exception {
         return buildContentAsString(build -> {
             build.startObject(fieldName);
             build.field(FIELD_X_KEY, point.getX());
