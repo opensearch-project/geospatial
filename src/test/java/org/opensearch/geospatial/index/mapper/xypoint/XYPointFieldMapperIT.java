@@ -5,7 +5,6 @@
 
 package org.opensearch.geospatial.index.mapper.xypoint;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -20,8 +19,11 @@ import org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder;
 public class XYPointFieldMapperIT extends GeospatialRestTestCase {
     private static final String FIELD_X_KEY = "x";
     private static final String FIELD_Y_KEY = "y";
+    private static final String FIELD_GEOJSON_TYPE_KEY = "type";
+    private static final String FIELD_GEOJSON_TYPE_VALUE = "Point";
+    private static final String FIELD_GEOJSON_COORDINATES_KEY = "coordinates";
 
-    public void testMappingWithXYPointField() throws IOException {
+    public void testMappingWithXYPointField() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -32,7 +34,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsWKTFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsWKTFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -45,7 +47,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsArrayFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsArrayFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -58,7 +60,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsStringFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsStringFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -72,7 +74,7 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    public void testIndexWithXYPointFieldAsObjectFormat() throws IOException {
+    public void testIndexWithXYPointFieldAsObjectFormat() throws Exception {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String fieldName = GeospatialTestHelper.randomLowerCaseString();
         createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
@@ -86,23 +88,46 @@ public class XYPointFieldMapperIT extends GeospatialRestTestCase {
         deleteIndex(indexName);
     }
 
-    private String getDocumentWithWKTValueForXYPoint(String fieldName, Geometry geometry) throws IOException {
+    public void testIndexWithXYPointFieldAsGeoJsonFormat() throws Exception {
+        String indexName = GeospatialTestHelper.randomLowerCaseString();
+        String fieldName = GeospatialTestHelper.randomLowerCaseString();
+        createIndex(indexName, Settings.EMPTY, Map.of(fieldName, XYPointFieldMapper.CONTENT_TYPE));
+        final Point point = ShapeObjectBuilder.randomPoint(randomBoolean());
+        String docID = indexDocument(indexName, getDocumentWithObjectValueForXYPoint(fieldName, point));
+        assertTrue("failed to index document", getIndexDocumentCount(indexName) > 0);
+        final Map<String, Object> document = getDocument(docID, indexName);
+        assertNotNull("failed to get indexed document", document);
+        String expectedValue = String.format(Locale.ROOT, "{x=%s, y=%s}", point.getX(), point.getY());
+        assertEquals("failed to index xy_point", expectedValue, document.get(fieldName).toString());
+        deleteIndex(indexName);
+    }
+
+    private String getDocumentWithWKTValueForXYPoint(String fieldName, Geometry geometry) throws Exception {
         return buildContentAsString(build -> build.field(fieldName, geometry.toString()));
     }
 
-    private String getDocumentWithArrayValueForXYPoint(String fieldName, Point point) throws IOException {
+    private String getDocumentWithArrayValueForXYPoint(String fieldName, Point point) throws Exception {
         return buildContentAsString(build -> build.field(fieldName, new double[] { point.getY(), point.getX() }));
     }
 
-    private String getDocumentWithStringValueForXYPoint(String fieldName, String pointAsString) throws IOException {
+    private String getDocumentWithStringValueForXYPoint(String fieldName, String pointAsString) throws Exception {
         return buildContentAsString(build -> build.field(fieldName, pointAsString));
     }
 
-    private String getDocumentWithObjectValueForXYPoint(String fieldName, Point point) throws IOException {
+    private String getDocumentWithObjectValueForXYPoint(String fieldName, Point point) throws Exception {
         return buildContentAsString(build -> {
             build.startObject(fieldName);
             build.field(FIELD_X_KEY, point.getX());
             build.field(FIELD_Y_KEY, point.getY());
+            build.endObject();
+        });
+    }
+
+    private String getDocumentWithGeoJsonValueForXYPoint(String fieldName, Point point) throws Exception {
+        return buildContentAsString(build -> {
+            build.startObject(fieldName);
+            build.field(FIELD_GEOJSON_TYPE_KEY, FIELD_GEOJSON_TYPE_VALUE);
+            build.array(FIELD_GEOJSON_COORDINATES_KEY, new double[] { point.getX(), point.getY() });
             build.endObject();
         });
     }
