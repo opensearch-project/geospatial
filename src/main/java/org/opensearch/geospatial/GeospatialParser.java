@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.XContentHelper;
@@ -77,18 +76,18 @@ public final class GeospatialParser {
      * getFeatures will return features from given map input. This function abstracts the logic to parse given input and returns
      * list of Features if exists in Map format.
      * @param geoJSON given input which may contain GeoJSON Object
-     * @return Returns an Optional with the List of Features as map if input is GeoJSON,
-     * else, returns an empty Optional instance.
+     * @return Returns List of Features as map if input is GeoJSON,
+     * else, returns an empty list.
      */
-    public static Optional<List<Map<String, Object>>> getFeatures(final Map<String, Object> geoJSON) {
+    public static List<Map<String, Object>> getFeatures(final Map<String, Object> geoJSON) {
         final String type = extractValueAsString(geoJSON, TYPE_KEY);
         Objects.requireNonNull(type, TYPE_KEY + " cannot be null");
         if (Feature.TYPE.equalsIgnoreCase(type)) {
-            return Optional.of(List.of(geoJSON));
+            return List.of(geoJSON);
         }
         if (FeatureCollection.TYPE.equalsIgnoreCase(type)) {
-            return Optional.of(Collections.unmodifiableList(FeatureCollection.create(geoJSON).getFeatures()));
+            return Collections.unmodifiableList(FeatureCollection.create(geoJSON).getFeatures());
         }
-        return Optional.empty();
+        return List.of();
     }
 }
