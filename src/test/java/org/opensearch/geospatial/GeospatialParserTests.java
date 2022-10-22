@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -77,10 +76,10 @@ public class GeospatialParserTests extends OpenSearchTestCase {
 
     public void testGetFeaturesWithGeoJSONFeature() {
         Map<String, Object> geoJSON = GeospatialObjectBuilder.randomGeoJSONFeature(new JSONObject()).toMap();
-        Optional<List<Map<String, Object>>> features = GeospatialParser.getFeatures(geoJSON);
-        assertTrue(features.isPresent());
-        assertEquals(1, features.get().size());
-        assertEquals(features.get().get(0), geoJSON);
+        List<Map<String, Object>> features = GeospatialParser.getFeatures(geoJSON);
+        assertFalse(features.isEmpty());
+        assertEquals(1, features.size());
+        assertEquals(features.get(0), geoJSON);
     }
 
     public void testGetFeaturesWithGeoJSONFeatureCollection() {
@@ -90,16 +89,16 @@ public class GeospatialParserTests extends OpenSearchTestCase {
         features.put(GeospatialObjectBuilder.randomGeoJSONFeature(new JSONObject()));
 
         JSONObject collection = GeospatialObjectBuilder.buildGeoJSONFeatureCollection(features);
-        Optional<List<Map<String, Object>>> featureList = GeospatialParser.getFeatures(collection.toMap());
-        assertTrue(featureList.isPresent());
-        assertEquals(featureList.get().size(), features.length());
+        List<Map<String, Object>> featureList = GeospatialParser.getFeatures(collection.toMap());
+        assertFalse(featureList.isEmpty());
+        assertEquals(featureList.size(), features.length());
     }
 
     public void testGetFeaturesWithUnSupportedType() {
         Map<String, Object> geoJSON = new HashMap<>();
         geoJSON.put(Feature.TYPE_KEY, "invalid-type");
-        Optional<List<Map<String, Object>>> features = GeospatialParser.getFeatures(geoJSON);
-        assertFalse(features.isPresent());
+        List<Map<String, Object>> features = GeospatialParser.getFeatures(geoJSON);
+        assertTrue(features.isEmpty());
     }
 
 }

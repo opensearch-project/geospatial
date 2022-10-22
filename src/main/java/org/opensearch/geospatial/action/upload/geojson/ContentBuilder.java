@@ -45,8 +45,6 @@ public class ContentBuilder {
             .stream()
             .map(GeospatialParser::toStringObjectMap)
             .map(GeospatialParser::getFeatures)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
             .flatMap(List::stream)
             .map(this::createIndexRequestBuilder)
             .map(indexRequestBuilder -> indexRequestBuilder.setIndex(content.getIndexName()))
