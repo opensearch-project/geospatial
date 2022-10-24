@@ -136,6 +136,8 @@ publishing {
 // Dependencies
 //****************************************************************************/
 dependencies {
+    implementation "org.opensearch.plugin:geo:${opensearch_version}"
+    api project(":libs:h3")
     yamlRestTestRuntimeOnly "org.apache.logging.log4j:log4j-core:${versions.log4j}"
     testImplementation "org.hamcrest:hamcrest:${versions.hamcrest}"
     testImplementation 'org.json:json:20211205'
