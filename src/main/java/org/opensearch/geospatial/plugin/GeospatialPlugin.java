@@ -34,6 +34,8 @@ import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
+import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGrid;
+import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGridAggregationBuilder;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.geospatial.stats.upload.UploadStatsAction;
@@ -119,5 +121,20 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     public List<QuerySpec<?>> getQueries() {
         // Register XYShapeQuery Builder to be delegated for query type: xy_shape
         return List.of(new QuerySpec<>(XYShapeQueryBuilder.NAME, XYShapeQueryBuilder::new, XYShapeQueryBuilder::fromXContent));
+    }
+
+    /**
+     * Registering {@link GeoHexGrid} aggregation on GeoPoint field.
+     */
+    @Override
+    public List<AggregationSpec> getAggregations() {
+
+        final var geoHexGridSpec = new AggregationSpec(
+            GeoHexGridAggregationBuilder.NAME,
+            GeoHexGridAggregationBuilder::new,
+            GeoHexGridAggregationBuilder.PARSER
+        ).addResultReader(GeoHexGrid::new).setAggregatorRegistrar(GeoHexGridAggregationBuilder::registerAggregators);
+
+        return List.of(geoHexGridSpec);
     }
 }
