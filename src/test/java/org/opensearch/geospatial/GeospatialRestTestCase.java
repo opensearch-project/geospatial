@@ -15,6 +15,8 @@ import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONReque
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 import static org.opensearch.index.query.AbstractGeometryQueryBuilder.DEFAULT_SHAPE_FIELD_NAME;
+import static org.opensearch.rest.action.search.RestSearchAction.TYPED_KEYS_PARAM;
+import static org.opensearch.search.aggregations.Aggregations.AGGREGATIONS_FIELD;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -69,6 +71,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
     public static final String SHAPE_INDEX_FIELD = "index";
     public static final String SHAPE_ID_FIELD = "id";
     public static final String SHAPE_INDEX_PATH_FIELD = "path";
+    public static final String QUERY_PARAM_TOKEN = "?";
 
     private static String buildPipelinePath(String name) {
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
@@ -251,7 +254,16 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         return Strings.toString(builder);
     }
 
-    public String buildSearchBodyAsString(
+    public String buildSearchAggregationsBodyAsString(CheckedConsumer<XContentBuilder, IOException> aggregationsBuilder)
+        throws IOException {
+        return buildContentAsString(builder -> {
+            builder.startObject(AGGREGATIONS_FIELD);
+            aggregationsBuilder.accept(builder);
+            builder.endObject();
+        });
+    }
+
+    public String buildSearchQueryBodyAsString(
         CheckedConsumer<XContentBuilder, IOException> searchQueryBuilder,
         String queryType,
         String fieldName
@@ -264,9 +276,12 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         });
     }
 
-    public SearchResponse searchIndex(String indexName, String entity) throws Exception {
-        String path = String.join(URL_DELIMITER, indexName, SEARCH);
-        final Request request = new Request("GET", path);
+    public SearchResponse searchIndex(String indexName, String entity, boolean includeType) throws Exception {
+        var urlPathBuilder = new StringBuilder().append(indexName).append(URL_DELIMITER).append(SEARCH);
+        if (includeType) {
+            urlPathBuilder.append(QUERY_PARAM_TOKEN).append(TYPED_KEYS_PARAM);
+        }
+        final Request request = new Request("GET", urlPathBuilder.toString());
         request.setJsonEntity(entity);
         final Response response = client().performRequest(request);
         return SearchResponse.fromXContent(createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())));
@@ -299,13 +314,13 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
 
     public SearchResponse searchUsingShapeRelation(String indexName, String fieldName, Geometry geometry, ShapeRelation shapeRelation)
         throws Exception {
-        String searchEntity = buildSearchBodyAsString(builder -> {
+        String searchEntity = buildSearchQueryBodyAsString(builder -> {
             builder.field(DEFAULT_SHAPE_FIELD_NAME);
             GeoJson.toXContent(geometry, builder, EMPTY_PARAMS);
             builder.field(SHAPE_RELATION, shapeRelation.getRelationName());
         }, XYShapeQueryBuilder.NAME, fieldName);
 
-        return searchIndex(indexName, searchEntity);
+        return searchIndex(indexName, searchEntity, false);
     }
 
     public void createIndexedShapeIndex() throws IOException {
@@ -321,7 +336,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         String docId,
         String fieldName
     ) throws Exception {
-        String searchEntity = buildSearchBodyAsString(builder -> {
+        String searchEntity = buildSearchQueryBodyAsString(builder -> {
             builder.startObject(INDEXED_SHAPE_FIELD);
             builder.field(SHAPE_INDEX_FIELD, indexedShapeIndex);
             builder.field(SHAPE_ID_FIELD, docId);
@@ -329,7 +344,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
             builder.endObject();
         }, XYShapeQueryBuilder.NAME, fieldName);
 
-        return searchIndex(indexName, searchEntity);
+        return searchIndex(indexName, searchEntity, false);
     }
 
 }
