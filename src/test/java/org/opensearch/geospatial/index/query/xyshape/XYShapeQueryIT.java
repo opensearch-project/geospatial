@@ -56,12 +56,12 @@ public class XYShapeQueryIT extends AbstractXYShapeQueryTestCase {
         indexDocumentUsingGeoJSON(indexName, xyShapeFieldName, new Point(-45, -50));
 
         Rectangle rectangle = new Rectangle(-45, 45, 45, -45);
-        String searchEntity = buildSearchBodyAsString(builder -> {
+        String searchEntity = buildSearchQueryBodyAsString(builder -> {
             builder.field(DEFAULT_SHAPE_FIELD_NAME);
             GeoJson.toXContent(rectangle, builder, EMPTY_PARAMS);
         }, XYShapeQueryBuilder.NAME, xyShapeFieldName);
 
-        final SearchResponse searchResponse = searchIndex(indexName, searchEntity);
+        final SearchResponse searchResponse = searchIndex(indexName, searchEntity, false);
         assertSearchResponse(searchResponse);
         assertHitCount(searchResponse, 1);
         MatcherAssert.assertThat(searchResponse.getHits().getAt(0).getId(), equalTo(firstDocumentID));

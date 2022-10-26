@@ -8,3 +8,6 @@
  */
 
 rootProject.name = 'geospatial'
+
+include ":libs"
+include ":libs:h3"

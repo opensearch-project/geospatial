@@ -42,6 +42,7 @@ import org.opensearch.common.UUIDs;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.geospatial.action.upload.geojson.ContentBuilder;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
+import org.opensearch.geospatial.h3.H3;
 import org.opensearch.geospatial.stats.upload.UploadMetric;
 import org.opensearch.index.shard.ShardId;
 import org.opensearch.test.OpenSearchTestCase;
@@ -164,6 +165,10 @@ public class GeospatialTestHelper {
 
     public static double[] toDoubleArray(float[] input) {
         return IntStream.range(0, input.length).mapToDouble(i -> input[i]).toArray();
+    }
+
+    public static int randomHexGridPrecision() {
+        return randomIntBetween(H3.MIN_H3_RES, H3.MAX_H3_RES);
     }
 
 }
