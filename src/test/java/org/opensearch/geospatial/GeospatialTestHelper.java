@@ -16,7 +16,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
-import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.ACCEPTED_INDEX_SUFFIX_PATH;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 import static org.opensearch.test.OpenSearchTestCase.randomBoolean;
 import static org.opensearch.test.OpenSearchTestCase.randomIntBetween;
@@ -66,10 +65,7 @@ public class GeospatialTestHelper {
         if (Randomness.get().nextBoolean()) {
             contents.put(ContentBuilder.GEOJSON_FEATURE_ID_FIELD, randomLowerCaseString());
         }
-        contents.put(
-            UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(),
-            randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH)
-        );
+        contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), randomLowerCaseString());
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), randomLowerCaseString());
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName(), "geo_shape");
         JSONArray values = new JSONArray();
@@ -84,10 +80,6 @@ public class GeospatialTestHelper {
 
     public static String randomLowerCaseString() {
         return randomString().toLowerCase(Locale.getDefault());
-    }
-
-    public static String randomLowerCaseStringWithSuffix(String suffix) {
-        return String.format(Locale.getDefault(), "%s%s", randomString().toLowerCase(Locale.getDefault()), suffix);
     }
 
     /**
