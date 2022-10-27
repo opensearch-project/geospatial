@@ -10,8 +10,6 @@ import static org.opensearch.common.xcontent.ToXContent.EMPTY_PARAMS;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
-import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseStringWithSuffix;
-import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.ACCEPTED_INDEX_SUFFIX_PATH;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 import static org.opensearch.index.query.AbstractGeometryQueryBuilder.DEFAULT_SHAPE_FIELD_NAME;
@@ -162,7 +160,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
     // TODO This method is copied from unit test. Refactor to common class to share across tests
     protected JSONObject buildUploadGeoJSONRequestContent(int totalGeoJSONObject, String index, String geoFieldName) {
         JSONObject contents = new JSONObject();
-        String indexName = Strings.hasText(index) ? index : randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
+        String indexName = Strings.hasText(index) ? index : randomLowerCaseString();
         String fieldName = Strings.hasText(geoFieldName) ? geoFieldName : randomLowerCaseString();
         contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), indexName);
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), fieldName);

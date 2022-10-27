@@ -29,7 +29,6 @@ public final class UploadGeoJSONRequestContent {
     public static final ParseField FIELD_GEOSPATIAL = new ParseField("field");
     public static final ParseField FIELD_GEOSPATIAL_TYPE = new ParseField("type");
     public static final ParseField FIELD_DATA = new ParseField("data");
-    public static final String ACCEPTED_INDEX_SUFFIX_PATH = "-map";
     private final String indexName;
     private final String fieldName;
     private final String fieldType;
@@ -67,22 +66,12 @@ public final class UploadGeoJSONRequestContent {
 
     private static String validateIndexName(Map<String, Object> input) {
         String index = extractValueAsString(input, FIELD_INDEX.getPreferredName());
-        if (!Strings.hasText(index)) {
-            throw new IllegalArgumentException(
-                String.format(Locale.getDefault(), "field [ %s ] cannot be empty", FIELD_INDEX.getPreferredName())
-            );
+        if (Strings.hasText(index)) {
+            return index;
         }
-        if (!index.endsWith(ACCEPTED_INDEX_SUFFIX_PATH)) {
-            throw new IllegalArgumentException(
-                String.format(
-                    Locale.getDefault(),
-                    "field [ %s ] should end with suffix %s",
-                    FIELD_INDEX.getPreferredName(),
-                    ACCEPTED_INDEX_SUFFIX_PATH
-                )
-            );
-        }
-        return index;
+        throw new IllegalArgumentException(
+            String.format(Locale.getDefault(), "field [ %s ] cannot be empty", FIELD_INDEX.getPreferredName())
+        );
     }
 
     public String getIndexName() {

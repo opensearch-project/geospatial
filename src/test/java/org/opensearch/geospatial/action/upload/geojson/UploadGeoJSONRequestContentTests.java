@@ -8,8 +8,6 @@ package org.opensearch.geospatial.action.upload.geojson;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
-import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseStringWithSuffix;
-import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.ACCEPTED_INDEX_SUFFIX_PATH;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.GEOSPATIAL_DEFAULT_FIELD_NAME;
 
@@ -21,9 +19,18 @@ import org.json.JSONObject;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
+    private String indexName;
+    private String fieldName;
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        indexName = randomLowerCaseString();
+        fieldName = randomLowerCaseString();
+    }
 
     private Map<String, Object> buildRequestContent(String indexName, String fieldName) {
-        JSONObject contents = new JSONObject();
+        final var contents = new JSONObject();
         contents.put(UploadGeoJSONRequestContent.FIELD_INDEX.getPreferredName(), indexName);
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL.getPreferredName(), fieldName);
         contents.put(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName(), "geo_shape");
@@ -36,10 +43,8 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
     }
 
     public void testCreate() {
-        final String indexName = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
-        final String fieldName = "location";
         Map<String, Object> contents = buildRequestContent(indexName, fieldName);
-        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(contents);
+        final var content = UploadGeoJSONRequestContent.create(contents);
         assertNotNull(content);
         assertEquals(fieldName, content.getFieldName());
         assertEquals(indexName, content.getIndexName());
@@ -55,32 +60,12 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
     }
 
     public void testCreateEmptyGeospatialFieldName() {
-        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(
-            buildRequestContent(randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH), "")
-        );
+        final var content = UploadGeoJSONRequestContent.create(buildRequestContent(randomLowerCaseString(), ""));
         assertNotNull(content);
         assertEquals("wrong field name", GEOSPATIAL_DEFAULT_FIELD_NAME, content.getFieldName());
     }
 
-    public void testCreateInvalidIndexName() {
-        final String indexName = randomLowerCaseString();
-        final String fieldName = "location";
-        Map<String, Object> contents = buildRequestContent(indexName, fieldName);
-        contents.remove(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName());
-        IllegalArgumentException invalidIndexName = assertThrows(
-            IllegalArgumentException.class,
-            () -> UploadGeoJSONRequestContent.create(contents)
-        );
-        assertEquals(
-            "wrong exception message",
-            "field [ index ] should end with suffix " + ACCEPTED_INDEX_SUFFIX_PATH,
-            invalidIndexName.getMessage()
-        );
-    }
-
     public void testCreateEmptyGeospatialFieldType() {
-        final String indexName = randomLowerCaseStringWithSuffix(ACCEPTED_INDEX_SUFFIX_PATH);
-        final String fieldName = "location";
         Map<String, Object> contents = buildRequestContent(indexName, fieldName);
         contents.remove(UploadGeoJSONRequestContent.FIELD_GEOSPATIAL_TYPE.getPreferredName());
         IllegalArgumentException invalidIndexName = assertThrows(
@@ -89,5 +74,4 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
         );
         assertTrue(invalidIndexName.getMessage().contains("[ type ] cannot be empty"));
     }
-
 }
