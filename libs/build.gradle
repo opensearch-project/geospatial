@@ -4,4 +4,5 @@
  */
 subprojects {
     apply plugin: 'opensearch.build'
+    description 'OpenSearch Geospatial H3 library'
 }
