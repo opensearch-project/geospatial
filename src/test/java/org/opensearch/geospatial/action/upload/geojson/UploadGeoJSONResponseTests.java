@@ -7,6 +7,7 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.common.Strings;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -20,7 +21,7 @@ public class UploadGeoJSONResponseTests extends OpenSearchTestCase {
         int successActionCount = randomIntBetween(MIN_SUCCESS_ITEM_COUNT, MAX_SUCCESS_ITEM_COUNT);
         final BulkResponse bulkItemResponses = GeospatialTestHelper.generateRandomBulkResponse(successActionCount, false);
         UploadGeoJSONResponse getResponse = new UploadGeoJSONResponse(bulkItemResponses);
-        String responseBody = Strings.toString(getResponse);
+        String responseBody = Strings.toString(XContentType.JSON, getResponse);
         assertTrue(responseBody.contains("\"errors\":false"));
         assertTrue(responseBody.contains("\"failure\":0"));
         assertTrue(responseBody.contains("\"total\":" + successActionCount));
@@ -33,7 +34,7 @@ public class UploadGeoJSONResponseTests extends OpenSearchTestCase {
         int totalActionCount = successActionCount + FAILURE_ITEM_COUNT;
         final BulkResponse bulkItemResponses = GeospatialTestHelper.generateRandomBulkResponse(successActionCount, true);
         UploadGeoJSONResponse getResponse = new UploadGeoJSONResponse(bulkItemResponses);
-        String responseBody = Strings.toString(getResponse);
+        String responseBody = Strings.toString(XContentType.JSON, getResponse);
         assertTrue(responseBody.contains("\"errors\":true"));
         assertTrue(responseBody.contains("\"total\":" + totalActionCount));
         assertTrue(responseBody.contains("\"success\":" + successActionCount));

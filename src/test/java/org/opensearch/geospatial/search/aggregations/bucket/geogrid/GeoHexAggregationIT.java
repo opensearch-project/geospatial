@@ -144,7 +144,7 @@ public class GeoHexAggregationIT extends GeospatialRestTestCase {
             exception.getMessage(),
             containsString(
                 String.format(
-                    Locale.getDefault(),
+                    Locale.ROOT,
                     "Invalid precision of %d . Must be between %d and %d",
                     invalidPrecision,
                     H3.MIN_H3_RES,
