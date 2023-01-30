@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.opensearch.common.geo.GeoBoundingBox;
-import org.opensearch.geo.search.aggregations.bucket.geogrid.CellIdSource;
+import org.opensearch.geo.search.aggregations.bucket.geogrid.cells.CellIdSource;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.search.aggregations.Aggregator;
 import org.opensearch.search.aggregations.AggregatorFactories;

@@ -17,7 +17,7 @@ import org.opensearch.common.xcontent.ObjectParser;
 import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.support.XContentMapValues;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.GeoGridAggregationBuilder;
-import org.opensearch.geo.search.aggregations.metrics.GeoGridAggregatorSupplier;
+import org.opensearch.geo.search.aggregations.bucket.geogrid.GeoGridAggregatorSupplier;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.search.aggregations.AggregationBuilder;
 import org.opensearch.search.aggregations.AggregatorFactories;
