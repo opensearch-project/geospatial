@@ -32,7 +32,7 @@ public final class UploadStats implements Writeable, ToXContentObject {
 
         @Override
         public String toString() {
-            return name().toLowerCase(Locale.getDefault());
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 

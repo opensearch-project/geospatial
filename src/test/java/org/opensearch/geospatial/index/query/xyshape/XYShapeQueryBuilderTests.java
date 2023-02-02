@@ -95,7 +95,7 @@ public class XYShapeQueryBuilderTests extends AbstractQueryTestCase<XYShapeQuery
                 Strings.toString(
                     PutMappingRequest.simpleMapping(
                         XY_SHAPE_FIELD_NAME,
-                        String.format(Locale.getDefault(), "%s=%s", MAPPING_FIELD_TYPE_KEY, XYShapeQueryBuilder.NAME)
+                        String.format(Locale.ROOT, "%s=%s", MAPPING_FIELD_TYPE_KEY, XYShapeQueryBuilder.NAME)
                     )
                 )
             ),
