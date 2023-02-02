@@ -46,14 +46,12 @@ public final class XYShapeIndexableFieldsVisitor implements GeometryVisitor<Inde
 
     @Override
     public IndexableField[] visit(Circle circle) {
-        throw new IllegalArgumentException(
-            String.format(Locale.getDefault(), "invalid shape type found [ %s ] while indexing shape", CIRCLE)
-        );
+        throw new IllegalArgumentException(String.format(Locale.ROOT, "invalid shape type found [ %s ] while indexing shape", CIRCLE));
     }
 
     @Override
     public IndexableField[] visit(GeometryCollection<?> collection) {
-        Objects.requireNonNull(collection, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.GEOMETRYCOLLECTION));
+        Objects.requireNonNull(collection, String.format(Locale.ROOT, "%s cannot be null", ShapeType.GEOMETRYCOLLECTION));
         return visitCollection(collection);
     }
 
@@ -65,32 +63,30 @@ public final class XYShapeIndexableFieldsVisitor implements GeometryVisitor<Inde
 
     @Override
     public IndexableField[] visit(LinearRing ring) {
-        throw new IllegalArgumentException(
-            String.format(Locale.getDefault(), "invalid shape type found [ %s ] while indexing shape", LINEARRING)
-        );
+        throw new IllegalArgumentException(String.format(Locale.ROOT, "invalid shape type found [ %s ] while indexing shape", LINEARRING));
     }
 
     @Override
     public IndexableField[] visit(MultiLine multiLine) {
-        Objects.requireNonNull(multiLine, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.MULTILINESTRING));
+        Objects.requireNonNull(multiLine, String.format(Locale.ROOT, "%s cannot be null", ShapeType.MULTILINESTRING));
         return visitCollection(multiLine);
     }
 
     @Override
     public IndexableField[] visit(MultiPoint multiPoint) {
-        Objects.requireNonNull(multiPoint, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.MULTIPOINT));
+        Objects.requireNonNull(multiPoint, String.format(Locale.ROOT, "%s cannot be null", ShapeType.MULTIPOINT));
         return visitCollection(multiPoint);
     }
 
     @Override
     public IndexableField[] visit(MultiPolygon multiPolygon) {
-        Objects.requireNonNull(multiPolygon, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.MULTIPOLYGON));
+        Objects.requireNonNull(multiPolygon, String.format(Locale.ROOT, "%s cannot be null", ShapeType.MULTIPOLYGON));
         return visitCollection(multiPolygon);
     }
 
     @Override
     public IndexableField[] visit(Point point) {
-        Objects.requireNonNull(point, String.format(Locale.getDefault(), "%s cannot be null", ShapeType.POINT));
+        Objects.requireNonNull(point, String.format(Locale.ROOT, "%s cannot be null", ShapeType.POINT));
         XYPoint xyPoint = toXYPoint(point);
         return XYShape.createIndexableFields(fieldName, xyPoint.getX(), xyPoint.getY());
     }

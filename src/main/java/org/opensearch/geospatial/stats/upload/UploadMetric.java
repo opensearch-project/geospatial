@@ -34,7 +34,7 @@ public final class UploadMetric implements ToXContentFragment, Writeable {
 
         @Override
         public String toString() {
-            return this.name().toLowerCase(Locale.getDefault());
+            return this.name().toLowerCase(Locale.ROOT);
         }
     }
 

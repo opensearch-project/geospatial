@@ -30,13 +30,7 @@ public class GeoHexHelper {
     public static void checkPrecisionRange(int precision) {
         if ((precision < MIN_H3_RES) || (precision > MAX_H3_RES)) {
             throw new IllegalArgumentException(
-                String.format(
-                    Locale.getDefault(),
-                    "Invalid precision of %d . Must be between %d and %d.",
-                    precision,
-                    MIN_H3_RES,
-                    MAX_H3_RES
-                )
+                String.format(Locale.ROOT, "Invalid precision of %d . Must be between %d and %d.", precision, MIN_H3_RES, MAX_H3_RES)
             );
         }
     }
@@ -48,7 +42,7 @@ public class GeoHexHelper {
      */
     public static GeoPoint h3ToGeoPoint(long h3CellID) {
         if (h3IsValid(h3CellID) == false) {
-            throw new IllegalArgumentException(String.format(Locale.getDefault(), "Invalid H3 Cell address: %d", h3CellID));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "Invalid H3 Cell address: %d", h3CellID));
         }
         final var position = h3ToLatLng(h3CellID);
         return new GeoPoint(position.getLatDeg(), position.getLonDeg());

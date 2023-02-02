@@ -30,7 +30,7 @@ import org.opensearch.geometry.Rectangle;
 public final class XYShapeSupportVisitor implements GeometryVisitor<Geometry, RuntimeException> {
     @Override
     public Geometry visit(Circle circle) {
-        throw new UnsupportedOperationException(String.format(Locale.getDefault(), "%s is not supported", CIRCLE));
+        throw new UnsupportedOperationException(String.format(Locale.ROOT, "%s is not supported", CIRCLE));
     }
 
     @Override
@@ -45,7 +45,7 @@ public final class XYShapeSupportVisitor implements GeometryVisitor<Geometry, Ru
 
     @Override
     public Geometry visit(LinearRing ring) {
-        throw new UnsupportedOperationException(String.format(Locale.getDefault(), "cannot index %s [ %s ] directly", LINEARRING, ring));
+        throw new UnsupportedOperationException(String.format(Locale.ROOT, "cannot index %s [ %s ] directly", LINEARRING, ring));
     }
 
     @Override

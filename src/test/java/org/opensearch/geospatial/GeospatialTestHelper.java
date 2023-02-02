@@ -79,7 +79,7 @@ public class GeospatialTestHelper {
     }
 
     public static String randomLowerCaseString() {
-        return randomString().toLowerCase(Locale.getDefault());
+        return randomString().toLowerCase(Locale.ROOT);
     }
 
     /**
