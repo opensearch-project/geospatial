@@ -200,7 +200,7 @@ public class XYPointQueryVisitor implements GeometryVisitor<Query, RuntimeExcept
     private Query geometryNotSupported(ShapeType shapeType) {
         throw new QueryShardException(
             context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape [%s]", fieldName, shapeType.name())
+            String.format(Locale.ROOT, "Field [%s] found an unsupported shape [%s]", fieldName, shapeType.name())
         );
     }
 }

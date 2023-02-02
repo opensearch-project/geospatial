@@ -71,7 +71,7 @@ public class XYShapeQueryVisitor implements GeometryVisitor<List<XYGeometry>, Ru
     public List<XYGeometry> visit(LinearRing linearRing) throws RuntimeException {
         throw new QueryShardException(
             this.context,
-            String.format(Locale.getDefault(), "Field [%s] found an unsupported shape LinearRing", this.name)
+            String.format(Locale.ROOT, "Field [%s] found an unsupported shape LinearRing", this.name)
         );
     }
 
