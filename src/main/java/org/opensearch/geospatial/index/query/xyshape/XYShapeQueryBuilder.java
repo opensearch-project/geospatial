@@ -66,13 +66,7 @@ public class XYShapeQueryBuilder extends AbstractGeometryQueryBuilder<XYShapeQue
         }
         throw new QueryShardException(
             context,
-            String.format(
-                Locale.getDefault(),
-                "Field [%s] is of unsupported type [%s] for [%s] query",
-                fieldName,
-                fieldType.typeName(),
-                NAME
-            )
+            String.format(Locale.ROOT, "Field [%s] is of unsupported type [%s] for [%s] query", fieldName, fieldType.typeName(), NAME)
         );
     }
 

@@ -75,7 +75,7 @@ public class XYShapeQueryProcessor {
         throw new QueryShardException(
             context,
             String.format(
-                Locale.getDefault(),
+                Locale.ROOT,
                 "Expected %s field type for Field [ %s ] but found %s",
                 XYShapeFieldMapper.CONTENT_TYPE,
                 fieldName,

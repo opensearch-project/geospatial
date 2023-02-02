@@ -100,7 +100,7 @@ public class GeoHexGridParserTests extends OpenSearchTestCase {
             MatcherAssert.assertThat(ex.getCause(), instanceOf(IllegalArgumentException.class));
             assertEquals(
                 String.format(
-                    Locale.getDefault(),
+                    Locale.ROOT,
                     "Invalid precision of %d . Must be between %d and %d.",
                     invalidPrecision,
                     H3.MIN_H3_RES,
@@ -116,7 +116,7 @@ public class GeoHexGridParserTests extends OpenSearchTestCase {
         XContentParser stParser = createParser(
             JsonXContent.jsonXContent,
             String.format(
-                Locale.getDefault(),
+                Locale.ROOT,
                 "{\"field\":\"my_loc\", \"precision\": 5, \"size\": 500, \"shard_size\": 550,\"bounds\": { \"top\": %s,\"bottom\": %s,\"left\": %s,\"right\": %s}}",
                 bbox.getMaxY(),
                 bbox.getMinY(),
@@ -132,7 +132,7 @@ public class GeoHexGridParserTests extends OpenSearchTestCase {
 
     private String buildAggregation(String fieldName, int precision, int size, int shardSize) {
         return String.format(
-            Locale.getDefault(),
+            Locale.ROOT,
             "{\"field\":\"%s\", \"precision\":%d, \"size\": %d, \"shard_size\": %d}",
             fieldName,
             precision,
