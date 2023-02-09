@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 
 import org.opensearch.common.ParseField;
 import org.opensearch.common.Strings;
+import org.opensearch.geospatial.GeospatialParser;
 
 /**
  * UploadGeoJSONRequestContent is the Data model for UploadGeoJSONRequest's body
@@ -29,6 +30,10 @@ public final class UploadGeoJSONRequestContent {
     public static final ParseField FIELD_GEOSPATIAL = new ParseField("field");
     public static final ParseField FIELD_GEOSPATIAL_TYPE = new ParseField("type");
     public static final ParseField FIELD_DATA = new ParseField("data");
+
+    // Custom Vector Map can support fetching up to 10K Features. Hence, we chose same value as limit
+    // for upload as well.
+    public static final int MAX_SUPPORTED_GEOJSON_FEATURE_COUNT = 10_000;
     private final String indexName;
     private final String fieldName;
     private final String fieldType;
@@ -61,7 +66,30 @@ public final class UploadGeoJSONRequestContent {
                 geoJSONData + " is not an instance of List, but of type [ " + geoJSONData.getClass().getName() + " ]"
             );
         }
+        validateFeatureCount(geoJSONData);
         return new UploadGeoJSONRequestContent(index, fieldName, fieldType, (List<Object>) geoJSONData);
+    }
+
+    private static void validateFeatureCount(Object geoJSONData) {
+        final long featureCount = getFeatureCount(geoJSONData);
+        if (featureCount > MAX_SUPPORTED_GEOJSON_FEATURE_COUNT) {
+            throw new IllegalArgumentException(
+                String.format(
+                    Locale.ROOT,
+                    "Received %d features, but, cannot upload more than %d features",
+                    featureCount,
+                    MAX_SUPPORTED_GEOJSON_FEATURE_COUNT
+                )
+            );
+        }
+    }
+
+    private static long getFeatureCount(Object geoJSONData) {
+        return ((List<Object>) geoJSONData).stream()
+            .map(GeospatialParser::toStringObjectMap)
+            .map(GeospatialParser::getFeatures)
+            .flatMap(List::stream)
+            .count();
     }
 
     private static String validateIndexName(Map<String, Object> input) {
