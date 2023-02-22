@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.lucene.index.IndexableField;
-import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.plugin.GeospatialPlugin;
 import org.opensearch.index.mapper.AbstractPointGeometryFieldMapper;
