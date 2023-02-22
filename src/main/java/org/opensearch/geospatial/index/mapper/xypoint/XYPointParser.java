@@ -13,10 +13,10 @@ import java.util.Objects;
 
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-import org.opensearch.common.xcontent.NamedXContentRegistry;
-import org.opensearch.common.xcontent.XContentParser;
-import org.opensearch.common.xcontent.XContentSubParser;
-import org.opensearch.common.xcontent.support.MapXContentParser;
+import org.opensearch.core.xcontent.MapXContentParser;
+import org.opensearch.core.xcontent.NamedXContentRegistry;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.core.xcontent.XContentSubParser;
 import org.opensearch.geometry.ShapeType;
 
 /**

@@ -9,8 +9,8 @@ import java.io.IOException;
 
 import lombok.NoArgsConstructor;
 
-import org.opensearch.common.xcontent.ObjectParser;
-import org.opensearch.common.xcontent.XContentParser;
+import org.opensearch.core.xcontent.ObjectParser;
+import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.ParsedGeoGrid;
 
 @NoArgsConstructor

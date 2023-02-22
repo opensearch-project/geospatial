@@ -11,8 +11,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Function;
 
-import org.opensearch.common.xcontent.ToXContentObject;
-import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.ToXContentObject;
+import org.opensearch.core.xcontent.XContentBuilder;
 
 // Holder to construct summary of Upload API Stats across all Nodes
 public final class TotalUploadStats implements ToXContentObject {

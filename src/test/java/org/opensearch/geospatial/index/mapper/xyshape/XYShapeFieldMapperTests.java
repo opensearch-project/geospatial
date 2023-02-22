@@ -14,7 +14,7 @@ import org.apache.lucene.document.ShapeField;
 import org.apache.lucene.index.IndexableField;
 import org.opensearch.common.geo.GeoShapeType;
 import org.opensearch.common.geo.builders.ShapeBuilder;
-import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.plugin.GeospatialPlugin;
 import org.opensearch.index.mapper.AbstractShapeGeometryFieldMapper;

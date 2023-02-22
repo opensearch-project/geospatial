@@ -15,9 +15,9 @@ import java.util.Map;
 
 import org.apache.lucene.index.IndexWriter;
 import org.hamcrest.MatcherAssert;
-import org.opensearch.common.ParseField;
-import org.opensearch.common.xcontent.ContextParser;
-import org.opensearch.common.xcontent.NamedXContentRegistry;
+import org.opensearch.core.ParseField;
+import org.opensearch.core.xcontent.ContextParser;
+import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.GeoGrid;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.InternalGeoGrid;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.InternalGeoGridBucket;
