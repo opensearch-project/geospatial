@@ -14,6 +14,7 @@ import java.io.IOException;
 import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -68,7 +69,7 @@ public class UploadMetricTests extends OpenSearchTestCase {
 
     public void testToXContent() {
         UploadMetric actualMetric = GeospatialTestHelper.generateRandomUploadMetric();
-        String metricAsString = Strings.toString(actualMetric);
+        String metricAsString = Strings.toString(XContentType.JSON, actualMetric);
         assertNotNull(metricAsString);
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.ID, actualMetric.getMetricID())));
         assertTrue(metricAsString.contains(buildFieldNameValuePair(UploadMetric.FIELDS.TYPE, GEOJSON)));
