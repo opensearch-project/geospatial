@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Features
 ### Enhancements
 ### Bug Fixes
+* Test #240()
 ### Infrastructure
 * Publish snapshots to maven via GHA ([#233](https://github.com/opensearch-project/geospatial/pull/233))
 * Update snapshot version and fix compilation issues ([#237](https://github.com/opensearch-project/geospatial/pull/237))
