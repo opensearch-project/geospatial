@@ -85,7 +85,7 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
 
     @Override
     protected Set<String> unsupportedProperties() {
-        return org.opensearch.common.collect.Set.of("analyzer", "similarity");
+        return Set.of("analyzer", "similarity");
     }
 
     @Override

@@ -5,6 +5,7 @@
 
 package org.opensearch.geospatial;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -12,7 +13,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.UUIDs;
-import org.opensearch.common.collect.List;
 import org.opensearch.common.geo.GeoShapeType;
 import org.opensearch.geo.GeometryTestUtils;
 import org.opensearch.geospatial.geojson.Feature;
