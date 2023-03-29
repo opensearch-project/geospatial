@@ -6,7 +6,7 @@
 package org.opensearch.geospatial.index.query.xyshape;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.opensearch.common.xcontent.ToXContent.EMPTY_PARAMS;
+import static org.opensearch.core.xcontent.ToXContent.EMPTY_PARAMS;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 import static org.opensearch.index.query.AbstractGeometryQueryBuilder.DEFAULT_SHAPE_FIELD_NAME;
 import static org.opensearch.test.hamcrest.OpenSearchAssertions.assertHitCount;

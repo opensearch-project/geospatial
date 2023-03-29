@@ -6,7 +6,7 @@
 package org.opensearch.geospatial;
 
 import static java.util.stream.Collectors.joining;
-import static org.opensearch.common.xcontent.ToXContent.EMPTY_PARAMS;
+import static org.opensearch.core.xcontent.ToXContent.EMPTY_PARAMS;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
@@ -38,10 +38,10 @@ import org.opensearch.common.UUIDs;
 import org.opensearch.common.geo.GeoJson;
 import org.opensearch.common.geo.ShapeRelation;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geometry.Geometry;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;

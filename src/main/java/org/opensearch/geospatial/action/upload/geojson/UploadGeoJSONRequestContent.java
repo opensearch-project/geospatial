@@ -15,8 +15,8 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
-import org.opensearch.common.ParseField;
 import org.opensearch.common.Strings;
+import org.opensearch.core.ParseField;
 import org.opensearch.geospatial.GeospatialParser;
 
 /**

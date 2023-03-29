@@ -15,9 +15,9 @@ import static org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHe
 import java.util.Locale;
 
 import org.hamcrest.MatcherAssert;
-import org.opensearch.common.xcontent.XContentParseException;
-import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.xcontent.XContentParseException;
+import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geo.GeometryTestUtils;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.geospatial.h3.H3;
