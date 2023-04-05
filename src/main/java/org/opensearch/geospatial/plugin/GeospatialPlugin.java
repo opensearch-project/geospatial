@@ -20,6 +20,7 @@ import org.opensearch.common.collect.MapBuilder;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
+import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.settings.SettingsFilter;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
@@ -32,6 +33,13 @@ import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldTypeParser;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
+import org.opensearch.geospatial.ip2geo.action.PutDatasourceAction;
+import org.opensearch.geospatial.ip2geo.action.PutDatasourceTransportAction;
+import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceAction;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceRunner;
+import org.opensearch.geospatial.ip2geo.processor.Ip2GeoCache;
+import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGrid;
@@ -41,12 +49,14 @@ import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.geospatial.stats.upload.UploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStatsTransportAction;
 import org.opensearch.index.mapper.Mapper;
+import org.opensearch.indices.SystemIndexDescriptor;
 import org.opensearch.ingest.Processor;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.IngestPlugin;
 import org.opensearch.plugins.MapperPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.plugins.SearchPlugin;
+import org.opensearch.plugins.SystemIndexPlugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.rest.RestController;
 import org.opensearch.rest.RestHandler;
@@ -58,13 +68,35 @@ import org.opensearch.watcher.ResourceWatcherService;
  * Entry point for Geospatial features. It provides additional Processors, Actions
  * to interact with Cluster.
  */
-public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin {
+public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin, SystemIndexPlugin {
+    /**
+     * Prefix of indices to hold GeoIP data for Ip2Geo datasource
+     */
+    public static final String IP2GEO_DATASOURCE_INDEX_NAME_PREFIX = ".ip2geo-datasource";
+
+    @Override
+    public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
+        return List.of(new SystemIndexDescriptor(IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, "System index used for Ip2Geo datasource"));
+    }
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
+            .put(
+                Ip2GeoProcessor.TYPE,
+                new Ip2GeoProcessor.Factory(
+                    new Ip2GeoCache(Ip2GeoSettings.CACHE_SIZE.get(parameters.client.settings())),
+                    parameters.client,
+                    parameters.ingestService
+                )
+            )
             .immutableMap();
+    }
+
+    @Override
+    public List<Setting<?>> getSettings() {
+        return Ip2GeoSettings.settings();
     }
 
     @Override
@@ -81,6 +113,11 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
+        // Initialize DatasourceUpdateRunner
+        DatasourceRunner.getJobRunnerInstance().setClient(client);
+        DatasourceRunner.getJobRunnerInstance().setClusterService(clusterService);
+        DatasourceRunner.getJobRunnerInstance().setThreadPool(threadPool);
+
         return List.of(UploadStats.getInstance());
     }
 
@@ -94,16 +131,15 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<DiscoveryNodes> nodesInCluster
     ) {
-        RestUploadGeoJSONAction uploadGeoJSONAction = new RestUploadGeoJSONAction();
-        RestUploadStatsAction statsAction = new RestUploadStatsAction();
-        return List.of(statsAction, uploadGeoJSONAction);
+        return List.of(new RestUploadStatsAction(), new RestUploadGeoJSONAction(), new RestPutDatasourceAction(settings, clusterSettings));
     }
 
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return List.of(
             new ActionHandler<>(UploadGeoJSONAction.INSTANCE, UploadGeoJSONTransportAction.class),
-            new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class)
+            new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class),
+            new ActionHandler<>(PutDatasourceAction.INSTANCE, PutDatasourceTransportAction.class)
         );
     }
 
