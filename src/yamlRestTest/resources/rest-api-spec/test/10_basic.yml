@@ -5,4 +5,4 @@
         h: component
 
   - match:
-      $body: /^opensearch-geospatial\n$/
+      $body: /^opensearch-geospatial\nopensearch-job-scheduler\n$/
