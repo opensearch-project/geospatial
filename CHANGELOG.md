@@ -12,14 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Maintenance
 ### Refactoring
 
-## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.6...2.x)
+## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.7...2.x)
 ### Features
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
-* Publish snapshots to maven via GHA ([#233](https://github.com/opensearch-project/geospatial/pull/233))
-* Update snapshot version and fix compilation issues ([#237](https://github.com/opensearch-project/geospatial/pull/237))
-* Add CHANGELOG ([#238](https://github.com/opensearch-project/geospatial/pull/238))
 ### Documentation
 ### Maintenance
 ### Refactoring
