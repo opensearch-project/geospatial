@@ -41,7 +41,7 @@ public class DatasourceHelperTests extends RestActionTestCase {
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assertTrue(actionRequest instanceof IndexRequest);
             IndexRequest request = (IndexRequest) actionRequest;
-            assertEquals(datasource.getId(), request.id());
+            assertEquals(datasource.getName(), request.id());
             assertEquals(DocWriteRequest.OpType.INDEX, request.opType());
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
             return null;
@@ -68,11 +68,11 @@ public class DatasourceHelperTests extends RestActionTestCase {
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assertTrue(actionRequest instanceof GetRequest);
             GetRequest request = (GetRequest) actionRequest;
-            assertEquals(datasource.getId(), request.id());
+            assertEquals(datasource.getName(), request.id());
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
             throw new IndexNotFoundException(DatasourceExtension.JOB_INDEX_NAME);
         });
 
-        assertNull(DatasourceHelper.getDatasource(verifyingClient, datasource.getId(), TimeValue.timeValueSeconds(30)));
+        assertNull(DatasourceHelper.getDatasource(verifyingClient, datasource.getName(), TimeValue.timeValueSeconds(30)));
     }
 }

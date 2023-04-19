@@ -94,7 +94,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         try {
             Datasource jobParameter = Datasource.Builder.build(request);
             IndexRequest indexRequest = new IndexRequest().index(DatasourceExtension.JOB_INDEX_NAME)
-                .id(jobParameter.getId())
+                .id(jobParameter.getName())
                 .source(jobParameter.toXContent(JsonXContent.contentBuilder(), null))
                 .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
                 .opType(DocWriteRequest.OpType.CREATE);
@@ -105,13 +105,13 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
                         try {
                             createDatasource(jobParameter);
                         } catch (Exception e) {
-                            log.error("Failed to create datasource for {}", jobParameter.getId(), e);
+                            log.error("Failed to create datasource for {}", jobParameter.getName(), e);
                             jobParameter.getUpdateStats().setLastFailedAt(Instant.now());
                             jobParameter.setState(DatasourceState.FAILED);
                             try {
                                 DatasourceHelper.updateDatasource(client, jobParameter, timeout);
                             } catch (Exception ex) {
-                                log.error("Failed to mark datasource state as FAILED for {}", jobParameter.getId(), ex);
+                                log.error("Failed to mark datasource state as FAILED for {}", jobParameter.getName(), ex);
                             }
                         }
                     });
@@ -121,16 +121,16 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
                 @Override
                 public void onFailure(final Exception e) {
                     if (e instanceof VersionConflictEngineException) {
-                        log.info("Datasource already exists {}", request.getDatasourceName(), e);
+                        log.info("Datasource already exists {}", request.getName(), e);
                         listener.onFailure(new ResourceAlreadyExistsException("Datasource already exists"));
                     } else {
-                        log.error("Failed to create a datasource {}", request.getDatasourceName(), e);
+                        log.error("Failed to create a datasource {}", request.getName(), e);
                         listener.onFailure(new OpenSearchException("Failed to create a datasource"));
                     }
                 }
             });
         } catch (Exception e) {
-            log.error("Error occurred while creating datasource {}", request.getDatasourceName(), e);
+            log.error("Error occurred while creating datasource {}", request.getName(), e);
             listener.onFailure(new OpenSearchException("Failed to create a datasource"));
         }
     }
@@ -176,7 +176,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         DatasourceHelper.updateDatasource(client, jobParameter, timeout);
         log.info(
             "GeoIP database creation succeeded for {} and took {} seconds",
-            jobParameter.getId(),
+            jobParameter.getName(),
             Duration.between(startTime, endTime)
         );
     }

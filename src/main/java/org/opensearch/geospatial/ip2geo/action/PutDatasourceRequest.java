@@ -9,6 +9,7 @@
 package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -18,8 +19,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 
+import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.support.master.AcknowledgedRequest;
+import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.common.unit.TimeValue;
@@ -36,11 +39,12 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceRequest> {
     private static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
     private static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
+    private static final int MAX_DATASOURCE_NAME_BYTES = 255;
     /**
-     * @param datasourceName the datasource name
+     * @param name the datasource name
      * @return the datasource name
      */
-    private String datasourceName;
+    private String name;
     /**
      * @param endpoint url to a manifest file for a datasource
      * @return url to a manifest file for a datasource
@@ -64,10 +68,10 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
 
     /**
      * Default constructor
-     * @param datasourceName name of a datasource
+     * @param name name of a datasource
      */
-    public PutDatasourceRequest(final String datasourceName) {
-        this.datasourceName = datasourceName;
+    public PutDatasourceRequest(final String name) {
+        this.name = name;
     }
 
     /**
@@ -77,7 +81,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
      */
     public PutDatasourceRequest(final StreamInput in) throws IOException {
         super(in);
-        this.datasourceName = in.readString();
+        this.name = in.readString();
         this.endpoint = in.readString();
         this.updateIntervalInDays = in.readTimeValue();
     }
@@ -85,7 +89,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     @Override
     public void writeTo(final StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeString(datasourceName);
+        out.writeString(name);
         out.writeString(endpoint);
         out.writeTimeValue(updateIntervalInDays);
     }
@@ -93,9 +97,41 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException errors = new ActionRequestValidationException();
+        validateDatasourceName(errors);
         validateEndpoint(errors);
         validateUpdateInterval(errors);
         return errors.validationErrors().isEmpty() ? null : errors;
+    }
+
+    private void validateDatasourceName(final ActionRequestValidationException errors) {
+        if (!Strings.validFileName(name)) {
+            errors.addValidationError("Datasource name must not contain the following characters " + Strings.INVALID_FILENAME_CHARS);
+        }
+        if (name.isEmpty()) {
+            errors.addValidationError("Datasource name must not be empty");
+        }
+        if (name.contains("#")) {
+            errors.addValidationError("Datasource name must not contain '#'");
+        }
+        if (name.contains(":")) {
+            errors.addValidationError("Datasource name must not contain ':'");
+        }
+        if (name.charAt(0) == '_' || name.charAt(0) == '-' || name.charAt(0) == '+') {
+            errors.addValidationError("Datasource name must not start with '_', '-', or '+'");
+        }
+        int byteCount = 0;
+        try {
+            byteCount = name.getBytes("UTF-8").length;
+        } catch (UnsupportedEncodingException e) {
+            // UTF-8 should always be supported, but rethrow this if it is not for some reason
+            throw new OpenSearchException("Unable to determine length of datasource name", e);
+        }
+        if (byteCount > MAX_DATASOURCE_NAME_BYTES) {
+            errors.addValidationError("Datasource name is too long, (" + byteCount + " > " + MAX_DATASOURCE_NAME_BYTES + ")");
+        }
+        if (name.equals(".") || name.equals("..")) {
+            errors.addValidationError("Datasource name must not be '.' or '..'");
+        }
     }
 
     private void validateEndpoint(final ActionRequestValidationException errors) {

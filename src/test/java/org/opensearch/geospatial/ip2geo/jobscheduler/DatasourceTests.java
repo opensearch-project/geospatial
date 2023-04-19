@@ -24,7 +24,7 @@ public class DatasourceTests extends OpenSearchTestCase {
         String id = "test";
         Instant now = Instant.now();
         Datasource datasource = new Datasource();
-        datasource.setId(id);
+        datasource.setName(id);
         datasource.setDatabase(new Datasource.Database("provider", "md5Hash", now, 10l, new ArrayList<>()));
         assertEquals(
             String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, id, now.toEpochMilli()),
@@ -39,7 +39,7 @@ public class DatasourceTests extends OpenSearchTestCase {
 
         String id = "test";
         Datasource datasource = new Datasource();
-        datasource.setId(id);
+        datasource.setName(id);
         assertEquals(
             String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, id, updatedAt),
             datasource.indexNameFor(manifest)

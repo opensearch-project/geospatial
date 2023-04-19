@@ -30,7 +30,7 @@ import org.opensearch.rest.action.RestToXContentListener;
  * Rest handler for Ip2Geo datasource creation
  */
 public class RestPutDatasourceAction extends BaseRestHandler {
-    private static final String ACTION_NAME = "ip2geo_datasource";
+    private static final String ACTION_NAME = "ip2geo_datasource_put";
     private String defaultDatasourceEndpoint;
     private TimeValue defaultUpdateInterval;
 
@@ -48,7 +48,7 @@ public class RestPutDatasourceAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        final PutDatasourceRequest putDatasourceRequest = new PutDatasourceRequest(request.param("id"));
+        final PutDatasourceRequest putDatasourceRequest = new PutDatasourceRequest(request.param("name"));
         if (request.hasContentOrSourceParam()) {
             try (XContentParser parser = request.contentOrSourceParamParser()) {
                 PutDatasourceRequest.PARSER.parse(parser, putDatasourceRequest, null);
@@ -65,8 +65,8 @@ public class RestPutDatasourceAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        boolean enabled = false;
-        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), "ip2geo/datasource/{id}");
+        boolean enabled = true;
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), "ip2geo/datasource/{name}");
         return enabled ? List.of(new Route(PUT, path)) : new ArrayList<>();
     }
 }

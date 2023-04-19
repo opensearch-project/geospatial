@@ -145,7 +145,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
                         updateDatasource(parameter);
                         deleteUnusedIndices(parameter);
                     } catch (Exception e) {
-                        log.error("Failed to update datasource for {}", parameter.getId(), e);
+                        log.error("Failed to update datasource for {}", parameter.getName(), e);
                         parameter.getUpdateStats().setLastFailedAt(Instant.now());
                         DatasourceHelper.updateDatasource(client, parameter, timeout);
                     } finally {
@@ -203,7 +203,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
                 DatasourceHelper.updateDatasource(client, parameter, timeout);
             }
         } catch (Exception e) {
-            log.error("Failed to delete old indices for {}", parameter.getId(), e);
+            log.error("Failed to delete old indices for {}", parameter.getName(), e);
         }
     }
 
@@ -226,7 +226,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
 
         if (skipUpdate(jobParameter, manifest)) {
-            log.info("Skipping GeoIP database update. Update is not required for {}", jobParameter.getId());
+            log.info("Skipping GeoIP database update. Update is not required for {}", jobParameter.getName());
             jobParameter.getUpdateStats().setLastSkippedAt(Instant.now());
             DatasourceHelper.updateDatasource(client, jobParameter, timeout);
             return;
@@ -260,7 +260,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
         DatasourceHelper.updateDatasource(client, jobParameter, timeout);
         log.info(
             "GeoIP database creation succeeded for {} and took {} seconds",
-            jobParameter.getId(),
+            jobParameter.getName(),
             Duration.between(startTime, endTime)
         );
     }

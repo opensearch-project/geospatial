@@ -27,7 +27,7 @@ public class PutDatasourceRequestTests extends OpenSearchTestCase {
 
     public void testValidateInvalidManifestFile() {
         PutDatasourceRequest request = new PutDatasourceRequest("test");
-        request.setDatasourceName("test");
+        request.setName("test");
         request.setEndpoint("https://hi.com");
         request.setUpdateIntervalInDays(TimeValue.ZERO);
         ActionRequestValidationException exception = request.validate();

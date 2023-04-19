@@ -20,6 +20,7 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.env.Environment;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
+import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceAction;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.processor.FeatureProcessor;
@@ -38,7 +39,8 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
     private final List<RestHandler> SUPPORTED_REST_HANDLERS = List.of(
         new RestUploadGeoJSONAction(),
         new RestUploadStatsAction(),
-        new RestPutDatasourceAction(Settings.EMPTY, clusterSettings)
+        new RestPutDatasourceAction(Settings.EMPTY, clusterSettings),
+        new RestGetDatasourceAction()
     );
     private final Client client;
     private final ClusterService clusterService;

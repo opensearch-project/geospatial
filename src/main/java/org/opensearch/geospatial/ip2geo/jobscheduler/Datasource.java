@@ -21,6 +21,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+import org.opensearch.common.io.stream.Writeable;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.xcontent.ConstructingObjectParser;
 import org.opensearch.core.xcontent.ToXContent;
@@ -30,7 +33,6 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
-import org.opensearch.jobscheduler.spi.schedule.Schedule;
 import org.opensearch.jobscheduler.spi.schedule.ScheduleParser;
 
 /**
@@ -39,19 +41,19 @@ import org.opensearch.jobscheduler.spi.schedule.ScheduleParser;
 @Getter
 @Setter
 @AllArgsConstructor
-public class Datasource implements ScheduledJobParameter {
+public class Datasource implements Writeable, ScheduledJobParameter {
     private static final long LOCK_DURATION_IN_SECONDS = 60 * 60;
 
     /**
      * Default fields for job scheduling
      */
-    private static final ParseField ID_FIELD = new ParseField("id");
+    private static final ParseField NAME_FIELD = new ParseField("name");
     private static final ParseField ENABLED_FILED = new ParseField("update_enabled");
-    private static final ParseField LAST_UPDATE_TIME_FIELD = new ParseField("last_update_time");
-    private static final ParseField LAST_UPDATE_TIME_FIELD_READABLE = new ParseField("last_update_time_field");
+    private static final ParseField LAST_UPDATE_TIME_FIELD = new ParseField("last_update_time_in_epoch_millis");
+    private static final ParseField LAST_UPDATE_TIME_FIELD_READABLE = new ParseField("last_update_time");
     private static final ParseField SCHEDULE_FIELD = new ParseField("schedule");
-    private static final ParseField ENABLED_TIME_FILED = new ParseField("enabled_time");
-    private static final ParseField ENABLED_TIME_FILED_READABLE = new ParseField("enabled_time_field");
+    private static final ParseField ENABLED_TIME_FILED = new ParseField("enabled_time_in_epoch_millis");
+    private static final ParseField ENABLED_TIME_FILED_READABLE = new ParseField("enabled_time");
 
     /**
      * Additional fields for datasource
@@ -67,10 +69,10 @@ public class Datasource implements ScheduledJobParameter {
      */
 
     /**
-     * @param id Id of a datasource
-     * @return Id of a datasource
+     * @param name datasource name
+     * @return datasource name
      */
-    private String id;
+    private String name;
     /**
      * @param lastUpdateTime Last update time of a datasource
      * @return Last update time of a datasource
@@ -90,7 +92,7 @@ public class Datasource implements ScheduledJobParameter {
      * @param schedule Schedule for a GeoIP data update
      * @return Schedule for the job scheduler
      */
-    private Schedule schedule;
+    private IntervalSchedule schedule;
 
     /**
      * Additional variables for datasource
@@ -133,7 +135,7 @@ public class Datasource implements ScheduledJobParameter {
             Instant lastUpdateTime = Instant.ofEpochMilli((long) args[1]);
             Instant enabledTime = args[2] == null ? null : Instant.ofEpochMilli((long) args[2]);
             boolean isEnabled = (boolean) args[3];
-            Schedule schedule = (Schedule) args[4];
+            IntervalSchedule schedule = (IntervalSchedule) args[4];
             String endpoint = (String) args[5];
             DatasourceState state = DatasourceState.valueOf((String) args[6]);
             List<String> indices = (List<String>) args[7];
@@ -156,7 +158,7 @@ public class Datasource implements ScheduledJobParameter {
         }
     );
     static {
-        PARSER.declareString(ConstructingObjectParser.constructorArg(), ID_FIELD);
+        PARSER.declareString(ConstructingObjectParser.constructorArg(), NAME_FIELD);
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), LAST_UPDATE_TIME_FIELD);
         PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), ENABLED_TIME_FILED);
         PARSER.declareBoolean(ConstructingObjectParser.constructorArg(), ENABLED_FILED);
@@ -169,6 +171,10 @@ public class Datasource implements ScheduledJobParameter {
 
     }
 
+    private static Instant toInstant(final Long epochMilli) {
+        return epochMilli == null ? null : Instant.ofEpochMilli(epochMilli);
+    }
+
     /**
      * Visible for testing
      */
@@ -176,10 +182,37 @@ public class Datasource implements ScheduledJobParameter {
 
     }
 
+    public Datasource(final StreamInput in) throws IOException {
+        name = in.readString();
+        lastUpdateTime = toInstant(in.readLong());
+        enabledTime = toInstant(in.readLong());
+        isEnabled = in.readBoolean();
+        schedule = new IntervalSchedule(in);
+        endpoint = in.readString();
+        state = DatasourceState.valueOf(in.readString());
+        indices = in.readStringList();
+        database = new Database(in);
+        updateStats = new UpdateStats(in);
+    }
+
+    @Override
+    public void writeTo(final StreamOutput out) throws IOException {
+        out.writeString(name);
+        out.writeLong(lastUpdateTime.toEpochMilli());
+        out.writeOptionalLong(enabledTime.toEpochMilli());
+        out.writeBoolean(isEnabled);
+        schedule.writeTo(out);
+        out.writeString(endpoint);
+        out.writeString(state.name());
+        out.writeStringCollection(indices);
+        database.writeTo(out);
+        updateStats.writeTo(out);
+    }
+
     @Override
     public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
         builder.startObject();
-        builder.field(ID_FIELD.getPreferredName(), id);
+        builder.field(NAME_FIELD.getPreferredName(), name);
         builder.timeField(
             LAST_UPDATE_TIME_FIELD.getPreferredName(),
             LAST_UPDATE_TIME_FIELD_READABLE.getPreferredName(),
@@ -205,7 +238,7 @@ public class Datasource implements ScheduledJobParameter {
 
     @Override
     public String getName() {
-        return id;
+        return name;
     }
 
     @Override
@@ -219,7 +252,7 @@ public class Datasource implements ScheduledJobParameter {
     }
 
     @Override
-    public Schedule getSchedule() {
+    public IntervalSchedule getSchedule() {
         return schedule;
     }
 
@@ -269,7 +302,7 @@ public class Datasource implements ScheduledJobParameter {
     }
 
     private String indexNameFor(final long suffix) {
-        return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, id, suffix);
+        return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, name, suffix);
     }
 
     public boolean isExpired() {
@@ -294,11 +327,11 @@ public class Datasource implements ScheduledJobParameter {
     @Getter
     @Setter
     @AllArgsConstructor
-    public static class Database implements ToXContent {
+    public static class Database implements Writeable, ToXContent {
         private static final ParseField PROVIDER_FIELD = new ParseField("provider");
         private static final ParseField MD5_HASH_FIELD = new ParseField("md5_hash");
-        private static final ParseField UPDATED_AT_FIELD = new ParseField("updated_at");
-        private static final ParseField UPDATED_AT_FIELD_READABLE = new ParseField("updated_at_field");
+        private static final ParseField UPDATED_AT_FIELD = new ParseField("updated_at_in_epoch_millis");
+        private static final ParseField UPDATED_AT_FIELD_READABLE = new ParseField("updated_at");
         private static final ParseField FIELDS_FIELD = new ParseField("fields");
         private static final ParseField VALID_FOR_IN_DAYS_FIELD = new ParseField("valid_for_in_days");
 
@@ -348,6 +381,23 @@ public class Datasource implements ScheduledJobParameter {
             PARSER.declareStringArray(ConstructingObjectParser.optionalConstructorArg(), FIELDS_FIELD);
         }
 
+        public Database(final StreamInput in) throws IOException {
+            provider = in.readOptionalString();
+            md5Hash = in.readOptionalString();
+            updatedAt = toInstant(in.readOptionalLong());
+            validForInDays = in.readOptionalLong();
+            fields = in.readOptionalStringList();
+        }
+
+        @Override
+        public void writeTo(final StreamOutput out) throws IOException {
+            out.writeOptionalString(provider);
+            out.writeOptionalString(md5Hash);
+            out.writeOptionalLong(updatedAt.toEpochMilli());
+            out.writeOptionalLong(validForInDays);
+            out.writeOptionalStringCollection(fields);
+        }
+
         @Override
         public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
             builder.startObject();
@@ -385,14 +435,14 @@ public class Datasource implements ScheduledJobParameter {
     @Getter
     @Setter
     @AllArgsConstructor
-    public static class UpdateStats implements ToXContent {
-        private static final ParseField LAST_SUCCEEDED_AT_FIELD = new ParseField("last_succeeded_at");
-        private static final ParseField LAST_SUCCEEDED_AT_FIELD_READABLE = new ParseField("last_succeeded_at_field");
+    public static class UpdateStats implements Writeable, ToXContent {
+        private static final ParseField LAST_SUCCEEDED_AT_FIELD = new ParseField("last_succeeded_at_in_epoch_millis");
+        private static final ParseField LAST_SUCCEEDED_AT_FIELD_READABLE = new ParseField("last_succeeded_at");
         private static final ParseField LAST_PROCESSING_TIME_IN_MILLIS_FIELD = new ParseField("last_processing_time_in_millis");
-        private static final ParseField LAST_FAILED_AT_FIELD = new ParseField("last_failed_at");
-        private static final ParseField LAST_FAILED_AT_FIELD_READABLE = new ParseField("last_failed_at_field");
-        private static final ParseField LAST_SKIPPED_AT = new ParseField("last_skipped_at");
-        private static final ParseField LAST_SKIPPED_AT_READABLE = new ParseField("last_skipped_at_field");
+        private static final ParseField LAST_FAILED_AT_FIELD = new ParseField("last_failed_at_in_epoch_millis");
+        private static final ParseField LAST_FAILED_AT_FIELD_READABLE = new ParseField("last_failed_at");
+        private static final ParseField LAST_SKIPPED_AT = new ParseField("last_skipped_at_in_epoch_millis");
+        private static final ParseField LAST_SKIPPED_AT_READABLE = new ParseField("last_skipped_at");
 
         /**
          * @param lastSucceededAt The last time when GeoIP data update was succeeded
@@ -434,6 +484,21 @@ public class Datasource implements ScheduledJobParameter {
             PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), LAST_SKIPPED_AT);
         }
 
+        public UpdateStats(final StreamInput in) throws IOException {
+            lastSucceededAt = toInstant(in.readOptionalLong());
+            lastProcessingTimeInMillis = in.readOptionalLong();
+            lastFailedAt = toInstant(in.readOptionalLong());
+            lastSkippedAt = toInstant(in.readOptionalLong());
+        }
+
+        @Override
+        public void writeTo(final StreamOutput out) throws IOException {
+            out.writeOptionalLong(lastSucceededAt.toEpochMilli());
+            out.writeOptionalLong(lastProcessingTimeInMillis);
+            out.writeOptionalLong(lastFailedAt.toEpochMilli());
+            out.writeOptionalLong(lastSkippedAt.toEpochMilli());
+        }
+
         @Override
         public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
             builder.startObject();
@@ -464,6 +529,7 @@ public class Datasource implements ScheduledJobParameter {
             builder.endObject();
             return builder;
         }
+
     }
 
     /**
@@ -471,11 +537,15 @@ public class Datasource implements ScheduledJobParameter {
      */
     public static class Builder {
         public static Datasource build(final PutDatasourceRequest request) {
-            String id = request.getDatasourceName();
+            String id = request.getName();
             Instant lastUpdateTime = Instant.now();
             Instant enabledTime = null;
             boolean isEnabled = false;
-            Schedule schedule = new IntervalSchedule(Instant.now(), (int) request.getUpdateIntervalInDays().days(), ChronoUnit.DAYS);
+            IntervalSchedule schedule = new IntervalSchedule(
+                Instant.now(),
+                (int) request.getUpdateIntervalInDays().days(),
+                ChronoUnit.DAYS
+            );
             String endpoint = request.getEndpoint();
             DatasourceState state = DatasourceState.PREPARING;
             List<String> indices = new ArrayList<>();
