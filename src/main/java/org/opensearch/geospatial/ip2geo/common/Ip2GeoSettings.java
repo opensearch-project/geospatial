@@ -67,16 +67,6 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Max datasource count allowed
-     */
-    public static final Setting<Integer> MAX_COUNT = Setting.intSetting(
-        "plugins.geospatial.ip2geo.datasource.max_count",
-        10,
-        1,
-        Setting.Property.NodeScope
-    );
-
-    /**
      * Cache size for GeoIP data
      */
     public static final Setting<Integer> CACHE_SIZE = Setting.intSetting(
@@ -125,7 +115,6 @@ public class Ip2GeoSettings {
             DATASOURCE_UPDATE_INTERVAL,
             TIMEOUT_IN_SECONDS,
             INDEXING_BULK_SIZE,
-            MAX_COUNT,
             CACHE_SIZE,
             MAX_BUNDLE_SIZE,
             MAX_CONCURRENT_SEARCHES

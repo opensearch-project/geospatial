@@ -29,8 +29,7 @@ public class Ip2GeoExecutorHelper {
      * @return the executor builder
      */
     public static ExecutorBuilder executorBuilder(final Settings settings) {
-        int maxCount = Ip2GeoSettings.MAX_COUNT.get(settings);
-        return new FixedExecutorBuilder(settings, THREAD_POOL_NAME, 1, maxCount, THREAD_POOL_NAME, false);
+        return new FixedExecutorBuilder(settings, THREAD_POOL_NAME, 1, 1000, THREAD_POOL_NAME, false);
     }
 
     /**
