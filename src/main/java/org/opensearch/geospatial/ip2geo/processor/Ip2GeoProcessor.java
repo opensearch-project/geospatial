@@ -104,10 +104,10 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         this.clusterService = clusterService;
 
         maxBundleSize = clusterService.getClusterSettings().get(Ip2GeoSettings.MAX_BUNDLE_SIZE);
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.MAX_BUNDLE_SIZE, it -> maxBundleSize = it);
+        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.MAX_BUNDLE_SIZE, newValue -> maxBundleSize = newValue);
         maxConcurrentSearches = clusterService.getClusterSettings().get(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES);
         clusterService.getClusterSettings()
-            .addSettingsUpdateConsumer(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES, it -> maxConcurrentSearches = it);
+            .addSettingsUpdateConsumer(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES, newValue -> maxConcurrentSearches = newValue);
     }
 
     /**
@@ -351,7 +351,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
             timeout = Ip2GeoSettings.TIMEOUT_IN_SECONDS.get(client.settings());
             ClusterSettings clusterSettings = ingestService.getClusterService().getClusterSettings();
-            clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, it -> timeout = it);
+            clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, newValue -> timeout = newValue);
         }
 
         /**

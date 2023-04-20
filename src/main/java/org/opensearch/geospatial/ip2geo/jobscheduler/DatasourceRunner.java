@@ -81,9 +81,9 @@ public class DatasourceRunner implements ScheduledJobRunner {
         this.clusterService = clusterService;
 
         timeout = Ip2GeoSettings.TIMEOUT_IN_SECONDS.get(clusterService.getSettings());
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, it -> timeout = it);
+        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, newValue -> timeout = newValue);
         indexingBulkSize = Ip2GeoSettings.INDEXING_BULK_SIZE.get(clusterService.getSettings());
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.INDEXING_BULK_SIZE, it -> indexingBulkSize = it);
+        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.INDEXING_BULK_SIZE, newValue -> indexingBulkSize = newValue);
     }
 
     /**

@@ -36,9 +36,9 @@ public class RestPutDatasourceAction extends BaseRestHandler {
 
     public RestPutDatasourceAction(final Settings settings, final ClusterSettings clusterSettings) {
         defaultDatasourceEndpoint = Ip2GeoSettings.DATASOURCE_ENDPOINT.get(settings);
-        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.DATASOURCE_ENDPOINT, it -> defaultDatasourceEndpoint = it);
+        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.DATASOURCE_ENDPOINT, newValue -> defaultDatasourceEndpoint = newValue);
         defaultUpdateInterval = Ip2GeoSettings.DATASOURCE_UPDATE_INTERVAL.get(settings);
-        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.DATASOURCE_UPDATE_INTERVAL, it -> defaultUpdateInterval = it);
+        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.DATASOURCE_UPDATE_INTERVAL, newValue -> defaultUpdateInterval = newValue);
     }
 
     @Override

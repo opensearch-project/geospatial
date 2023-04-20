@@ -84,9 +84,9 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         this.clusterService = clusterService;
         this.threadPool = threadPool;
         timeout = Ip2GeoSettings.TIMEOUT_IN_SECONDS.get(settings);
-        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, it -> timeout = it);
+        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, newValue -> timeout = newValue);
         indexingBulkSize = Ip2GeoSettings.INDEXING_BULK_SIZE.get(settings);
-        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.INDEXING_BULK_SIZE, it -> indexingBulkSize = it);
+        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.INDEXING_BULK_SIZE, newValue -> indexingBulkSize = newValue);
     }
 
     @Override
