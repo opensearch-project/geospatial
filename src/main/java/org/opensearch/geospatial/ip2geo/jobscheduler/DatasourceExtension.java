@@ -14,6 +14,10 @@ import org.opensearch.jobscheduler.spi.ScheduledJobRunner;
 
 /**
  * Datasource job scheduler extension
+ *
+ * This extension is responsible for scheduling Ip2Geo data update task
+ *
+ * See https://github.com/opensearch-project/job-scheduler/blob/main/README.md#getting-started
  */
 public class DatasourceExtension implements JobSchedulerExtension {
     /**

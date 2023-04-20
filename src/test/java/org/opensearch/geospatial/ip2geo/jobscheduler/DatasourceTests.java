@@ -10,15 +10,17 @@ package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.opensearch.geospatial.plugin.GeospatialPlugin.IP2GEO_DATASOURCE_INDEX_NAME_PREFIX;
+import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Locale;
 
 import org.opensearch.common.Randomness;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
+import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class DatasourceTests extends OpenSearchTestCase {
@@ -29,7 +31,7 @@ public class DatasourceTests extends OpenSearchTestCase {
         datasource.setId(id);
         datasource.setDatabase(new Datasource.Database("provider", "md5Hash", now, 10l, new ArrayList<>()));
         assertEquals(
-            String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, id, now.toEpochMilli()),
+            String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, now.toEpochMilli()),
             datasource.currentIndexName()
         );
     }
@@ -43,8 +45,16 @@ public class DatasourceTests extends OpenSearchTestCase {
         Datasource datasource = new Datasource();
         datasource.setId(id);
         assertEquals(
-            String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, id, updatedAt),
+            String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, updatedAt),
             datasource.indexNameFor(manifest)
         );
+    }
+
+    public void testGetJitter() {
+        Datasource datasource = new Datasource();
+        datasource.setSchedule(new IntervalSchedule(Instant.now(), Randomness.get().nextInt(31), ChronoUnit.DAYS));
+        long intervalInMinutes = datasource.getSchedule().getInterval() * 60 * 24;
+        double fiveMinutes = 5;
+        assertTrue(datasource.getJitter() * intervalInMinutes <= fiveMinutes);
     }
 }

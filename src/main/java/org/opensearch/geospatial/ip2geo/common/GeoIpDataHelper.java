@@ -47,6 +47,7 @@ import org.opensearch.client.Client;
 import org.opensearch.client.Requests;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.SuppressForbidden;
+import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
@@ -59,6 +60,8 @@ import org.opensearch.index.query.QueryBuilders;
 public class GeoIpDataHelper {
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
+    private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_SHARDS = new Tuple<>("index.number_of_shards", 1);
+    private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
 
     /**
      * Create an index of single shard with auto expand replicas to all nodes
@@ -69,19 +72,19 @@ public class GeoIpDataHelper {
      * @param timeout timeout
      * @throws IOException io exception
      */
-    public static void createIndex(
+    public static void createIndexIfNotExists(
         final ClusterService clusterService,
         final Client client,
         final String indexName,
         final TimeValue timeout
     ) throws IOException {
         if (clusterService.state().metadata().hasIndex(indexName) == true) {
-            log.info("Index {} already exist. Skipping creation.", indexName);
+            log.info("Index {} already exist", indexName);
             return;
         }
         final Map<String, Object> indexSettings = new HashMap<>();
-        indexSettings.put("index.number_of_shards", 1);
-        indexSettings.put("index.auto_expand_replicas", "0-all");
+        indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
+        indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings).mapping(getIndexMapping());
         CreateIndexResponse response = client.admin().indices().create(createIndexRequest).actionGet(timeout);
     }

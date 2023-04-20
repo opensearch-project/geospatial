@@ -8,8 +8,6 @@
 
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
-import static org.opensearch.geospatial.plugin.GeospatialPlugin.IP2GEO_DATASOURCE_INDEX_NAME_PREFIX;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,7 +28,6 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
-import org.opensearch.jobscheduler.spi.schedule.Schedule;
 import org.opensearch.jobscheduler.spi.schedule.ScheduleParser;
 
 /**
@@ -40,6 +37,10 @@ import org.opensearch.jobscheduler.spi.schedule.ScheduleParser;
 @Setter
 @AllArgsConstructor
 public class Datasource implements ScheduledJobParameter {
+    /**
+     * Prefix of indices having Ip2Geo data
+     */
+    public static final String IP2GEO_DATA_INDEX_NAME_PREFIX = ".ip2geo-data";
     private static final long LOCK_DURATION_IN_SECONDS = 60 * 60;
 
     /**
@@ -90,7 +91,7 @@ public class Datasource implements ScheduledJobParameter {
      * @param schedule Schedule for a GeoIP data update
      * @return Schedule for the job scheduler
      */
-    private Schedule schedule;
+    private IntervalSchedule schedule;
 
     /**
      * Additional variables for datasource
@@ -133,7 +134,7 @@ public class Datasource implements ScheduledJobParameter {
             Instant lastUpdateTime = Instant.ofEpochMilli((long) args[1]);
             Instant enabledTime = args[2] == null ? null : Instant.ofEpochMilli((long) args[2]);
             boolean isEnabled = (boolean) args[3];
-            Schedule schedule = (Schedule) args[4];
+            IntervalSchedule schedule = (IntervalSchedule) args[4];
             String endpoint = (String) args[5];
             DatasourceState state = DatasourceState.valueOf((String) args[6]);
             List<String> indices = (List<String>) args[7];
@@ -219,7 +220,7 @@ public class Datasource implements ScheduledJobParameter {
     }
 
     @Override
-    public Schedule getSchedule() {
+    public IntervalSchedule getSchedule() {
         return schedule;
     }
 
@@ -231,6 +232,21 @@ public class Datasource implements ScheduledJobParameter {
     @Override
     public Long getLockDurationSeconds() {
         return LOCK_DURATION_IN_SECONDS;
+    }
+
+    /**
+     * Jitter in scheduling a task
+     *
+     * We want a job to be delayed randomly with range of (0, 5) minutes for the
+     * next execution time.
+     *
+     * @see ScheduledJobParameter#getJitter()
+     *
+     * @return the jitter
+     */
+    @Override
+    public Double getJitter() {
+        return 5.0 / (schedule.getInterval() * 24 * 60);
     }
 
     /**
@@ -269,7 +285,7 @@ public class Datasource implements ScheduledJobParameter {
     }
 
     private String indexNameFor(final long suffix) {
-        return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATASOURCE_INDEX_NAME_PREFIX, id, suffix);
+        return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, suffix);
     }
 
     public boolean isExpired() {
@@ -475,7 +491,11 @@ public class Datasource implements ScheduledJobParameter {
             Instant lastUpdateTime = Instant.now();
             Instant enabledTime = null;
             boolean isEnabled = false;
-            Schedule schedule = new IntervalSchedule(Instant.now(), (int) request.getUpdateIntervalInDays().days(), ChronoUnit.DAYS);
+            IntervalSchedule schedule = new IntervalSchedule(
+                Instant.now(),
+                (int) request.getUpdateIntervalInDays().days(),
+                ChronoUnit.DAYS
+            );
             String endpoint = request.getEndpoint();
             DatasourceState state = DatasourceState.PREPARING;
             List<String> indices = new ArrayList<>();

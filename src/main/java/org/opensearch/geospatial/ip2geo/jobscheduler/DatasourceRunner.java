@@ -29,6 +29,7 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceHelper;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataHelper;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutorHelper;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.jobscheduler.spi.JobExecutionContext;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
@@ -67,39 +68,44 @@ public class DatasourceRunner implements ScheduledJobRunner {
     private ThreadPool threadPool;
     private Client client;
     private TimeValue timeout;
-    private int indexingBulkSize;
+    private Integer indexingBulkSize;
+    private boolean initialized;
 
     private DatasourceRunner() {
         // Singleton class, use getJobRunner method instead of constructor
     }
 
     /**
-     * Set cluster service
-     * @param clusterService the cluster service
+     * Initialize timeout and indexingBulkSize from settings
      */
-    public void setClusterService(ClusterService clusterService) {
+    public void initialize(final ClusterService clusterService, final ThreadPool threadPool, final Client client) {
         this.clusterService = clusterService;
-
-        timeout = Ip2GeoSettings.TIMEOUT_IN_SECONDS.get(clusterService.getSettings());
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, newValue -> timeout = newValue);
-        indexingBulkSize = Ip2GeoSettings.INDEXING_BULK_SIZE.get(clusterService.getSettings());
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.INDEXING_BULK_SIZE, newValue -> indexingBulkSize = newValue);
-    }
-
-    /**
-     * Set thread pool
-     * @param threadPool the thread pool
-     */
-    public void setThreadPool(ThreadPool threadPool) {
         this.threadPool = threadPool;
+        this.client = client;
+
+        this.timeout = Ip2GeoSettings.TIMEOUT_IN_SECONDS.get(clusterService.getSettings());
+        clusterService.getClusterSettings()
+            .addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, newValue -> this.timeout = newValue);
+        this.indexingBulkSize = Ip2GeoSettings.INDEXING_BULK_SIZE.get(clusterService.getSettings());
+        clusterService.getClusterSettings()
+            .addSettingsUpdateConsumer(Ip2GeoSettings.INDEXING_BULK_SIZE, newValue -> this.indexingBulkSize = newValue);
+        this.initialized = true;
     }
 
-    /**
-     * Set client
-     * @param client the client
-     */
-    public void setClient(Client client) {
-        this.client = client;
+    @Override
+    public void runJob(final ScheduledJobParameter jobParameter, final JobExecutionContext context) {
+        if (initialized == false) {
+            throw new AssertionError("This instance is not initialized");
+        }
+
+        log.info("Update job started for a datasource[{}]", jobParameter.getName());
+        if (jobParameter instanceof Datasource == false) {
+            throw new IllegalStateException(
+                "Job parameter is not instance of DatasourceUpdateJobParameter, type: " + jobParameter.getClass().getCanonicalName()
+            );
+        }
+
+        Ip2GeoExecutorHelper.forDatasourceUpdate(threadPool).submit(updateDatasourceRunner(jobParameter, context));
     }
 
     /**
@@ -111,48 +117,31 @@ public class DatasourceRunner implements ScheduledJobRunner {
      * @param jobParameter job parameter
      * @param context context
      */
-    @Override
-    public void runJob(ScheduledJobParameter jobParameter, JobExecutionContext context) {
-        log.info("Update job started for a datasource[{}]", jobParameter.getName());
-        if (!(jobParameter instanceof Datasource)) {
-            throw new IllegalStateException(
-                "Job parameter is not instance of DatasourceUpdateJobParameter, type: " + jobParameter.getClass().getCanonicalName()
-            );
-        }
-
-        if (clusterService == null) {
-            throw new IllegalStateException("ClusterService is not initialized.");
-        }
-
-        if (threadPool == null) {
-            throw new IllegalStateException("ThreadPool is not initialized.");
-        }
-
-        if (client == null) {
-            throw new IllegalStateException("Client is not initialized.");
-        }
-
+    private Runnable updateDatasourceRunner(final ScheduledJobParameter jobParameter, final JobExecutionContext context) {
         final LockService lockService = context.getLockService();
-        Runnable runnable = () -> {
+        return () -> {
             if (jobParameter.getLockDurationSeconds() != null) {
                 lockService.acquireLock(jobParameter, context, ActionListener.wrap(lock -> {
                     if (lock == null) {
                         return;
                     }
-                    Datasource parameter = (Datasource) jobParameter;
+                    Datasource datasource = DatasourceHelper.getDatasource(client, jobParameter.getName(), timeout);
+                    if (datasource == null) {
+                        log.info("Datasource[{}] is already deleted", jobParameter.getName());
+                    }
                     try {
-                        deleteUnusedIndices(parameter);
-                        updateDatasource(parameter);
-                        deleteUnusedIndices(parameter);
+                        deleteUnusedIndices(datasource);
+                        updateDatasource(datasource);
+                        deleteUnusedIndices(datasource);
                     } catch (Exception e) {
-                        log.error("Failed to update datasource for {}", parameter.getId(), e);
-                        parameter.getUpdateStats().setLastFailedAt(Instant.now());
-                        DatasourceHelper.updateDatasource(client, parameter, timeout);
+                        log.error("Failed to update datasource for {}", datasource.getId(), e);
+                        datasource.getUpdateStats().setLastFailedAt(Instant.now());
+                        DatasourceHelper.updateDatasource(client, datasource, timeout);
                     } finally {
                         lockService.release(
                             lock,
                             ActionListener.wrap(
-                                released -> { log.info("Released lock for job {}", jobParameter.getName()); },
+                                released -> { log.info("Released lock for job {}", datasource.getId()); },
                                 exception -> { throw new IllegalStateException("Failed to release lock."); }
                             )
                         );
@@ -161,7 +150,6 @@ public class DatasourceRunner implements ScheduledJobRunner {
             }
         };
 
-        threadPool.generic().submit(runnable);
     }
 
     /**
@@ -236,7 +224,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
         String indexName = jobParameter.indexNameFor(manifest);
         jobParameter.getIndices().add(indexName);
         DatasourceHelper.updateDatasource(client, jobParameter, timeout);
-        GeoIpDataHelper.createIndex(clusterService, client, indexName, timeout);
+        GeoIpDataHelper.createIndexIfNotExists(clusterService, client, indexName, timeout);
         String[] fields;
         try (CSVParser reader = GeoIpDataHelper.getDatabaseReader(manifest)) {
             Iterator<CSVRecord> iter = reader.iterator();

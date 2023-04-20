@@ -13,7 +13,6 @@ import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 import static org.opensearch.rest.RestRequest.Method.PUT;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
@@ -28,13 +27,24 @@ import org.opensearch.rest.action.RestToXContentListener;
 
 /**
  * Rest handler for Ip2Geo datasource creation
+ *
+ * This handler handles a request of
+ * PUT /_plugins/geospatial/ip2geo/datasource/{id}
+ * {
+ *     "endpoint": {endpoint},
+ *     "update_interval_in_days": 3
+ * }
+ *
+ * When request is received, it will create a datasource by downloading GeoIp data from the endpoint.
+ * After the creation of datasource is completed, it will schedule the next update task after update_interval_in_days.
+ *
  */
-public class RestPutDatasourceAction extends BaseRestHandler {
+public class RestPutDatasourceHandler extends BaseRestHandler {
     private static final String ACTION_NAME = "ip2geo_datasource";
     private String defaultDatasourceEndpoint;
     private TimeValue defaultUpdateInterval;
 
-    public RestPutDatasourceAction(final Settings settings, final ClusterSettings clusterSettings) {
+    public RestPutDatasourceHandler(final Settings settings, final ClusterSettings clusterSettings) {
         defaultDatasourceEndpoint = Ip2GeoSettings.DATASOURCE_ENDPOINT.get(settings);
         clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.DATASOURCE_ENDPOINT, newValue -> defaultDatasourceEndpoint = newValue);
         defaultUpdateInterval = Ip2GeoSettings.DATASOURCE_UPDATE_INTERVAL.get(settings);
@@ -65,8 +75,7 @@ public class RestPutDatasourceAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        boolean enabled = false;
         String path = String.join(URL_DELIMITER, getPluginURLPrefix(), "ip2geo/datasource/{id}");
-        return enabled ? List.of(new Route(PUT, path)) : new ArrayList<>();
+        return List.of(new Route(PUT, path));
     }
 }

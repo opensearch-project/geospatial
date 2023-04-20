@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.xcontent.json.JsonXContent;
@@ -128,7 +129,7 @@ public class DatasourceManifest {
                     );
                     return PARSER.parse(parser, null);
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new OpenSearchException("Failed to build manifest", e);
                 }
             });
         }

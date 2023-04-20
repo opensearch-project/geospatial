@@ -104,7 +104,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
             url.toURI(); // Validate URL complies with RFC-2396
             validateManifestFile(url, errors);
         } catch (MalformedURLException | URISyntaxException e) {
-            log.info("Invalid URL format is provided", e);
+            log.info("Invalid URL[{}] is provided", endpoint, e);
             errors.addValidationError("Invalid URL format is provided");
         }
     }
@@ -122,12 +122,12 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
         try {
             new URL(manifest.getUrl()).toURI(); // Validate URL complies with RFC-2396
         } catch (MalformedURLException | URISyntaxException e) {
-            log.info("Invalid URL format is provided for url field in the manifest file", e);
+            log.info("Invalid URL[{}] is provided for url field in the manifest file", manifest.getUrl(), e);
             errors.addValidationError("Invalid URL format is provided for url field in the manifest file");
             return;
         }
 
-        if (manifest.getValidForInDays() <= updateIntervalInDays.days()) {
+        if (updateIntervalInDays.days() >= manifest.getValidForInDays()) {
             errors.addValidationError(
                 String.format(
                     Locale.ROOT,

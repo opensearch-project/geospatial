@@ -45,7 +45,7 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Default timeout value for Ip2Geo processor
+     * Timeout value for Ip2Geo processor
      */
     public static final Setting<TimeValue> TIMEOUT_IN_SECONDS = Setting.timeSetting(
         "plugins.geospatial.ip2geo.timeout_in_seconds",
@@ -56,7 +56,7 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Default bulk size for indexing GeoIP data
+     * Bulk size for indexing GeoIP data
      */
     public static final Setting<Integer> INDEXING_BULK_SIZE = Setting.intSetting(
         "plugins.geospatial.ip2geo.datasource.indexing_bulk_size",
@@ -67,7 +67,17 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Default cache size for GeoIP data
+     * Max datasource count allowed
+     */
+    public static final Setting<Integer> MAX_COUNT = Setting.intSetting(
+        "plugins.geospatial.ip2geo.datasource.max_count",
+        10,
+        1,
+        Setting.Property.NodeScope
+    );
+
+    /**
+     * Cache size for GeoIP data
      */
     public static final Setting<Integer> CACHE_SIZE = Setting.intSetting(
         "plugins.geospatial.ip2geo.processor.cache_size",
@@ -77,7 +87,7 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Default multi search bundle size for GeoIP data
+     * Multi search bundle size for GeoIP data
      *
      * Multi search is used only when a field contains a list of ip addresses.
      */
@@ -90,7 +100,7 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Default multi search max concurrent searches
+     * Multi search max concurrent searches
      *
      * Multi search is used only when a field contains a list of ip addresses.
      *
@@ -115,6 +125,7 @@ public class Ip2GeoSettings {
             DATASOURCE_UPDATE_INTERVAL,
             TIMEOUT_IN_SECONDS,
             INDEXING_BULK_SIZE,
+            MAX_COUNT,
             CACHE_SIZE,
             MAX_BUNDLE_SIZE,
             MAX_CONCURRENT_SEARCHES

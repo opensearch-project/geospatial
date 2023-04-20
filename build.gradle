@@ -161,8 +161,6 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:3.12.0"
     implementation "org.locationtech.spatial4j:spatial4j:${versions.spatial4j}"
     implementation "org.locationtech.jts:jts-core:${versions.jts}"
-    api("com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}")
-    api("com.fasterxml.jackson.core:jackson-databind:${versions.jackson_databind}")
     implementation "org.apache.commons:commons-csv:1.10.0"
     zipArchive group: 'org.opensearch.plugin', name:'opensearch-job-scheduler', version: "${opensearch_build}"
     compileOnly "org.opensearch:opensearch-job-scheduler-spi:${opensearch_build}"

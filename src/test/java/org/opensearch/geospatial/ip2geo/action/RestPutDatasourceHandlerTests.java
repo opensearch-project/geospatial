@@ -21,12 +21,12 @@ import org.opensearch.rest.RestRequest;
 import org.opensearch.test.rest.FakeRestRequest;
 import org.opensearch.test.rest.RestActionTestCase;
 
-public class RestPutDatasourceActionTests extends RestActionTestCase {
-    private RestPutDatasourceAction action;
+public class RestPutDatasourceHandlerTests extends RestActionTestCase {
+    private RestPutDatasourceHandler action;
 
     @Before
     public void setupAction() {
-        action = new RestPutDatasourceAction(Settings.EMPTY, new ClusterSettings(Settings.EMPTY, new HashSet(Ip2GeoSettings.settings())));
+        action = new RestPutDatasourceHandler(Settings.EMPTY, new ClusterSettings(Settings.EMPTY, new HashSet(Ip2GeoSettings.settings())));
         controller().registerHandler(action);
     }
 

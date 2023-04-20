@@ -101,6 +101,8 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
             client.index(indexRequest, new ActionListener<>() {
                 @Override
                 public void onResponse(final IndexResponse indexResponse) {
+                    // This is user initiated request. Therefore, we want to handle the first datasource update task in a generic thread
+                    // pool.
                     threadPool.generic().submit(() -> {
                         try {
                             createDatasource(jobParameter);
@@ -151,7 +153,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         String indexName = jobParameter.indexNameFor(manifest);
         jobParameter.getIndices().add(indexName);
         DatasourceHelper.updateDatasource(client, jobParameter, timeout);
-        GeoIpDataHelper.createIndex(clusterService, client, indexName, timeout);
+        GeoIpDataHelper.createIndexIfNotExists(clusterService, client, indexName, timeout);
         String[] fields;
         try (CSVParser reader = GeoIpDataHelper.getDatabaseReader(manifest)) {
             Iterator<CSVRecord> iter = reader.iterator();
