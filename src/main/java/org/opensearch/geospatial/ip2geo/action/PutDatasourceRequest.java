@@ -110,25 +110,32 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     }
 
     private void validateManifestFile(final URL url, final ActionRequestValidationException errors) {
+        DatasourceManifest manifest;
         try {
-            DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
-            new URL(manifest.getUrl()).toURI(); // Validate URL complies with RFC-2396
-            if (manifest.getValidForInDays() <= updateIntervalInDays.days()) {
-                errors.addValidationError(
-                    String.format(
-                        Locale.ROOT,
-                        "updateInterval %d is should be smaller than %d",
-                        updateIntervalInDays.days(),
-                        manifest.getValidForInDays()
-                    )
-                );
-            }
-        } catch (MalformedURLException | URISyntaxException e) {
-            log.info("Invalid URL format is provided for url field in the manifest file", e);
-            errors.addValidationError("Invalid URL format is provided for url field in the manifest file");
+            manifest = DatasourceManifest.Builder.build(url);
         } catch (Exception e) {
             log.info("Error occurred while reading a file from {}", url, e);
             errors.addValidationError(String.format(Locale.ROOT, "Error occurred while reading a file from %s", url));
+            return;
+        }
+
+        try {
+            new URL(manifest.getUrl()).toURI(); // Validate URL complies with RFC-2396
+        } catch (MalformedURLException | URISyntaxException e) {
+            log.info("Invalid URL format is provided for url field in the manifest file", e);
+            errors.addValidationError("Invalid URL format is provided for url field in the manifest file");
+            return;
+        }
+
+        if (manifest.getValidForInDays() <= updateIntervalInDays.days()) {
+            errors.addValidationError(
+                String.format(
+                    Locale.ROOT,
+                    "updateInterval %d is should be smaller than %d",
+                    updateIntervalInDays.days(),
+                    manifest.getValidForInDays()
+                )
+            );
         }
     }
 

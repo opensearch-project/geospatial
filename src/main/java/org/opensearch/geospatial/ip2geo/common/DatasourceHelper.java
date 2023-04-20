@@ -98,17 +98,18 @@ public class DatasourceHelper {
             public void onResponse(final GetResponse response) {
                 if (!response.isExists()) {
                     actionListener.onResponse(null);
-                } else {
-                    try {
-                        XContentParser parser = XContentHelper.createParser(
-                            NamedXContentRegistry.EMPTY,
-                            LoggingDeprecationHandler.INSTANCE,
-                            response.getSourceAsBytesRef()
-                        );
-                        actionListener.onResponse(Datasource.PARSER.parse(parser, null));
-                    } catch (IOException e) {
-                        actionListener.onFailure(e);
-                    }
+                    return;
+                }
+
+                try {
+                    XContentParser parser = XContentHelper.createParser(
+                        NamedXContentRegistry.EMPTY,
+                        LoggingDeprecationHandler.INSTANCE,
+                        response.getSourceAsBytesRef()
+                    );
+                    actionListener.onResponse(Datasource.PARSER.parse(parser, null));
+                } catch (IOException e) {
+                    actionListener.onFailure(e);
                 }
             }
 

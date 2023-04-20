@@ -16,12 +16,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.opensearch.common.Randomness;
+import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class DatasourceTests extends OpenSearchTestCase {
     public void testCurrentIndexName() {
-        String id = "test";
+        String id = GeospatialTestHelper.randomLowerCaseString();
         Instant now = Instant.now();
         Datasource datasource = new Datasource();
         datasource.setId(id);
@@ -33,11 +35,11 @@ public class DatasourceTests extends OpenSearchTestCase {
     }
 
     public void testGetIndexNameFor() {
-        long updatedAt = 123123123l;
+        long updatedAt = Randomness.get().nextLong();
         DatasourceManifest manifest = mock(DatasourceManifest.class);
         when(manifest.getUpdatedAt()).thenReturn(updatedAt);
 
-        String id = "test";
+        String id = GeospatialTestHelper.randomLowerCaseString();
         Datasource datasource = new Datasource();
         datasource.setId(id);
         assertEquals(
