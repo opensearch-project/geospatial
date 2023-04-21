@@ -98,6 +98,13 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
         return errors.validationErrors().isEmpty() ? null : errors;
     }
 
+    /**
+     * Conduct following validation on endpoint
+     * 1. endpoint format complies with RFC-2396
+     * 2. validate manifest file from the endpoint
+     *
+     * @param errors the errors to add error messages
+     */
     private void validateEndpoint(final ActionRequestValidationException errors) {
         try {
             URL url = new URL(endpoint);
@@ -109,6 +116,15 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
         }
     }
 
+    /**
+     * Conduct following validation on url
+     * 1. can read manifest file from the endpoint
+     * 2. the url in the manifest file complies with RFC-2396
+     * 3. updateIntervalInDays is less than validForInDays value in the manifest file
+     *
+     * @param url the url to validate
+     * @param errors the errors to add error messages
+     */
     private void validateManifestFile(final URL url, final ActionRequestValidationException errors) {
         DatasourceManifest manifest;
         try {
@@ -139,6 +155,11 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
         }
     }
 
+    /**
+     * Validate updateIntervalInDays is larger than 0
+     *
+     * @param errors the errors to add error messages
+     */
     private void validateUpdateInterval(final ActionRequestValidationException errors) {
         if (updateIntervalInDays.compareTo(TimeValue.timeValueDays(1)) > 0) {
             errors.addValidationError("Update interval should be equal to or larger than 1 day");

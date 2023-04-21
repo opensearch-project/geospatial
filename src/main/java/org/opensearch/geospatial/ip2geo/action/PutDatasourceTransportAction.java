@@ -8,6 +8,7 @@
 
 package org.opensearch.geospatial.ip2geo.action;
 
+import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
@@ -148,20 +149,21 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
 
         URL url = new URL(jobParameter.getEndpoint());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
-
+        String indexName = setupIndex(manifest, jobParameter);
         Instant startTime = Instant.now();
-        String indexName = jobParameter.indexNameFor(manifest);
-        jobParameter.getIndices().add(indexName);
-        DatasourceHelper.updateDatasource(client, jobParameter, timeout);
-        GeoIpDataHelper.createIndexIfNotExists(clusterService, client, indexName, timeout);
-        String[] fields;
-        try (CSVParser reader = GeoIpDataHelper.getDatabaseReader(manifest)) {
-            Iterator<CSVRecord> iter = reader.iterator();
-            fields = iter.next().values();
-            GeoIpDataHelper.putGeoData(client, indexName, fields, iter, indexingBulkSize, timeout);
-        }
-
+        String[] fields = putIp2GeoData(indexName, manifest);
         Instant endTime = Instant.now();
+        updateJobParameterAsSucceeded(jobParameter, manifest, fields, startTime, endTime);
+        log.info("GeoIP database[{}] creation succeeded after {} seconds", jobParameter.getId(), Duration.between(startTime, endTime));
+    }
+
+    private void updateJobParameterAsSucceeded(
+        final Datasource jobParameter,
+        final DatasourceManifest manifest,
+        final String[] fields,
+        final Instant startTime,
+        final Instant endTime
+    ) throws IOException {
         jobParameter.setDatabase(
             new Datasource.Database(
                 manifest.getProvider(),
@@ -176,10 +178,23 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         jobParameter.enable();
         jobParameter.setState(DatasourceState.AVAILABLE);
         DatasourceHelper.updateDatasource(client, jobParameter, timeout);
-        log.info(
-            "GeoIP database creation succeeded for {} and took {} seconds",
-            jobParameter.getId(),
-            Duration.between(startTime, endTime)
-        );
+    }
+
+    private String setupIndex(final DatasourceManifest manifest, final Datasource jobParameter) throws IOException {
+        String indexName = jobParameter.indexNameFor(manifest);
+        jobParameter.getIndices().add(indexName);
+        DatasourceHelper.updateDatasource(client, jobParameter, timeout);
+        GeoIpDataHelper.createIndexIfNotExists(clusterService, client, indexName, timeout);
+        return indexName;
+    }
+
+    private String[] putIp2GeoData(final String indexName, final DatasourceManifest manifest) throws IOException {
+        String[] fields;
+        try (CSVParser reader = GeoIpDataHelper.getDatabaseReader(manifest)) {
+            Iterator<CSVRecord> iter = reader.iterator();
+            fields = iter.next().values();
+            GeoIpDataHelper.putGeoData(client, indexName, fields, iter, indexingBulkSize, timeout);
+        }
+        return fields;
     }
 }
