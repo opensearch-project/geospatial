@@ -29,7 +29,11 @@ public class DatasourceTests extends OpenSearchTestCase {
         Instant now = Instant.now();
         Datasource datasource = new Datasource();
         datasource.setId(id);
-        datasource.setDatabase(new Datasource.Database("provider", "md5Hash", now, 10l, new ArrayList<>()));
+        datasource.getDatabase().setProvider("provider");
+        datasource.getDatabase().setMd5Hash("md5Hash");
+        datasource.getDatabase().setUpdatedAt(now);
+        datasource.getDatabase().setValidForInDays(10l);
+        datasource.getDatabase().setFields(new ArrayList<>());
         assertEquals(
             String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, now.toEpochMilli()),
             datasource.currentIndexName()
@@ -54,7 +58,7 @@ public class DatasourceTests extends OpenSearchTestCase {
         Datasource datasource = new Datasource();
         datasource.setSchedule(new IntervalSchedule(Instant.now(), Randomness.get().nextInt(31), ChronoUnit.DAYS));
         long intervalInMinutes = datasource.getSchedule().getInterval() * 60 * 24;
-        double fiveMinutes = 5;
-        assertTrue(datasource.getJitter() * intervalInMinutes <= fiveMinutes);
+        double sixMinutes = 6;
+        assertTrue(datasource.getJitter() * intervalInMinutes <= sixMinutes);
     }
 }

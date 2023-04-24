@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Iterator;
 
 import lombok.extern.log4j.Log4j2;
@@ -164,15 +163,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         final Instant startTime,
         final Instant endTime
     ) throws IOException {
-        jobParameter.setDatabase(
-            new Datasource.Database(
-                manifest.getProvider(),
-                manifest.getMd5Hash(),
-                Instant.ofEpochMilli(manifest.getUpdatedAt()),
-                manifest.getValidForInDays(),
-                Arrays.asList(fields)
-            )
-        );
+        jobParameter.setDatabase(manifest, fields);
         jobParameter.getUpdateStats().setLastSucceededAt(endTime);
         jobParameter.getUpdateStats().setLastProcessingTimeInMillis(endTime.toEpochMilli() - startTime.toEpochMilli());
         jobParameter.enable();

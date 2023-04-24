@@ -12,11 +12,14 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.opensearch.core.ParseField;
@@ -174,7 +177,22 @@ public class Datasource implements ScheduledJobParameter {
      * Visible for testing
      */
     protected Datasource() {
+        this(null, null, null);
+    }
 
+    public Datasource(final String id, final IntervalSchedule schedule, final String endpoint) {
+        this(
+            id,
+            Instant.now(),
+            null,
+            false,
+            schedule,
+            endpoint,
+            DatasourceState.PREPARING,
+            new ArrayList<>(),
+            new Database(),
+            new UpdateStats()
+        );
     }
 
     @Override
@@ -304,12 +322,21 @@ public class Datasource implements ScheduledJobParameter {
         return Instant.now().isAfter(lastCheckedAt.plus(database.validForInDays, ChronoUnit.DAYS));
     }
 
+    public void setDatabase(final DatasourceManifest datasourceManifest, final String[] fields) {
+        this.database.setProvider(datasourceManifest.getProvider());
+        this.database.setMd5Hash(datasourceManifest.getMd5Hash());
+        this.database.setUpdatedAt(Instant.ofEpochMilli(datasourceManifest.getUpdatedAt()));
+        this.database.setValidForInDays(database.validForInDays);
+        this.database.setFields(Arrays.asList(fields));
+    }
+
     /**
      * Database of a datasource
      */
     @Getter
     @Setter
-    @AllArgsConstructor
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Database implements ToXContent {
         private static final ParseField PROVIDER_FIELD = new ParseField("provider");
         private static final ParseField MD5_HASH_FIELD = new ParseField("md5_hash");
@@ -400,7 +427,8 @@ public class Datasource implements ScheduledJobParameter {
      */
     @Getter
     @Setter
-    @AllArgsConstructor
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class UpdateStats implements ToXContent {
         private static final ParseField LAST_SUCCEEDED_AT_FIELD = new ParseField("last_succeeded_at");
         private static final ParseField LAST_SUCCEEDED_AT_FIELD_READABLE = new ParseField("last_succeeded_at_field");
@@ -488,20 +516,13 @@ public class Datasource implements ScheduledJobParameter {
     public static class Builder {
         public static Datasource build(final PutDatasourceRequest request) {
             String id = request.getDatasourceName();
-            Instant lastUpdateTime = Instant.now();
-            Instant enabledTime = null;
-            boolean isEnabled = false;
             IntervalSchedule schedule = new IntervalSchedule(
                 Instant.now(),
                 (int) request.getUpdateIntervalInDays().days(),
                 ChronoUnit.DAYS
             );
             String endpoint = request.getEndpoint();
-            DatasourceState state = DatasourceState.PREPARING;
-            List<String> indices = new ArrayList<>();
-            Database database = new Database(null, null, null, null, null);
-            UpdateStats updateStats = new UpdateStats(null, null, null, null);
-            return new Datasource(id, lastUpdateTime, enabledTime, isEnabled, schedule, endpoint, state, indices, database, updateStats);
+            return new Datasource(id, schedule, endpoint);
         }
     }
 }

@@ -238,11 +238,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
         }
 
         Instant endTime = Instant.now();
-        jobParameter.getDatabase().setProvider(manifest.getProvider());
-        jobParameter.getDatabase().setMd5Hash(manifest.getMd5Hash());
-        jobParameter.getDatabase().setUpdatedAt(Instant.ofEpochMilli(manifest.getUpdatedAt()));
-        jobParameter.getDatabase().setValidForInDays(manifest.getValidForInDays());
-        jobParameter.getDatabase().setFields(Arrays.asList(fields));
+        jobParameter.setDatabase(manifest, fields);
         jobParameter.getUpdateStats().setLastSucceededAt(endTime);
         jobParameter.getUpdateStats().setLastProcessingTimeInMillis(endTime.toEpochMilli() - startTime.toEpochMilli());
         DatasourceHelper.updateDatasource(client, jobParameter, timeout);

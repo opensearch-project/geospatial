@@ -12,7 +12,7 @@ import org.opensearch.action.ActionType;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 
 /**
- * GeoIp datasource creation action
+ * Ip2Geo datasource creation action
  */
 public class PutDatasourceAction extends ActionType<AcknowledgedResponse> {
     /**
@@ -20,9 +20,9 @@ public class PutDatasourceAction extends ActionType<AcknowledgedResponse> {
      */
     public static final PutDatasourceAction INSTANCE = new PutDatasourceAction();
     /**
-     * Name of a put datasource action
+     * Put datasource action name
      */
-    public static final String NAME = "cluster:admin/geospatial/datasource";
+    public static final String NAME = "cluster:admin/geospatial/datasource/put";
 
     private PutDatasourceAction() {
         super(NAME, AcknowledgedResponse::new);
