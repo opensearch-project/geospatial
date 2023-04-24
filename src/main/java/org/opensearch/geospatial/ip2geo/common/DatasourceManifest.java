@@ -9,6 +9,7 @@
 package org.opensearch.geospatial.ip2geo.common;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.CharBuffer;
@@ -19,7 +20,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.xcontent.json.JsonXContent;
@@ -112,10 +112,9 @@ public class DatasourceManifest {
          *
          * @param url url to downloads a manifest file
          * @return DatasourceManifest representing the manifest file
-         * @throws Exception exception
          */
         @SuppressForbidden(reason = "Need to connect to http endpoint to read manifest file")
-        public static DatasourceManifest build(final URL url) throws Exception {
+        public static DatasourceManifest build(final URL url) {
             SpecialPermission.check();
             return AccessController.doPrivileged((PrivilegedAction<DatasourceManifest>) () -> {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
@@ -128,8 +127,8 @@ public class DatasourceManifest {
                         charBuffer.toString()
                     );
                     return PARSER.parse(parser, null);
-                } catch (Exception e) {
-                    throw new OpenSearchException("Failed to build manifest", e);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
         }

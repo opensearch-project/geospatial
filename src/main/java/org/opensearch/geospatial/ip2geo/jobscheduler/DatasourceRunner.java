@@ -20,6 +20,7 @@ import lombok.extern.log4j.Log4j2;
 
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.client.Client;
@@ -95,13 +96,13 @@ public class DatasourceRunner implements ScheduledJobRunner {
     @Override
     public void runJob(final ScheduledJobParameter jobParameter, final JobExecutionContext context) {
         if (initialized == false) {
-            throw new AssertionError("This instance is not initialized");
+            throw new AssertionError("this instance is not initialized");
         }
 
         log.info("Update job started for a datasource[{}]", jobParameter.getName());
         if (jobParameter instanceof Datasource == false) {
             throw new IllegalStateException(
-                "Job parameter is not instance of DatasourceUpdateJobParameter, type: " + jobParameter.getClass().getCanonicalName()
+                "job parameter is not instance of DatasourceUpdateJobParameter, type: " + jobParameter.getClass().getCanonicalName()
             );
         }
 
@@ -125,28 +126,29 @@ public class DatasourceRunner implements ScheduledJobRunner {
                     if (lock == null) {
                         return;
                     }
-                    Datasource datasource = DatasourceHelper.getDatasource(client, jobParameter.getName(), timeout);
-                    if (datasource == null) {
-                        log.info("Datasource[{}] is already deleted", jobParameter.getName());
-                    }
                     try {
-                        deleteUnusedIndices(datasource);
-                        updateDatasource(datasource);
-                        deleteUnusedIndices(datasource);
-                    } catch (Exception e) {
-                        log.error("Failed to update datasource for {}", datasource.getId(), e);
-                        datasource.getUpdateStats().setLastFailedAt(Instant.now());
-                        DatasourceHelper.updateDatasource(client, datasource, timeout);
+                        Datasource datasource = DatasourceHelper.getDatasource(client, jobParameter.getName(), timeout);
+                        if (datasource == null) {
+                            log.info("Datasource[{}] is already deleted", jobParameter.getName());
+                            return;
+                        }
+
+                        try {
+                            deleteUnusedIndices(datasource);
+                            updateDatasource(datasource);
+                            deleteUnusedIndices(datasource);
+                        } catch (Exception e) {
+                            log.error("Failed to update datasource for {}", datasource.getId(), e);
+                            datasource.getUpdateStats().setLastFailedAt(Instant.now());
+                            DatasourceHelper.updateDatasource(client, datasource, timeout);
+                        }
                     } finally {
                         lockService.release(
                             lock,
-                            ActionListener.wrap(
-                                released -> { log.info("Released lock for job {}", datasource.getId()); },
-                                exception -> { throw new IllegalStateException("Failed to release lock."); }
-                            )
+                            ActionListener.wrap(released -> {}, exception -> { log.error("Failed to release lock [{}]", lock); })
                         );
                     }
-                }, exception -> { throw new IllegalStateException("Failed to acquire lock."); }));
+                }, exception -> { log.error("Failed to acquire lock for job [{}]", jobParameter.getName()); }));
             }
         };
 
@@ -180,10 +182,10 @@ public class DatasourceRunner implements ScheduledJobRunner {
                         .isAcknowledged()) {
                         deletedIndices.add(index);
                     } else {
-                        log.error("Failed to delete an index {}", index);
+                        log.error("Failed to delete an index [{}]", index);
                     }
                 } catch (Exception e) {
-                    log.error("Failed to delete an index {}", index, e);
+                    log.error("Failed to delete an index [{}]", index, e);
                 }
             }
             if (!deletedIndices.isEmpty()) {
@@ -230,15 +232,21 @@ public class DatasourceRunner implements ScheduledJobRunner {
             Iterator<CSVRecord> iter = reader.iterator();
             fields = iter.next().values();
             if (!jobParameter.getDatabase().getFields().equals(Arrays.asList(fields))) {
-                log.error("The previous fields and new fields does not match.");
-                log.error("Previous: {}, New: {}", jobParameter.getDatabase().getFields().toString(), Arrays.asList(fields).toString());
-                throw new IllegalStateException("Fields does not match between old and new");
+                throw new OpenSearchException(
+                    "fields does not match between old [{}] and new [{}]",
+                    jobParameter.getDatabase().getFields().toString(),
+                    Arrays.asList(fields).toString()
+                );
             }
             GeoIpDataHelper.putGeoData(client, indexName, fields, iter, indexingBulkSize, timeout);
         }
 
         Instant endTime = Instant.now();
-        jobParameter.setDatabase(manifest, fields);
+        jobParameter.getDatabase().setProvider(manifest.getProvider());
+        jobParameter.getDatabase().setMd5Hash(manifest.getMd5Hash());
+        jobParameter.getDatabase().setUpdatedAt(Instant.ofEpochMilli(manifest.getUpdatedAt()));
+        jobParameter.getDatabase().setValidForInDays(manifest.getValidForInDays());
+        jobParameter.getDatabase().setFields(Arrays.asList(fields));
         jobParameter.getUpdateStats().setLastSucceededAt(endTime);
         jobParameter.getUpdateStats().setLastProcessingTimeInMillis(endTime.toEpochMilli() - startTime.toEpochMilli());
         DatasourceHelper.updateDatasource(client, jobParameter, timeout);

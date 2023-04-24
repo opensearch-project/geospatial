@@ -18,7 +18,6 @@ import lombok.extern.log4j.Log4j2;
 
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
@@ -123,17 +122,16 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
                 @Override
                 public void onFailure(final Exception e) {
                     if (e instanceof VersionConflictEngineException) {
-                        log.info("Datasource already exists {}", request.getDatasourceName(), e);
-                        listener.onFailure(new ResourceAlreadyExistsException("Datasource already exists"));
+                        listener.onFailure(
+                            new ResourceAlreadyExistsException("datasource [{}] already exists", request.getDatasourceName())
+                        );
                     } else {
-                        log.error("Failed to create a datasource {}", request.getDatasourceName(), e);
-                        listener.onFailure(new OpenSearchException("Failed to create a datasource"));
+                        listener.onFailure(e);
                     }
                 }
             });
         } catch (Exception e) {
-            log.error("Error occurred while creating datasource {}", request.getDatasourceName(), e);
-            listener.onFailure(new OpenSearchException("Failed to create a datasource"));
+            listener.onFailure(e);
         }
     }
 

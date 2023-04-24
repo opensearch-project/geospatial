@@ -24,7 +24,6 @@ import java.util.function.BiConsumer;
 
 import lombok.extern.log4j.Log4j2;
 
-import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
@@ -173,8 +172,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             @Override
             public void onResponse(final Datasource datasource) {
                 if (datasource == null) {
-                    log.error("Datasource[{}] does not exist", datasourceName);
-                    handler.accept(null, new IllegalStateException("Datasource does not exist"));
+                    handler.accept(null, new IllegalStateException("datasource does not exist"));
                     return;
                 }
 
@@ -196,16 +194,14 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
                     @Override
                     public void onFailure(final Exception e) {
-                        log.error("Error while retrieving geo data from datasource[{}] for a given ip[{}]", datasourceName, ip, e);
-                        handler.accept(null, new OpenSearchException("Failed to geo data"));
+                        handler.accept(null, e);
                     }
                 });
             }
 
             @Override
             public void onFailure(final Exception e) {
-                log.error("Failed to get datasource[{}]", datasourceName, e);
-                handler.accept(null, new OpenSearchException("Failed to get datasource[{}]", datasourceName));
+                handler.accept(null, e);
             }
         });
     }
@@ -235,8 +231,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             @Override
             public void onResponse(final Datasource datasource) {
                 if (datasource == null) {
-                    log.error("Datasource[{}] does not exist", datasourceName);
-                    handler.accept(null, new IllegalStateException("Datasource does not exist"));
+                    handler.accept(null, new IllegalStateException("datasource does not exist"));
                     return;
                 }
 
@@ -291,8 +286,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
                         @Override
                         public void onFailure(final Exception e) {
-                            log.error("Error while retrieving geo data from datasource[{}] for a given ip[{}]", datasourceName, ipList, e);
-                            handler.accept(null, new OpenSearchException("Failed to geo data"));
+                            handler.accept(null, e);
                         }
                     }
                 );
@@ -300,8 +294,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
             @Override
             public void onFailure(final Exception e) {
-                log.error("Failed to get datasource[{}]", datasourceName, e);
-                handler.accept(null, new OpenSearchException("Failed to get datasource[{}]", datasourceName));
+                handler.accept(null, e);
             }
         });
     }

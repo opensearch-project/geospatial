@@ -35,7 +35,6 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
-import org.opensearch.action.admin.indices.create.CreateIndexResponse;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
@@ -70,14 +69,13 @@ public class GeoIpDataHelper {
      * @param client client
      * @param indexName index name
      * @param timeout timeout
-     * @throws IOException io exception
      */
     public static void createIndexIfNotExists(
         final ClusterService clusterService,
         final Client client,
         final String indexName,
         final TimeValue timeout
-    ) throws IOException {
+    ) {
         if (clusterService.state().metadata().hasIndex(indexName) == true) {
             log.info("Index {} already exist", indexName);
             return;
@@ -86,7 +84,7 @@ public class GeoIpDataHelper {
         indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
         indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings).mapping(getIndexMapping());
-        CreateIndexResponse response = client.admin().indices().create(createIndexRequest).actionGet(timeout);
+        client.admin().indices().create(createIndexRequest).actionGet(timeout);
     }
 
     /**
@@ -111,8 +109,8 @@ public class GeoIpDataHelper {
                     return reader.lines().collect(Collectors.joining());
                 }
             }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Ip2Geo datasource mapping cannot be read correctly.");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -140,8 +138,11 @@ public class GeoIpDataHelper {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            log.error("ZIP file {} does not have database file {}", manifest.getUrl(), manifest.getDbName());
-            throw new RuntimeException("ZIP file does not have database file");
+            throw new OpenSearchException(
+                "database file [{}] does not exist in the zip file [{}]",
+                manifest.getDbName(),
+                manifest.getUrl()
+            );
         });
     }
 
@@ -332,25 +333,20 @@ public class GeoIpDataHelper {
     ) {
         BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         while (iterator.hasNext()) {
-            try {
-                CSVRecord record = iterator.next();
-                String document = createDocument(fields, record.values());
-                IndexRequest request = Requests.indexRequest(indexName).source(document, XContentType.JSON);
-                bulkRequest.add(request);
-                if (!iterator.hasNext() || bulkRequest.requests().size() == bulkSize) {
-                    BulkResponse response = client.bulk(bulkRequest).actionGet(timeout);
-                    if (response.hasFailures()) {
-                        log.error(
-                            "Error occurred while ingesting GeoIP data in {} with an error {}",
-                            indexName,
-                            response.buildFailureMessage()
-                        );
-                        throw new OpenSearchException("Error occurred while ingesting GeoIP data");
-                    }
-                    bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
+            CSVRecord record = iterator.next();
+            String document = createDocument(fields, record.values());
+            IndexRequest request = Requests.indexRequest(indexName).source(document, XContentType.JSON);
+            bulkRequest.add(request);
+            if (!iterator.hasNext() || bulkRequest.requests().size() == bulkSize) {
+                BulkResponse response = client.bulk(bulkRequest).actionGet(timeout);
+                if (response.hasFailures()) {
+                    throw new OpenSearchException(
+                        "error occurred while ingesting GeoIP data in {} with an error {}",
+                        indexName,
+                        response.buildFailureMessage()
+                    );
                 }
-            } catch (Exception e) {
-                throw e;
+                bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
             }
         }
         client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
