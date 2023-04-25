@@ -77,7 +77,6 @@ public class GeoIpDataHelper {
         final TimeValue timeout
     ) {
         if (clusterService.state().metadata().hasIndex(indexName) == true) {
-            log.info("Index {} already exist", indexName);
             return;
         }
         final Map<String, Object> indexSettings = new HashMap<>();
@@ -136,7 +135,7 @@ public class GeoIpDataHelper {
                     return new CSVParser(new BufferedReader(new InputStreamReader(zipIn)), CSVFormat.RFC4180);
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new OpenSearchException("failed to read geoip data from {}", manifest.getUrl(), e);
             }
             throw new OpenSearchException(
                 "database file [{}] does not exist in the zip file [{}]",

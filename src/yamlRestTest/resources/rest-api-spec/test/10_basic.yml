@@ -1,4 +1,4 @@
-"Test that geospatial plugin is loaded in OpenSearch":
+"Test that geospatial and job scheduler plugins are loaded in OpenSearch":
   - do:
       cat.plugins:
         local: true
