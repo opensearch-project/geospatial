@@ -12,20 +12,24 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import org.opensearch.core.ParseField;
 import org.opensearch.core.xcontent.ConstructingObjectParser;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceRequest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
@@ -38,6 +42,8 @@ import org.opensearch.jobscheduler.spi.schedule.ScheduleParser;
  */
 @Getter
 @Setter
+@ToString
+@EqualsAndHashCode
 @AllArgsConstructor
 public class Datasource implements ScheduledJobParameter {
     /**
@@ -45,6 +51,9 @@ public class Datasource implements ScheduledJobParameter {
      */
     public static final String IP2GEO_DATA_INDEX_NAME_PREFIX = ".ip2geo-data";
     private static final long LOCK_DURATION_IN_SECONDS = 60 * 60;
+    private static final long MAX_JITTER_IN_MINUTES = 5;
+    private static final long ONE_DAY_IN_HOURS = 24;
+    private static final long ONE_HOUR_IN_MINUTES = 60;
 
     /**
      * Default fields for job scheduling
@@ -173,22 +182,20 @@ public class Datasource implements ScheduledJobParameter {
 
     }
 
-    /**
-     * Visible for testing
-     */
-    protected Datasource() {
+    @VisibleForTesting
+    public Datasource() {
         this(null, null, null);
     }
 
     public Datasource(final String id, final IntervalSchedule schedule, final String endpoint) {
         this(
             id,
-            Instant.now(),
+            Instant.now().truncatedTo(ChronoUnit.MILLIS),
             null,
             false,
             schedule,
             endpoint,
-            DatasourceState.PREPARING,
+            DatasourceState.CREATING,
             new ArrayList<>(),
             new Database(),
             new UpdateStats()
@@ -264,14 +271,17 @@ public class Datasource implements ScheduledJobParameter {
      */
     @Override
     public Double getJitter() {
-        return 5.0 / (schedule.getInterval() * 24 * 60);
+        return MAX_JITTER_IN_MINUTES / ((double) schedule.getInterval() * ONE_DAY_IN_HOURS * ONE_HOUR_IN_MINUTES);
     }
 
     /**
      * Enable auto update of GeoIP data
      */
     public void enable() {
-        enabledTime = Instant.now();
+        if (isEnabled == true) {
+            return;
+        }
+        enabledTime = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         isEnabled = true;
     }
 
@@ -306,6 +316,11 @@ public class Datasource implements ScheduledJobParameter {
         return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, suffix);
     }
 
+    /**
+     * Checks if datasource is expired or not
+     *
+     * @return true if datasource is expired false otherwise
+     */
     public boolean isExpired() {
         if (database.validForInDays == null) {
             return false;
@@ -322,12 +337,45 @@ public class Datasource implements ScheduledJobParameter {
         return Instant.now().isAfter(lastCheckedAt.plus(database.validForInDays, ChronoUnit.DAYS));
     }
 
-    public void setDatabase(final DatasourceManifest datasourceManifest, final String[] fields) {
+    /**
+     * Set database attributes with given input
+     *
+     * @param datasourceManifest the datasource manifest
+     * @param fields the fields
+     */
+    public void setDatabase(final DatasourceManifest datasourceManifest, final List<String> fields) {
         this.database.setProvider(datasourceManifest.getProvider());
         this.database.setMd5Hash(datasourceManifest.getMd5Hash());
         this.database.setUpdatedAt(Instant.ofEpochMilli(datasourceManifest.getUpdatedAt()));
-        this.database.setValidForInDays(database.validForInDays);
-        this.database.setFields(Arrays.asList(fields));
+        this.database.setValidForInDays(datasourceManifest.getValidForInDays());
+        this.database.setFields(fields);
+    }
+
+    /**
+     * Checks if the database fields are compatible with the given set of fields.
+     *
+     * If database fields are null, it is compatible with any input fields
+     * as it hasn't been generated before.
+     *
+     * @param fields The set of input fields to check for compatibility.
+     * @return true if the database fields are compatible with the given input fields, false otherwise.
+     */
+    public boolean isCompatible(final List<String> fields) {
+        if (database.fields == null) {
+            return true;
+        }
+
+        if (fields.size() < database.fields.size()) {
+            return false;
+        }
+
+        Set<String> fieldsSet = new HashSet<>(fields);
+        for (String field : database.fields) {
+            if (fieldsSet.contains(field) == false) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -335,6 +383,8 @@ public class Datasource implements ScheduledJobParameter {
      */
     @Getter
     @Setter
+    @ToString
+    @EqualsAndHashCode
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Database implements ToXContent {
@@ -427,6 +477,8 @@ public class Datasource implements ScheduledJobParameter {
      */
     @Getter
     @Setter
+    @ToString
+    @EqualsAndHashCode
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class UpdateStats implements ToXContent {
@@ -517,8 +569,8 @@ public class Datasource implements ScheduledJobParameter {
         public static Datasource build(final PutDatasourceRequest request) {
             String id = request.getDatasourceName();
             IntervalSchedule schedule = new IntervalSchedule(
-                Instant.now(),
-                (int) request.getUpdateIntervalInDays().days(),
+                Instant.now().truncatedTo(ChronoUnit.MILLIS),
+                (int) request.getUpdateInterval().days(),
                 ChronoUnit.DAYS
             );
             String endpoint = request.getEndpoint();
