@@ -261,7 +261,7 @@ spotless {
 }
 
 jacocoTestReport {
-    dependsOn integTest, test, yamlRestTest
+    dependsOn test
     reports {
         xml.enabled = true
         html.enabled = true
