@@ -5,6 +5,8 @@
 
 import org.opensearch.gradle.test.RestIntegTestTask
 
+import java.util.concurrent.Callable
+
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
@@ -35,6 +37,7 @@ opensearchplugin {
     classname "${projectPath}.${pathToPlugin}.${pluginClassName}"
     licenseFile rootProject.file('LICENSE')
     noticeFile rootProject.file('NOTICE')
+    extendedPlugins = ['opensearch-job-scheduler']
 }
 
 // This requires an additional Jar not published as part of build-tools
@@ -142,6 +145,10 @@ publishing {
 }
 
 
+configurations {
+    zipArchive
+}
+
 //****************************************************************************/
 // Dependencies
 //****************************************************************************/
@@ -154,6 +161,9 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:3.12.0"
     implementation "org.locationtech.spatial4j:spatial4j:${versions.spatial4j}"
     implementation "org.locationtech.jts:jts-core:${versions.jts}"
+    implementation "org.apache.commons:commons-csv:1.10.0"
+    zipArchive group: 'org.opensearch.plugin', name:'opensearch-job-scheduler', version: "${opensearch_build}"
+    compileOnly "org.opensearch:opensearch-job-scheduler-spi:${opensearch_build}"
 }
 
 licenseHeaders.enabled = true
@@ -206,8 +216,6 @@ integTest {
 testClusters.integTest {
     testDistribution = "ARCHIVE"
 
-    // This installs our plugin into the testClusters
-    plugin(project.tasks.bundlePlugin.archiveFile)
     // Cluster shrink exception thrown if we try to set numberOfNodes to 1, so only apply if > 1
     if (_numNodes > 1) numberOfNodes = _numNodes
     // When running integration tests it doesn't forward the --debug-jvm to the cluster anymore
@@ -220,6 +228,49 @@ testClusters.integTest {
             debugPort += 1
         }
     }
+
+    // This installs our plugin into the testClusters
+    plugin(project.tasks.bundlePlugin.archiveFile)
+    plugin(provider(new Callable<RegularFile>(){
+        @Override
+        RegularFile call() throws Exception {
+            return new RegularFile() {
+                @Override
+                File getAsFile() {
+                    return configurations.zipArchive.asFileTree.getSingleFile()
+                }
+            }
+        }
+    }))
+
+    // opensearch-geospatial plugin is being added to the list of plugins for the testCluster during build before
+    // the opensearch-job-scheduler plugin, which is causing build failures. From the stack trace, this looks like a bug.
+    //
+    // Exception in thread "main" java.lang.IllegalArgumentException: Missing plugin [opensearch-job-scheduler], dependency of [opensearch-geospatial]
+    //       at org.opensearch.plugins.PluginsService.addSortedBundle(PluginsService.java:515)
+    //
+    // A temporary hack is to reorder the plugins list after evaluation but prior to task execution when the plugins are installed.
+    // See https://github.com/opensearch-project/anomaly-detection/blob/fd547014fdde5114bbc9c8e49fe7aaa37eb6e793/build.gradle#L400-L422
+    nodes.each { node ->
+        def plugins = node.plugins
+        def firstPlugin = plugins.get(0)
+        plugins.remove(0)
+        plugins.add(firstPlugin)
+    }
+}
+
+testClusters.yamlRestTest {
+    plugin(provider(new Callable<RegularFile>(){
+        @Override
+        RegularFile call() throws Exception {
+            return new RegularFile() {
+                @Override
+                File getAsFile() {
+                    return configurations.zipArchive.asFileTree.getSingleFile()
+                }
+            }
+        }
+    }))
 }
 
 run {
