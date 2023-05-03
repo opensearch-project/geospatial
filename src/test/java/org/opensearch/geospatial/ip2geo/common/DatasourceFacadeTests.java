@@ -16,14 +16,24 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
+import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
+import org.mockito.ArgumentCaptor;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
+import org.opensearch.action.get.MultiGetItemResponse;
+import org.opensearch.action.get.MultiGetRequest;
+import org.opensearch.action.get.MultiGetResponse;
 import org.opensearch.action.index.IndexRequest;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
+import org.opensearch.common.Randomness;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
@@ -33,7 +43,10 @@ import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.index.IndexNotFoundException;
+import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
 
 public class DatasourceFacadeTests extends Ip2GeoTestCase {
     private DatasourceFacade datasourceFacade;
@@ -46,7 +59,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         );
     }
 
-    public void testUpdateDatasource() throws Exception {
+    public void testUpdateDatasource_whenValidInput_thenSucceed() throws Exception {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         Datasource datasource = new Datasource(
             datasourceName,
@@ -69,29 +82,29 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         assertTrue(previousTime.isBefore(datasource.getLastUpdateTime()));
     }
 
-    public void testGetDatasourceException() throws Exception {
+    public void testGetDatasource_whenException_thenNull() throws Exception {
         Datasource datasource = setupClientForGetRequest(true, new IndexNotFoundException(DatasourceExtension.JOB_INDEX_NAME));
         assertNull(datasourceFacade.getDatasource(datasource.getName()));
     }
 
-    public void testGetDatasourceExist() throws Exception {
+    public void testGetDatasource_whenExist_thenReturnDatasource() throws Exception {
         Datasource datasource = setupClientForGetRequest(true, null);
         assertEquals(datasource, datasourceFacade.getDatasource(datasource.getName()));
     }
 
-    public void testGetDatasourceNotExist() throws Exception {
+    public void testGetDatasource_whenNotExist_thenNull() throws Exception {
         Datasource datasource = setupClientForGetRequest(false, null);
         assertNull(datasourceFacade.getDatasource(datasource.getName()));
     }
 
-    public void testGetDatasourceExistWithListener() {
+    public void testGetDatasource_whenExistWithListener_thenListenerIsCalledWithDatasource() {
         Datasource datasource = setupClientForGetRequest(true, null);
         ActionListener<Datasource> listener = mock(ActionListener.class);
         datasourceFacade.getDatasource(datasource.getName(), listener);
         verify(listener).onResponse(eq(datasource));
     }
 
-    public void testGetDatasourceNotExistWithListener() {
+    public void testGetDatasource_whenExistWithListener_thenListenerIsCalledWithNull() {
         Datasource datasource = setupClientForGetRequest(false, null);
         ActionListener<Datasource> listener = mock(ActionListener.class);
         datasourceFacade.getDatasource(datasource.getName(), listener);
@@ -115,6 +128,76 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         return datasource;
     }
 
+    public void testGetDatasources_whenValidInput_thenSucceed() {
+        List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
+        String[] names = datasources.stream().map(Datasource::getName).toArray(String[]::new);
+        ActionListener<List<Datasource>> listener = mock(ActionListener.class);
+        MultiGetItemResponse[] multiGetItemResponses = datasources.stream().map(datasource -> {
+            GetResponse getResponse = getMockedGetResponse(datasource);
+            MultiGetItemResponse multiGetItemResponse = mock(MultiGetItemResponse.class);
+            when(multiGetItemResponse.getResponse()).thenReturn(getResponse);
+            return multiGetItemResponse;
+        }).toArray(MultiGetItemResponse[]::new);
+
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            // Verify
+            assertTrue(actionRequest instanceof MultiGetRequest);
+            MultiGetRequest request = (MultiGetRequest) actionRequest;
+            assertEquals(2, request.getItems().size());
+            for (MultiGetRequest.Item item : request.getItems()) {
+                assertEquals(DatasourceExtension.JOB_INDEX_NAME, item.index());
+                assertTrue(datasources.stream().filter(datasource -> datasource.getName().equals(item.id())).findAny().isPresent());
+            }
+
+            MultiGetResponse response = mock(MultiGetResponse.class);
+            when(response.getResponses()).thenReturn(multiGetItemResponses);
+            return response;
+        });
+
+        // Run
+        datasourceFacade.getDatasources(names, listener);
+
+        // Verify
+        ArgumentCaptor<List<Datasource>> captor = ArgumentCaptor.forClass(List.class);
+        verify(listener).onResponse(captor.capture());
+        assertEquals(datasources, captor.getValue());
+
+    }
+
+    public void testGetAllDatasources_whenValidInput_thenSucceed() {
+        List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
+        ActionListener<List<Datasource>> listener = mock(ActionListener.class);
+        SearchHits searchHits = getMockedSearchHits(datasources);
+
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            // Verify
+            assertTrue(actionRequest instanceof SearchRequest);
+            SearchRequest request = (SearchRequest) actionRequest;
+            assertEquals(1, request.indices().length);
+            assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.indices()[0]);
+            assertEquals(QueryBuilders.matchAllQuery(), request.source().query());
+            assertEquals(1000, request.source().size());
+
+            SearchResponse response = mock(SearchResponse.class);
+            when(response.getHits()).thenReturn(searchHits);
+            return response;
+        });
+
+        // Run
+        datasourceFacade.getAllDatasources(listener);
+
+        // Verify
+        ArgumentCaptor<List<Datasource>> captor = ArgumentCaptor.forClass(List.class);
+        verify(listener).onResponse(captor.capture());
+        assertEquals(datasources, captor.getValue());
+    }
+
+    private SearchHits getMockedSearchHits(List<Datasource> datasources) {
+        SearchHit[] searchHitArray = datasources.stream().map(this::toBytesReference).map(this::toSearchHit).toArray(SearchHit[]::new);
+
+        return new SearchHits(searchHitArray, new TotalHits(1l, TotalHits.Relation.EQUAL_TO), 1);
+    }
+
     private GetResponse getMockedGetResponse(Datasource datasource) {
         GetResponse response = mock(GetResponse.class);
         when(response.isExists()).thenReturn(datasource != null);
@@ -132,5 +215,11 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private SearchHit toSearchHit(BytesReference bytesReference) {
+        SearchHit searchHit = new SearchHit(Randomness.get().nextInt());
+        searchHit.sourceRef(bytesReference);
+        return searchHit;
     }
 }

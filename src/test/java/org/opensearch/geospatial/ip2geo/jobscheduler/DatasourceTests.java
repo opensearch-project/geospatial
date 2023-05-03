@@ -21,11 +21,11 @@ import java.util.Locale;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.geospatial.GeospatialTestHelper;
+import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
-import org.opensearch.test.OpenSearchTestCase;
 
-public class DatasourceTests extends OpenSearchTestCase {
+public class DatasourceTests extends Ip2GeoTestCase {
 
     public void testParser() throws Exception {
         String id = GeospatialTestHelper.randomLowerCaseString();
@@ -38,7 +38,7 @@ public class DatasourceTests extends OpenSearchTestCase {
         datasource.getDatabase().setUpdatedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
         datasource.getDatabase().setSha256Hash(GeospatialTestHelper.randomLowerCaseString());
         datasource.getDatabase().setValidForInDays(1l);
-        datasource.getUpdateStats().setLastProcessingTimeInMillis(Randomness.get().nextLong());
+        datasource.getUpdateStats().setLastProcessingTimeInMillis(randomPositiveLong());
         datasource.getUpdateStats().setLastSucceededAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
         datasource.getUpdateStats().setLastSkippedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
         datasource.getUpdateStats().setLastFailedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
@@ -67,7 +67,7 @@ public class DatasourceTests extends OpenSearchTestCase {
     }
 
     public void testGetIndexNameFor() {
-        long updatedAt = Randomness.get().nextLong();
+        long updatedAt = randomPositiveLong();
         DatasourceManifest manifest = mock(DatasourceManifest.class);
         when(manifest.getUpdatedAt()).thenReturn(updatedAt);
 

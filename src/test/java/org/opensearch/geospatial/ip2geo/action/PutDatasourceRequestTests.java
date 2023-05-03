@@ -105,7 +105,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         String domain = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(validDatasourceName);
         request.setEndpoint(sampleManifestUrl());
-        request.setUpdateInterval(TimeValue.timeValueDays(Randomness.get().nextInt(30) + 1));
+        request.setUpdateInterval(TimeValue.timeValueDays(Randomness.get().nextInt(10) + 1));
 
         // Run
         ActionRequestValidationException exception = request.validate();

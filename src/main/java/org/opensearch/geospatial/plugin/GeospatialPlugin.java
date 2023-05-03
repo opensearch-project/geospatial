@@ -36,8 +36,11 @@ import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldTypeParser;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
+import org.opensearch.geospatial.ip2geo.action.GetDatasourceAction;
+import org.opensearch.geospatial.ip2geo.action.GetDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceTransportAction;
+import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
@@ -153,7 +156,12 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<DiscoveryNodes> nodesInCluster
     ) {
-        return List.of(new RestUploadStatsAction(), new RestUploadGeoJSONAction(), new RestPutDatasourceHandler(clusterSettings));
+        return List.of(
+            new RestUploadStatsAction(),
+            new RestUploadGeoJSONAction(),
+            new RestPutDatasourceHandler(clusterSettings),
+            new RestGetDatasourceHandler()
+        );
     }
 
     @Override
@@ -161,7 +169,8 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         return List.of(
             new ActionHandler<>(UploadGeoJSONAction.INSTANCE, UploadGeoJSONTransportAction.class),
             new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class),
-            new ActionHandler<>(PutDatasourceAction.INSTANCE, PutDatasourceTransportAction.class)
+            new ActionHandler<>(PutDatasourceAction.INSTANCE, PutDatasourceTransportAction.class),
+            new ActionHandler<>(GetDatasourceAction.INSTANCE, GetDatasourceTransportAction.class)
         );
     }
 

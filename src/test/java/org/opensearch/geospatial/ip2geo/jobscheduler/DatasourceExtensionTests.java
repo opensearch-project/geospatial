@@ -13,7 +13,6 @@ import static org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension.
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import org.opensearch.common.Randomness;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
@@ -39,7 +38,7 @@ public class DatasourceExtensionTests extends Ip2GeoTestCase {
             .parse(
                 createParser(datasource.toXContent(XContentFactory.jsonBuilder(), null)),
                 GeospatialTestHelper.randomLowerCaseString(),
-                new JobDocVersion(Randomness.get().nextLong(), Randomness.get().nextLong(), Randomness.get().nextLong())
+                new JobDocVersion(randomPositiveLong(), randomPositiveLong(), randomPositiveLong())
             );
 
         assertTrue(datasource.equals(anotherDatasource));
