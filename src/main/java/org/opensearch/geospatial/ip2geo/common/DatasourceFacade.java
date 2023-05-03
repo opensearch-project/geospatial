@@ -53,7 +53,7 @@ public class DatasourceFacade {
     public IndexResponse updateDatasource(final Datasource datasource) throws IOException {
         datasource.setLastUpdateTime(Instant.now());
         IndexRequestBuilder requestBuilder = client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME);
-        requestBuilder.setId(datasource.getId());
+        requestBuilder.setId(datasource.getName());
         requestBuilder.setOpType(DocWriteRequest.OpType.INDEX);
         requestBuilder.setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS));
         return client.index(requestBuilder.request()).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
@@ -61,17 +61,17 @@ public class DatasourceFacade {
 
     /**
      * Get datasource from an index {@code DatasourceExtension.JOB_INDEX_NAME}
-     * @param id the name of a datasource
+     * @param name the name of a datasource
      * @return datasource
      * @throws IOException exception
      */
-    public Datasource getDatasource(final String id) throws IOException {
-        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, id);
+    public Datasource getDatasource(final String name) throws IOException {
+        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
         GetResponse response;
         try {
             response = client.get(request).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
             if (response.isExists() == false) {
-                log.error("Datasource[{}] does not exist in an index[{}]", id, DatasourceExtension.JOB_INDEX_NAME);
+                log.error("Datasource[{}] does not exist in an index[{}]", name, DatasourceExtension.JOB_INDEX_NAME);
                 return null;
             }
         } catch (IndexNotFoundException e) {
@@ -89,11 +89,11 @@ public class DatasourceFacade {
 
     /**
      * Get datasource from an index {@code DatasourceExtension.JOB_INDEX_NAME}
-     * @param id the name of a datasource
+     * @param name the name of a datasource
      * @param actionListener the action listener
      */
-    public void getDatasource(final String id, final ActionListener<Datasource> actionListener) {
-        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, id);
+    public void getDatasource(final String name, final ActionListener<Datasource> actionListener) {
+        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
         client.get(request, new ActionListener<GetResponse>() {
             @Override
             public void onResponse(final GetResponse response) {

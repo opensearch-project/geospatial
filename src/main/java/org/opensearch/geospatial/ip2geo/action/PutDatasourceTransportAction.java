@@ -73,7 +73,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         try {
             Datasource datasource = Datasource.Builder.build(request);
             IndexRequest indexRequest = new IndexRequest().index(DatasourceExtension.JOB_INDEX_NAME)
-                .id(datasource.getId())
+                .id(datasource.getName())
                 .source(datasource.toXContent(JsonXContent.contentBuilder(), null))
                 .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
                 .opType(DocWriteRequest.OpType.CREATE);
@@ -100,7 +100,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
             @Override
             public void onFailure(final Exception e) {
                 if (e instanceof VersionConflictEngineException) {
-                    listener.onFailure(new ResourceAlreadyExistsException("datasource [{}] already exists", datasource.getId()));
+                    listener.onFailure(new ResourceAlreadyExistsException("datasource [{}] already exists", datasource.getName()));
                 } else {
                     listener.onFailure(e);
                 }
@@ -119,7 +119,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         try {
             datasourceUpdateService.updateOrCreateGeoIpData(datasource);
         } catch (Exception e) {
-            log.error("Failed to create datasource for {}", datasource.getId(), e);
+            log.error("Failed to create datasource for {}", datasource.getName(), e);
             markDatasourceAsCreateFailed(datasource);
         }
     }
@@ -130,7 +130,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         try {
             datasourceFacade.updateDatasource(datasource);
         } catch (Exception e) {
-            log.error("Failed to mark datasource state as CREATE_FAILED for {}", datasource.getId(), e);
+            log.error("Failed to mark datasource state as CREATE_FAILED for {}", datasource.getName(), e);
         }
     }
 }

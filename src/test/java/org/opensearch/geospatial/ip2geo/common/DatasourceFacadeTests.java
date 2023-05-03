@@ -59,7 +59,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assertTrue(actionRequest instanceof IndexRequest);
             IndexRequest request = (IndexRequest) actionRequest;
-            assertEquals(datasource.getId(), request.id());
+            assertEquals(datasource.getName(), request.id());
             assertEquals(DocWriteRequest.OpType.INDEX, request.opType());
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
             return null;
@@ -71,60 +71,66 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
     public void testGetDatasourceException() throws Exception {
         Datasource datasource = setupClientForGetRequest(true, new IndexNotFoundException(DatasourceExtension.JOB_INDEX_NAME));
-        assertNull(datasourceFacade.getDatasource(datasource.getId()));
+        assertNull(datasourceFacade.getDatasource(datasource.getName()));
     }
 
     public void testGetDatasourceExist() throws Exception {
         Datasource datasource = setupClientForGetRequest(true, null);
-        assertEquals(datasource, datasourceFacade.getDatasource(datasource.getId()));
+        assertEquals(datasource, datasourceFacade.getDatasource(datasource.getName()));
     }
 
     public void testGetDatasourceNotExist() throws Exception {
         Datasource datasource = setupClientForGetRequest(false, null);
-        assertNull(datasourceFacade.getDatasource(datasource.getId()));
+        assertNull(datasourceFacade.getDatasource(datasource.getName()));
     }
 
     public void testGetDatasourceExistWithListener() {
         Datasource datasource = setupClientForGetRequest(true, null);
         ActionListener<Datasource> listener = mock(ActionListener.class);
-        datasourceFacade.getDatasource(datasource.getId(), listener);
+        datasourceFacade.getDatasource(datasource.getName(), listener);
         verify(listener).onResponse(eq(datasource));
     }
 
     public void testGetDatasourceNotExistWithListener() {
         Datasource datasource = setupClientForGetRequest(false, null);
         ActionListener<Datasource> listener = mock(ActionListener.class);
-        datasourceFacade.getDatasource(datasource.getId(), listener);
+        datasourceFacade.getDatasource(datasource.getName(), listener);
         verify(listener).onResponse(null);
     }
 
     private Datasource setupClientForGetRequest(final boolean isExist, final RuntimeException exception) {
-        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
-        Datasource datasource = new Datasource(
-            datasourceName,
-            new IntervalSchedule(Instant.now().truncatedTo(ChronoUnit.MILLIS), 1, ChronoUnit.DAYS),
-            "https://test.com"
-        );
+        Datasource datasource = randomDatasource();
 
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assertTrue(actionRequest instanceof GetRequest);
             GetRequest request = (GetRequest) actionRequest;
-            assertEquals(datasource.getId(), request.id());
+            assertEquals(datasource.getName(), request.id());
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
-            GetResponse response = mock(GetResponse.class);
-            when(response.isExists()).thenReturn(isExist);
-            try {
-                when(response.getSourceAsBytesRef()).thenReturn(
-                    BytesReference.bytes(datasource.toXContent(JsonXContent.contentBuilder(), null))
-                );
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            GetResponse response = getMockedGetResponse(isExist ? datasource : null);
             if (exception != null) {
                 throw exception;
             }
             return response;
         });
         return datasource;
+    }
+
+    private GetResponse getMockedGetResponse(Datasource datasource) {
+        GetResponse response = mock(GetResponse.class);
+        when(response.isExists()).thenReturn(datasource != null);
+        when(response.getSourceAsBytesRef()).thenReturn(toBytesReference(datasource));
+        return response;
+    }
+
+    private BytesReference toBytesReference(Datasource datasource) {
+        if (datasource == null) {
+            return null;
+        }
+
+        try {
+            return BytesReference.bytes(datasource.toXContent(JsonXContent.contentBuilder(), null));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

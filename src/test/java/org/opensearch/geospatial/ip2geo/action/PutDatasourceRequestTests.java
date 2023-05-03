@@ -143,7 +143,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         );
 
         for (Map.Entry<String, String> entry : nameToError.entrySet()) {
-            request.setDatasourceName(entry.getKey());
+            request.setName(entry.getKey());
 
             // Run
             exception = request.validate();

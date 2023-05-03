@@ -54,7 +54,7 @@ public class DatasourceTests extends OpenSearchTestCase {
         String id = GeospatialTestHelper.randomLowerCaseString();
         Instant now = Instant.now();
         Datasource datasource = new Datasource();
-        datasource.setId(id);
+        datasource.setName(id);
         datasource.getDatabase().setProvider("provider");
         datasource.getDatabase().setMd5Hash("md5Hash");
         datasource.getDatabase().setUpdatedAt(now);
@@ -73,7 +73,7 @@ public class DatasourceTests extends OpenSearchTestCase {
 
         String id = GeospatialTestHelper.randomLowerCaseString();
         Datasource datasource = new Datasource();
-        datasource.setId(id);
+        datasource.setName(id);
         assertEquals(
             String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, updatedAt),
             datasource.indexNameFor(manifest)
