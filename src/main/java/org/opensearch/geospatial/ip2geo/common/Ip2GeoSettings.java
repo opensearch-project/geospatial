@@ -36,10 +36,10 @@ public class Ip2GeoSettings {
     /**
      * Default update interval to be used in Ip2Geo datasource creation API
      */
-    public static final Setting<TimeValue> DATASOURCE_UPDATE_INTERVAL = Setting.timeSetting(
+    public static final Setting<Long> DATASOURCE_UPDATE_INTERVAL = Setting.longSetting(
         "plugins.geospatial.ip2geo.datasource.update_interval_in_days",
-        TimeValue.timeValueDays(3),
-        TimeValue.timeValueDays(1),
+        3l,
+        1l,
         Setting.Property.NodeScope,
         Setting.Property.Dynamic
     );
@@ -47,8 +47,8 @@ public class Ip2GeoSettings {
     /**
      * Timeout value for Ip2Geo processor
      */
-    public static final Setting<TimeValue> TIMEOUT_IN_SECONDS = Setting.timeSetting(
-        "plugins.geospatial.ip2geo.timeout_in_seconds",
+    public static final Setting<TimeValue> TIMEOUT = Setting.timeSetting(
+        "plugins.geospatial.ip2geo.timeout",
         TimeValue.timeValueSeconds(30),
         TimeValue.timeValueSeconds(1),
         Setting.Property.NodeScope,
@@ -64,16 +64,6 @@ public class Ip2GeoSettings {
         1,
         Setting.Property.NodeScope,
         Setting.Property.Dynamic
-    );
-
-    /**
-     * Cache size for GeoIP data
-     */
-    public static final Setting<Integer> CACHE_SIZE = Setting.intSetting(
-        "plugins.geospatial.ip2geo.processor.cache_size",
-        1000,
-        0,
-        Setting.Property.NodeScope
     );
 
     /**
@@ -113,9 +103,8 @@ public class Ip2GeoSettings {
         return List.of(
             DATASOURCE_ENDPOINT,
             DATASOURCE_UPDATE_INTERVAL,
-            TIMEOUT_IN_SECONDS,
+            TIMEOUT,
             INDEXING_BULK_SIZE,
-            CACHE_SIZE,
             MAX_BUNDLE_SIZE,
             MAX_CONCURRENT_SEARCHES
         );
