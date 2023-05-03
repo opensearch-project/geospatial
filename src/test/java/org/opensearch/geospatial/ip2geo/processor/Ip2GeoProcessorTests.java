@@ -68,7 +68,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
 
     public void testCreateWithInvalidDatasourceState() {
         Datasource datasource = new Datasource();
-        datasource.setId(GeospatialTestHelper.randomLowerCaseString());
+        datasource.setName(GeospatialTestHelper.randomLowerCaseString());
         datasource.setState(randomStateExcept(DatasourceState.AVAILABLE));
         OpenSearchException exception = expectThrows(OpenSearchException.class, () -> createProcessor(datasource, Collections.emptyMap()));
         assertTrue(exception.getDetailedMessage().contains("available state"));
@@ -323,14 +323,14 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
 
     private Ip2GeoProcessor createProcessor(final String datasourceName, final Map<String, Object> config) throws Exception {
         Datasource datasource = new Datasource();
-        datasource.setId(datasourceName);
+        datasource.setName(datasourceName);
         datasource.setState(DatasourceState.AVAILABLE);
         datasource.getDatabase().setFields(SUPPORTED_FIELDS);
         return createProcessor(datasource, config);
     }
 
     private Ip2GeoProcessor createProcessor(final Datasource datasource, final Map<String, Object> config) throws Exception {
-        when(datasourceFacade.getDatasource(datasource.getId())).thenReturn(datasource);
+        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
         Map<String, Object> baseConfig = new HashMap<>();
         baseConfig.put(CONFIG_FIELD_KEY, "ip");
         baseConfig.put(CONFIG_DATASOURCE_KEY, datasource.getName());

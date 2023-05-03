@@ -153,7 +153,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
             datasourceUpdateService.updateOrCreateGeoIpData(datasource);
             datasourceUpdateService.deleteUnusedIndices(datasource);
         } catch (Exception e) {
-            log.error("Failed to update datasource for {}", datasource.getId(), e);
+            log.error("Failed to update datasource for {}", datasource.getName(), e);
             datasource.getUpdateStats().setLastFailedAt(Instant.now());
             datasourceFacade.updateDatasource(datasource);
         }

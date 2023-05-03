@@ -68,7 +68,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         datasource.enable();
         datasource.getUpdateStats().setLastFailedAt(null);
         datasource.setState(randomStateExcept(DatasourceState.AVAILABLE));
-        when(datasourceFacade.getDatasource(datasource.getId())).thenReturn(datasource);
+        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
 
         // Run
         DatasourceRunner.getJobRunnerInstance().updateDatasource(datasource);
@@ -82,8 +82,8 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
     public void testUpdateDatasource() throws Exception {
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
-        datasource.setId(randomLowerCaseString());
-        when(datasourceFacade.getDatasource(datasource.getId())).thenReturn(datasource);
+        datasource.setName(randomLowerCaseString());
+        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
 
         // Run
         DatasourceRunner.getJobRunnerInstance().updateDatasource(datasource);
@@ -95,9 +95,9 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
 
     public void testUpdateDatasourceExceptionHandling() throws Exception {
         Datasource datasource = new Datasource();
-        datasource.setId(randomLowerCaseString());
+        datasource.setName(randomLowerCaseString());
         datasource.getUpdateStats().setLastFailedAt(null);
-        when(datasourceFacade.getDatasource(datasource.getId())).thenReturn(datasource);
+        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
         doThrow(new RuntimeException("test failure")).when(datasourceUpdateService).deleteUnusedIndices(any());
 
         // Run

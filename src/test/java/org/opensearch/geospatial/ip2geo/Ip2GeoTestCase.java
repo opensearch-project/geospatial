@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -39,13 +41,16 @@ import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
+import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.ingest.IngestService;
+import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.jobscheduler.spi.utils.LockService;
 import org.opensearch.tasks.Task;
 import org.opensearch.tasks.TaskListener;
@@ -120,6 +125,13 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             .get(Randomness.createSecure().nextInt(DatasourceState.values().length - 2));
     }
 
+    public DatasourceState randomState() {
+        return Arrays.stream(DatasourceState.values())
+            .sequential()
+            .collect(Collectors.toList())
+            .get(Randomness.createSecure().nextInt(DatasourceState.values().length - 1));
+    }
+
     public String randomIpAddress() {
         return String.format(
             Locale.ROOT,
@@ -147,6 +159,33 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     @SuppressForbidden(reason = "unit test")
     public File sampleIp2GeoFile() {
         return new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
+    }
+
+    public Datasource randomDatasource() {
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        Datasource datasource = new Datasource();
+        datasource.setName(GeospatialTestHelper.randomLowerCaseString());
+        datasource.setSchedule(new IntervalSchedule(now, Randomness.get().nextInt(30) + 1, ChronoUnit.DAYS));
+        datasource.setState(randomState());
+        datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
+        datasource.setEndpoint(GeospatialTestHelper.randomLowerCaseString());
+        datasource.getDatabase()
+            .setFields(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
+        datasource.getDatabase().setProvider(GeospatialTestHelper.randomLowerCaseString());
+        datasource.getDatabase().setUpdatedAt(now);
+        datasource.getDatabase().setMd5Hash(GeospatialTestHelper.randomLowerCaseString());
+        datasource.getDatabase().setValidForInDays(Randomness.get().nextInt(30) + 1l);
+        datasource.getUpdateStats().setLastSkippedAt(now);
+        datasource.getUpdateStats().setLastSucceededAt(now);
+        datasource.getUpdateStats().setLastFailedAt(now);
+        datasource.getUpdateStats().setLastProcessingTimeInMillis(Randomness.get().nextLong());
+        datasource.setLastUpdateTime(now);
+        if (Randomness.get().nextInt() % 2 == 0) {
+            datasource.enable();
+        } else {
+            datasource.disable();
+        }
+        return datasource;
     }
 
     /**

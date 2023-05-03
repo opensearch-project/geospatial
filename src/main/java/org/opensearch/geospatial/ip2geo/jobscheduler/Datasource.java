@@ -58,13 +58,13 @@ public class Datasource implements ScheduledJobParameter {
     /**
      * Default fields for job scheduling
      */
-    private static final ParseField ID_FIELD = new ParseField("id");
-    private static final ParseField ENABLED_FILED = new ParseField("update_enabled");
+    private static final ParseField NAME_FIELD = new ParseField("name");
+    private static final ParseField ENABLED_FIELD = new ParseField("update_enabled");
     private static final ParseField LAST_UPDATE_TIME_FIELD = new ParseField("last_update_time");
     private static final ParseField LAST_UPDATE_TIME_FIELD_READABLE = new ParseField("last_update_time_field");
     private static final ParseField SCHEDULE_FIELD = new ParseField("schedule");
-    private static final ParseField ENABLED_TIME_FILED = new ParseField("enabled_time");
-    private static final ParseField ENABLED_TIME_FILED_READABLE = new ParseField("enabled_time_field");
+    private static final ParseField ENABLED_TIME_FIELD = new ParseField("enabled_time");
+    private static final ParseField ENABLED_TIME_FIELD_READABLE = new ParseField("enabled_time_field");
 
     /**
      * Additional fields for datasource
@@ -80,10 +80,10 @@ public class Datasource implements ScheduledJobParameter {
      */
 
     /**
-     * @param id Id of a datasource
-     * @return Id of a datasource
+     * @param name name of a datasource
+     * @return name of a datasource
      */
-    private String id;
+    private String name;
     /**
      * @param lastUpdateTime Last update time of a datasource
      * @return Last update time of a datasource
@@ -169,10 +169,10 @@ public class Datasource implements ScheduledJobParameter {
         }
     );
     static {
-        PARSER.declareString(ConstructingObjectParser.constructorArg(), ID_FIELD);
+        PARSER.declareString(ConstructingObjectParser.constructorArg(), NAME_FIELD);
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), LAST_UPDATE_TIME_FIELD);
-        PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), ENABLED_TIME_FILED);
-        PARSER.declareBoolean(ConstructingObjectParser.constructorArg(), ENABLED_FILED);
+        PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), ENABLED_TIME_FIELD);
+        PARSER.declareBoolean(ConstructingObjectParser.constructorArg(), ENABLED_FIELD);
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), (p, c) -> ScheduleParser.parse(p), SCHEDULE_FIELD);
         PARSER.declareString(ConstructingObjectParser.constructorArg(), ENDPOINT_FIELD);
         PARSER.declareString(ConstructingObjectParser.constructorArg(), STATE_FIELD);
@@ -205,7 +205,7 @@ public class Datasource implements ScheduledJobParameter {
     @Override
     public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
         builder.startObject();
-        builder.field(ID_FIELD.getPreferredName(), id);
+        builder.field(NAME_FIELD.getPreferredName(), name);
         builder.timeField(
             LAST_UPDATE_TIME_FIELD.getPreferredName(),
             LAST_UPDATE_TIME_FIELD_READABLE.getPreferredName(),
@@ -213,12 +213,12 @@ public class Datasource implements ScheduledJobParameter {
         );
         if (enabledTime != null) {
             builder.timeField(
-                ENABLED_TIME_FILED.getPreferredName(),
-                ENABLED_TIME_FILED_READABLE.getPreferredName(),
+                ENABLED_TIME_FIELD.getPreferredName(),
+                ENABLED_TIME_FIELD_READABLE.getPreferredName(),
                 enabledTime.toEpochMilli()
             );
         }
-        builder.field(ENABLED_FILED.getPreferredName(), isEnabled);
+        builder.field(ENABLED_FIELD.getPreferredName(), isEnabled);
         builder.field(SCHEDULE_FIELD.getPreferredName(), schedule);
         builder.field(ENDPOINT_FIELD.getPreferredName(), endpoint);
         builder.field(STATE_FIELD.getPreferredName(), state.name());
@@ -231,7 +231,7 @@ public class Datasource implements ScheduledJobParameter {
 
     @Override
     public String getName() {
-        return id;
+        return name;
     }
 
     @Override
@@ -313,7 +313,7 @@ public class Datasource implements ScheduledJobParameter {
     }
 
     private String indexNameFor(final long suffix) {
-        return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, suffix);
+        return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, name, suffix);
     }
 
     /**
@@ -567,7 +567,7 @@ public class Datasource implements ScheduledJobParameter {
      */
     public static class Builder {
         public static Datasource build(final PutDatasourceRequest request) {
-            String id = request.getDatasourceName();
+            String id = request.getName();
             IntervalSchedule schedule = new IntervalSchedule(
                 Instant.now().truncatedTo(ChronoUnit.MILLIS),
                 (int) request.getUpdateInterval().days(),

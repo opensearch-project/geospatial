@@ -54,7 +54,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
             assertTrue(actionRequest instanceof IndexRequest);
             IndexRequest indexRequest = (IndexRequest) actionRequest;
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, indexRequest.index());
-            assertEquals(request.getDatasourceName(), indexRequest.id());
+            assertEquals(request.getName(), indexRequest.id());
             assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, indexRequest.getRefreshPolicy());
             assertEquals(DocWriteRequest.OpType.CREATE, indexRequest.opType());
             return null;
