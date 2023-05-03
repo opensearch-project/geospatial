@@ -9,6 +9,7 @@
 package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -19,8 +20,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 
+import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.support.master.AcknowledgedRequest;
+import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.common.unit.TimeValue;
@@ -38,6 +41,7 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceRequest> {
     private static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
     private static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
+    private static final int MAX_DATASOURCE_NAME_BYTES = 255;
     /**
      * @param datasourceName the datasource name
      * @return the datasource name
@@ -95,9 +99,48 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException errors = new ActionRequestValidationException();
+        validateDatasourceName(errors);
         validateEndpoint(errors);
         validateUpdateInterval(errors);
         return errors.validationErrors().isEmpty() ? null : errors;
+    }
+
+    private void validateDatasourceName(final ActionRequestValidationException errors) {
+        if (!Strings.validFileName(datasourceName)) {
+            errors.addValidationError("Datasource name must not contain the following characters " + Strings.INVALID_FILENAME_CHARS);
+            return;
+        }
+        if (datasourceName.isEmpty()) {
+            errors.addValidationError("Datasource name must not be empty");
+            return;
+        }
+        if (datasourceName.contains("#")) {
+            errors.addValidationError("Datasource name must not contain '#'");
+            return;
+        }
+        if (datasourceName.contains(":")) {
+            errors.addValidationError("Datasource name must not contain ':'");
+            return;
+        }
+        if (datasourceName.charAt(0) == '_' || datasourceName.charAt(0) == '-' || datasourceName.charAt(0) == '+') {
+            errors.addValidationError("Datasource name must not start with '_', '-', or '+'");
+            return;
+        }
+        int byteCount = 0;
+        try {
+            byteCount = datasourceName.getBytes("UTF-8").length;
+        } catch (UnsupportedEncodingException e) {
+            // UTF-8 should always be supported, but rethrow this if it is not for some reason
+            throw new OpenSearchException("Unable to determine length of datasource name", e);
+        }
+        if (byteCount > MAX_DATASOURCE_NAME_BYTES) {
+            errors.addValidationError("Datasource name is too long, (" + byteCount + " > " + MAX_DATASOURCE_NAME_BYTES + ")");
+            return;
+        }
+        if (datasourceName.equals(".") || datasourceName.equals("..")) {
+            errors.addValidationError("Datasource name must not be '.' or '..'");
+            return;
+        }
     }
 
     /**

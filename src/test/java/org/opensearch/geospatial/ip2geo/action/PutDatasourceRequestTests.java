@@ -8,10 +8,13 @@
 
 package org.opensearch.geospatial.ip2geo.action;
 
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
 
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.common.Randomness;
+import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamInput;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.unit.TimeValue;
@@ -95,6 +98,60 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         // Verify
         assertEquals(1, exception.validationErrors().size());
         assertTrue(exception.validationErrors().get(0).contains("Invalid URL format"));
+    }
+
+    public void testValidateDatasourceNames() throws Exception {
+        String validDatasourceName = GeospatialTestHelper.randomLowerCaseString();
+        String domain = GeospatialTestHelper.randomLowerCaseString();
+        PutDatasourceRequest request = new PutDatasourceRequest(validDatasourceName);
+        request.setEndpoint(sampleManifestUrl());
+        request.setUpdateInterval(TimeValue.timeValueDays(Randomness.get().nextInt(30) + 1));
+
+        // Run
+        ActionRequestValidationException exception = request.validate();
+
+        // Verify
+        assertNull(exception);
+
+        String fileNameChar = validDatasourceName + Strings.INVALID_FILENAME_CHARS.stream()
+            .skip(Randomness.get().nextInt(Strings.INVALID_FILENAME_CHARS.size() - 1))
+            .findFirst();
+        String startsWith = Arrays.asList("_", "-", "+").get(Randomness.get().nextInt(3)) + validDatasourceName;
+        String empty = "";
+        String hash = validDatasourceName + "#";
+        String colon = validDatasourceName + ":";
+        StringBuilder longName = new StringBuilder();
+        while (longName.length() < 256) {
+            longName.append(GeospatialTestHelper.randomLowerCaseString());
+        }
+        String point = Arrays.asList(".", "..").get(Randomness.get().nextInt(2));
+        Map<String, String> nameToError = Map.of(
+            fileNameChar,
+            "not contain the following characters",
+            empty,
+            "must not be empty",
+            hash,
+            "must not contain '#'",
+            colon,
+            "must not contain ':'",
+            startsWith,
+            "must not start with",
+            longName.toString(),
+            "name is too long",
+            point,
+            "must not be '.' or '..'"
+        );
+
+        for (Map.Entry<String, String> entry : nameToError.entrySet()) {
+            request.setDatasourceName(entry.getKey());
+
+            // Run
+            exception = request.validate();
+
+            // Verify
+            assertEquals(1, exception.validationErrors().size());
+            assertTrue(exception.validationErrors().get(0).contains(entry.getValue()));
+        }
     }
 
     public void testStreamInOut() throws Exception {
