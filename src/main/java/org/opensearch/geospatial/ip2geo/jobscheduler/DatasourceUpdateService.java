@@ -63,7 +63,7 @@ public class DatasourceUpdateService {
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
 
         if (shouldUpdate(datasource, manifest) == false) {
-            log.info("Skipping GeoIP database update. Update is not required for {}", datasource.getId());
+            log.info("Skipping GeoIP database update. Update is not required for {}", datasource.getName());
             datasource.getUpdateStats().setLastSkippedAt(Instant.now());
             datasourceFacade.updateDatasource(datasource);
             return;
@@ -110,7 +110,7 @@ public class DatasourceUpdateService {
                 datasourceFacade.updateDatasource(parameter);
             }
         } catch (Exception e) {
-            log.error("Failed to delete old indices for {}", parameter.getId(), e);
+            log.error("Failed to delete old indices for {}", parameter.getName(), e);
         }
     }
 
@@ -175,7 +175,11 @@ public class DatasourceUpdateService {
         datasource.enable();
         datasource.setState(DatasourceState.AVAILABLE);
         datasourceFacade.updateDatasource(datasource);
-        log.info("GeoIP database creation succeeded for {} and took {} seconds", datasource.getId(), Duration.between(startTime, endTime));
+        log.info(
+            "GeoIP database creation succeeded for {} and took {} seconds",
+            datasource.getName(),
+            Duration.between(startTime, endTime)
+        );
     }
 
     /***

@@ -53,7 +53,7 @@ public class RestPutDatasourceHandlerTests extends RestActionTestCase {
             PutDatasourceRequest putDatasourceRequest = (PutDatasourceRequest) actionRequest;
             assertEquals("https://test.com", putDatasourceRequest.getEndpoint());
             assertEquals(TimeValue.timeValueDays(1), putDatasourceRequest.getUpdateInterval());
-            assertEquals(datasourceName, putDatasourceRequest.getDatasourceName());
+            assertEquals(datasourceName, putDatasourceRequest.getName());
             isExecuted.set(true);
             return null;
         });
@@ -74,7 +74,7 @@ public class RestPutDatasourceHandlerTests extends RestActionTestCase {
             PutDatasourceRequest putDatasourceRequest = (PutDatasourceRequest) actionRequest;
             assertEquals("https://geoip.maps.opensearch.org/v1/geolite-2/manifest.json", putDatasourceRequest.getEndpoint());
             assertEquals(TimeValue.timeValueDays(3), putDatasourceRequest.getUpdateInterval());
-            assertEquals(datasourceName, putDatasourceRequest.getDatasourceName());
+            assertEquals(datasourceName, putDatasourceRequest.getName());
             isExecuted.set(true);
             return null;
         });

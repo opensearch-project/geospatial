@@ -43,10 +43,10 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     private static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
     private static final int MAX_DATASOURCE_NAME_BYTES = 255;
     /**
-     * @param datasourceName the datasource name
+     * @param name the datasource name
      * @return the datasource name
      */
-    private String datasourceName;
+    private String name;
     /**
      * @param endpoint url to a manifest file for a datasource
      * @return url to a manifest file for a datasource
@@ -70,10 +70,10 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
 
     /**
      * Default constructor
-     * @param datasourceName name of a datasource
+     * @param name name of a datasource
      */
-    public PutDatasourceRequest(final String datasourceName) {
-        this.datasourceName = datasourceName;
+    public PutDatasourceRequest(final String name) {
+        this.name = name;
     }
 
     /**
@@ -83,7 +83,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
      */
     public PutDatasourceRequest(final StreamInput in) throws IOException {
         super(in);
-        this.datasourceName = in.readString();
+        this.name = in.readString();
         this.endpoint = in.readString();
         this.updateInterval = in.readTimeValue();
     }
@@ -91,7 +91,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     @Override
     public void writeTo(final StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeString(datasourceName);
+        out.writeString(name);
         out.writeString(endpoint);
         out.writeTimeValue(updateInterval);
     }
@@ -106,29 +106,29 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     }
 
     private void validateDatasourceName(final ActionRequestValidationException errors) {
-        if (!Strings.validFileName(datasourceName)) {
+        if (!Strings.validFileName(name)) {
             errors.addValidationError("Datasource name must not contain the following characters " + Strings.INVALID_FILENAME_CHARS);
             return;
         }
-        if (datasourceName.isEmpty()) {
+        if (name.isEmpty()) {
             errors.addValidationError("Datasource name must not be empty");
             return;
         }
-        if (datasourceName.contains("#")) {
+        if (name.contains("#")) {
             errors.addValidationError("Datasource name must not contain '#'");
             return;
         }
-        if (datasourceName.contains(":")) {
+        if (name.contains(":")) {
             errors.addValidationError("Datasource name must not contain ':'");
             return;
         }
-        if (datasourceName.charAt(0) == '_' || datasourceName.charAt(0) == '-' || datasourceName.charAt(0) == '+') {
+        if (name.charAt(0) == '_' || name.charAt(0) == '-' || name.charAt(0) == '+') {
             errors.addValidationError("Datasource name must not start with '_', '-', or '+'");
             return;
         }
         int byteCount = 0;
         try {
-            byteCount = datasourceName.getBytes("UTF-8").length;
+            byteCount = name.getBytes("UTF-8").length;
         } catch (UnsupportedEncodingException e) {
             // UTF-8 should always be supported, but rethrow this if it is not for some reason
             throw new OpenSearchException("Unable to determine length of datasource name", e);
@@ -137,7 +137,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
             errors.addValidationError("Datasource name is too long, (" + byteCount + " > " + MAX_DATASOURCE_NAME_BYTES + ")");
             return;
         }
-        if (datasourceName.equals(".") || datasourceName.equals("..")) {
+        if (name.equals(".") || name.equals("..")) {
             errors.addValidationError("Datasource name must not be '.' or '..'");
             return;
         }
