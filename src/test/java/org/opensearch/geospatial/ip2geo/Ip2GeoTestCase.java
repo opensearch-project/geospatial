@@ -233,7 +233,11 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             Request request,
             ActionListener<Response> listener
         ) {
-            listener.onResponse((Response) executeVerifier.get().apply(action, request));
+            try {
+                listener.onResponse((Response) executeVerifier.get().apply(action, request));
+            } catch (Exception e) {
+                listener.onFailure(e);
+            }
         }
 
         /**

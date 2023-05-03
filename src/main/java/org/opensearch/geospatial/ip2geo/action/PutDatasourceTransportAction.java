@@ -8,6 +8,7 @@
 
 package org.opensearch.geospatial.ip2geo.action;
 
+import java.io.IOException;
 import java.time.Instant;
 
 import lombok.extern.log4j.Log4j2;
@@ -15,6 +16,7 @@ import lombok.extern.log4j.Log4j2;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
+import org.opensearch.action.StepListener;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.support.ActionFilters;
@@ -71,16 +73,24 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
     @Override
     protected void doExecute(final Task task, final PutDatasourceRequest request, final ActionListener<AcknowledgedResponse> listener) {
         try {
-            Datasource datasource = Datasource.Builder.build(request);
-            IndexRequest indexRequest = new IndexRequest().index(DatasourceExtension.JOB_INDEX_NAME)
-                .id(datasource.getName())
-                .source(datasource.toXContent(JsonXContent.contentBuilder(), null))
-                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
-                .opType(DocWriteRequest.OpType.CREATE);
-            client.index(indexRequest, getIndexResponseListener(datasource, listener));
+            StepListener<Void> createIndexStep = new StepListener<>();
+            datasourceFacade.createIndexIfNotExists(createIndexStep);
+            createIndexStep.whenComplete(v -> putDatasource(request, listener), exception -> listener.onFailure(exception));
         } catch (Exception e) {
             listener.onFailure(e);
         }
+    }
+
+    @VisibleForTesting
+    protected void putDatasource(final PutDatasourceRequest request, final ActionListener<AcknowledgedResponse> listener)
+        throws IOException {
+        Datasource datasource = Datasource.Builder.build(request);
+        IndexRequest indexRequest = new IndexRequest().index(DatasourceExtension.JOB_INDEX_NAME)
+            .id(datasource.getName())
+            .source(datasource.toXContent(JsonXContent.contentBuilder(), null))
+            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+            .opType(DocWriteRequest.OpType.CREATE);
+        client.index(indexRequest, getIndexResponseListener(datasource, listener));
     }
 
     @VisibleForTesting

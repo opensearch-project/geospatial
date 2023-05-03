@@ -20,7 +20,7 @@ import org.opensearch.jobscheduler.spi.JobDocVersion;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 public class DatasourceExtensionTests extends Ip2GeoTestCase {
-    public void testBasic() throws Exception {
+    public void testBasic() {
         DatasourceExtension extension = new DatasourceExtension();
         assertEquals("scheduler_geospatial_ip2geo_datasource", extension.getJobType());
         assertEquals(JOB_INDEX_NAME, extension.getJobIndex());
