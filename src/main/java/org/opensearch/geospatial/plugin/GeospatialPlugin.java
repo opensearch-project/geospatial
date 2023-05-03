@@ -39,10 +39,12 @@ import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
-import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutorHelper;
+import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
+import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceRunner;
-import org.opensearch.geospatial.ip2geo.processor.Ip2GeoCache;
+import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
@@ -87,9 +89,10 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             .put(
                 Ip2GeoProcessor.TYPE,
                 new Ip2GeoProcessor.Factory(
-                    new Ip2GeoCache(Ip2GeoSettings.CACHE_SIZE.get(parameters.client.settings())),
                     parameters.client,
-                    parameters.ingestService
+                    parameters.ingestService,
+                    new DatasourceFacade(parameters.client, parameters.ingestService.getClusterService().getClusterSettings()),
+                    new GeoIpDataFacade(parameters.ingestService.getClusterService(), parameters.client)
                 )
             )
             .immutableMap();
@@ -98,7 +101,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     @Override
     public List<ExecutorBuilder<?>> getExecutorBuilders(Settings settings) {
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
-        executorBuilders.add(Ip2GeoExecutorHelper.executorBuilder(settings));
+        executorBuilders.add(Ip2GeoExecutor.executorBuilder(settings));
         return executorBuilders;
     }
 
@@ -121,10 +124,23 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
-        // Initialize DatasourceUpdateRunner
-        DatasourceRunner.getJobRunnerInstance().initialize(clusterService, threadPool, client);
+        GeoIpDataFacade geoIpDataFacade = new GeoIpDataFacade(clusterService, client);
+        DatasourceFacade datasourceFacade = new DatasourceFacade(client, clusterService.getClusterSettings());
+        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(
+            clusterService,
+            client,
+            datasourceFacade,
+            geoIpDataFacade
+        );
+        Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
+        /**
+         * We don't need to return datasource runner because it is used only by job scheduler and job scheduler
+         * does not use DI but it calls DatasourceExtension#getJobRunner to get DatasourceRunner instance.
+         */
+        DatasourceRunner.getJobRunnerInstance()
+            .initialize(clusterService, client, datasourceUpdateService, ip2GeoExecutor, datasourceFacade);
 
-        return List.of(UploadStats.getInstance());
+        return List.of(UploadStats.getInstance(), datasourceUpdateService, datasourceFacade, ip2GeoExecutor, geoIpDataFacade);
     }
 
     @Override
@@ -137,7 +153,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<DiscoveryNodes> nodesInCluster
     ) {
-        return List.of(new RestUploadStatsAction(), new RestUploadGeoJSONAction(), new RestPutDatasourceHandler(settings, clusterSettings));
+        return List.of(new RestUploadStatsAction(), new RestUploadGeoJSONAction(), new RestPutDatasourceHandler(clusterSettings));
     }
 
     @Override

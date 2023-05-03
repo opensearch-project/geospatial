@@ -18,8 +18,13 @@ import org.opensearch.threadpool.ThreadPool;
 /**
  * Provide a list of static methods related with executors for Ip2Geo
  */
-public class Ip2GeoExecutorHelper {
+public class Ip2GeoExecutor {
     private static final String THREAD_POOL_NAME = "_plugin_geospatial_ip2geo_datasource_update";
+    private final ThreadPool threadPool;
+
+    public Ip2GeoExecutor(final ThreadPool threadPool) {
+        this.threadPool = threadPool;
+    }
 
     /**
      * We use fixed thread count of 1 for updating datasource as updating datasource is running background
@@ -35,10 +40,9 @@ public class Ip2GeoExecutorHelper {
     /**
      * Return an executor service for datasource update task
      *
-     * @param threadPool the thread pool
      * @return the executor service
      */
-    public static ExecutorService forDatasourceUpdate(final ThreadPool threadPool) {
+    public ExecutorService forDatasourceUpdate() {
         return threadPool.executor(THREAD_POOL_NAME);
     }
 }

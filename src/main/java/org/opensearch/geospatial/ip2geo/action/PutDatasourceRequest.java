@@ -14,6 +14,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Locale;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
@@ -28,11 +29,12 @@ import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 
 /**
- * GeoIP datasource creation request
+ * Ip2Geo datasource creation request
  */
 @Getter
 @Setter
 @Log4j2
+@EqualsAndHashCode
 public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceRequest> {
     private static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
     private static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
@@ -47,10 +49,10 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
      */
     private String endpoint;
     /**
-     * @param updateIntervalInDays update interval of a datasource
+     * @param updateInterval update interval of a datasource
      * @return update interval of a datasource
      */
-    private TimeValue updateIntervalInDays;
+    private TimeValue updateInterval;
 
     /**
      * Parser of a datasource
@@ -59,7 +61,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     static {
         PARSER = new ObjectParser<>("put_datasource");
         PARSER.declareString((request, val) -> request.setEndpoint(val), ENDPOINT_FIELD);
-        PARSER.declareLong((request, val) -> request.setUpdateIntervalInDays(TimeValue.timeValueDays(val)), UPDATE_INTERVAL_IN_DAYS_FIELD);
+        PARSER.declareLong((request, val) -> request.setUpdateInterval(TimeValue.timeValueDays(val)), UPDATE_INTERVAL_IN_DAYS_FIELD);
     }
 
     /**
@@ -79,7 +81,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
         super(in);
         this.datasourceName = in.readString();
         this.endpoint = in.readString();
-        this.updateIntervalInDays = in.readTimeValue();
+        this.updateInterval = in.readTimeValue();
     }
 
     @Override
@@ -87,7 +89,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
         super.writeTo(out);
         out.writeString(datasourceName);
         out.writeString(endpoint);
-        out.writeTimeValue(updateIntervalInDays);
+        out.writeTimeValue(updateInterval);
     }
 
     @Override
@@ -120,7 +122,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
      * Conduct following validation on url
      * 1. can read manifest file from the endpoint
      * 2. the url in the manifest file complies with RFC-2396
-     * 3. updateIntervalInDays is less than validForInDays value in the manifest file
+     * 3. updateInterval is less than validForInDays value in the manifest file
      *
      * @param url the url to validate
      * @param errors the errors to add error messages
@@ -143,12 +145,12 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
             return;
         }
 
-        if (updateIntervalInDays.days() >= manifest.getValidForInDays()) {
+        if (updateInterval.days() >= manifest.getValidForInDays()) {
             errors.addValidationError(
                 String.format(
                     Locale.ROOT,
-                    "updateInterval %d is should be smaller than %d",
-                    updateIntervalInDays.days(),
+                    "updateInterval %d should be smaller than %d",
+                    updateInterval.days(),
                     manifest.getValidForInDays()
                 )
             );
@@ -156,12 +158,12 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
     }
 
     /**
-     * Validate updateIntervalInDays is larger than 0
+     * Validate updateInterval is equal or larger than 1
      *
      * @param errors the errors to add error messages
      */
     private void validateUpdateInterval(final ActionRequestValidationException errors) {
-        if (updateIntervalInDays.compareTo(TimeValue.timeValueDays(1)) > 0) {
+        if (updateInterval.compareTo(TimeValue.timeValueDays(1)) < 0) {
             errors.addValidationError("Update interval should be equal to or larger than 1 day");
         }
     }

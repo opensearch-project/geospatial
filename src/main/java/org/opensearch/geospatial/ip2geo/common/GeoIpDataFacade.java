@@ -8,6 +8,8 @@
 
 package org.opensearch.geospatial.ip2geo.common;
 
+import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,41 +43,45 @@ import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.search.MultiSearchRequestBuilder;
 import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.action.support.WriteRequest;
+import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.client.Client;
 import org.opensearch.client.Requests;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.collect.Tuple;
+import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.query.QueryBuilders;
 
 /**
- * Helper class for GeoIp data
+ * Facade class for GeoIp data
  */
 @Log4j2
-public class GeoIpDataHelper {
+public class GeoIpDataFacade {
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
     private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_SHARDS = new Tuple<>("index.number_of_shards", 1);
     private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
+    private final ClusterService clusterService;
+    private final ClusterSettings clusterSettings;
+    private final Client client;
+
+    public GeoIpDataFacade(final ClusterService clusterService, final Client client) {
+        this.clusterService = clusterService;
+        this.clusterSettings = clusterService.getClusterSettings();
+        this.client = client;
+    }
 
     /**
      * Create an index of single shard with auto expand replicas to all nodes
      *
-     * @param clusterService cluster service
-     * @param client client
      * @param indexName index name
-     * @param timeout timeout
      */
-    public static void createIndexIfNotExists(
-        final ClusterService clusterService,
-        final Client client,
-        final String indexName,
-        final TimeValue timeout
-    ) {
+    public void createIndexIfNotExists(final String indexName) {
         if (clusterService.state().metadata().hasIndex(indexName) == true) {
             return;
         }
@@ -83,7 +89,7 @@ public class GeoIpDataHelper {
         indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
         indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings).mapping(getIndexMapping());
-        client.admin().indices().create(createIndexRequest).actionGet(timeout);
+        client.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
     }
 
     /**
@@ -101,11 +107,11 @@ public class GeoIpDataHelper {
      *
      * @return String representing datasource database index mapping
      */
-    private static String getIndexMapping() {
+    private String getIndexMapping() {
         try {
-            try (InputStream is = DatasourceHelper.class.getResourceAsStream("/mappings/ip2geo_datasource.json")) {
+            try (InputStream is = DatasourceFacade.class.getResourceAsStream("/mappings/ip2geo_datasource.json")) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                    return reader.lines().collect(Collectors.joining());
+                    return reader.lines().map(String::trim).collect(Collectors.joining());
                 }
             }
         } catch (IOException e) {
@@ -120,7 +126,7 @@ public class GeoIpDataHelper {
      * @return CSVParser for GeoIP data
      */
     @SuppressForbidden(reason = "Need to connect to http endpoint to read GeoIP database file")
-    public static CSVParser getDatabaseReader(final DatasourceManifest manifest) {
+    public CSVParser getDatabaseReader(final DatasourceManifest manifest) {
         SpecialPermission.check();
         return AccessController.doPrivileged((PrivilegedAction<CSVParser>) () -> {
             try {
@@ -128,7 +134,7 @@ public class GeoIpDataHelper {
                 ZipInputStream zipIn = new ZipInputStream(zipUrl.openStream());
                 ZipEntry zipEntry = zipIn.getNextEntry();
                 while (zipEntry != null) {
-                    if (!zipEntry.getName().equalsIgnoreCase(manifest.getDbName())) {
+                    if (zipEntry.getName().equalsIgnoreCase(manifest.getDbName()) == false) {
                         zipEntry = zipIn.getNextEntry();
                         continue;
                     }
@@ -164,7 +170,10 @@ public class GeoIpDataHelper {
      * @param values a list of values
      * @return Document in json string format
      */
-    public static String createDocument(final String[] fields, final String[] values) {
+    public String createDocument(final String[] fields, final String[] values) {
+        if (fields.length != values.length) {
+            throw new OpenSearchException("header[{}] and record[{}] length does not match", fields, values);
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("{\"");
         sb.append(IP_RANGE_FIELD_NAME);
@@ -188,35 +197,30 @@ public class GeoIpDataHelper {
     }
 
     /**
-     * Query a given index using a given ip address to get geo data
+     * Query a given index using a given ip address to get geoip data
      *
-     * @param client client
      * @param indexName index
      * @param ip ip address
      * @param actionListener action listener
      */
-    public static void getGeoData(
-        final Client client,
-        final String indexName,
-        final String ip,
-        final ActionListener<Map<String, Object>> actionListener
-    ) {
+    public void getGeoIpData(final String indexName, final String ip, final ActionListener<Map<String, Object>> actionListener) {
         client.prepareSearch(indexName)
             .setSize(1)
             .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
             .setPreference("_local")
+            .setRequestCache(true)
             .execute(new ActionListener<>() {
                 @Override
                 public void onResponse(final SearchResponse searchResponse) {
                     if (searchResponse.getHits().getHits().length == 0) {
                         actionListener.onResponse(Collections.emptyMap());
                     } else {
-                        Map<String, Object> geoData = (Map<String, Object>) XContentHelper.convertToMap(
+                        Map<String, Object> geoIpData = (Map<String, Object>) XContentHelper.convertToMap(
                             searchResponse.getHits().getAt(0).getSourceRef(),
                             false,
                             XContentType.JSON
                         ).v2().get(DATA_FIELD_NAME);
-                        actionListener.onResponse(geoData);
+                        actionListener.onResponse(geoIpData);
                     }
                 }
 
@@ -228,28 +232,26 @@ public class GeoIpDataHelper {
     }
 
     /**
-     * Query a given index using a given ip address iterator to get geo data
+     * Query a given index using a given ip address iterator to get geoip data
      *
      * This method calls itself recursively until it processes all ip addresses in bulk of {@code bulkSize}.
      *
-     * @param client the client
      * @param indexName the index name
      * @param ipIterator the iterator of ip addresses
      * @param maxBundleSize number of ip address to pass in multi search
      * @param maxConcurrentSearches the max concurrent search requests
      * @param firstOnly return only the first matching result if true
-     * @param geoData collected geo data
+     * @param geoIpData collected geo data
      * @param actionListener the action listener
      */
-    public static void getGeoData(
-        final Client client,
+    public void getGeoIpData(
         final String indexName,
         final Iterator<String> ipIterator,
         final Integer maxBundleSize,
         final Integer maxConcurrentSearches,
         final boolean firstOnly,
-        final Map<String, Map<String, Object>> geoData,
-        final ActionListener<Object> actionListener
+        final Map<String, Map<String, Object>> geoIpData,
+        final ActionListener<Map<String, Map<String, Object>>> actionListener
     ) {
         MultiSearchRequestBuilder mRequestBuilder = client.prepareMultiSearch();
         if (maxConcurrentSearches != 0) {
@@ -259,19 +261,20 @@ public class GeoIpDataHelper {
         List<String> ipsToSearch = new ArrayList<>(maxBundleSize);
         while (ipIterator.hasNext() && ipsToSearch.size() < maxBundleSize) {
             String ip = ipIterator.next();
-            if (geoData.get(ip) == null) {
+            if (geoIpData.get(ip) == null) {
                 mRequestBuilder.add(
                     client.prepareSearch(indexName)
                         .setSize(1)
                         .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
                         .setPreference("_local")
+                        .setRequestCache(true)
                 );
                 ipsToSearch.add(ip);
             }
         }
 
         if (ipsToSearch.isEmpty()) {
-            actionListener.onResponse(null);
+            actionListener.onResponse(geoIpData);
             return;
         }
 
@@ -285,7 +288,7 @@ public class GeoIpDataHelper {
                     }
 
                     if (items.getResponses()[i].getResponse().getHits().getHits().length == 0) {
-                        geoData.put(ipsToSearch.get(i), Collections.emptyMap());
+                        geoIpData.put(ipsToSearch.get(i), Collections.emptyMap());
                         continue;
                     }
 
@@ -295,14 +298,14 @@ public class GeoIpDataHelper {
                         XContentType.JSON
                     ).v2().get(DATA_FIELD_NAME);
 
-                    geoData.put(ipsToSearch.get(i), data);
+                    geoIpData.put(ipsToSearch.get(i), data);
 
                     if (firstOnly) {
-                        actionListener.onResponse(null);
+                        actionListener.onResponse(geoIpData);
                         return;
                     }
                 }
-                getGeoData(client, indexName, ipIterator, maxBundleSize, maxConcurrentSearches, firstOnly, geoData, actionListener);
+                getGeoIpData(indexName, ipIterator, maxBundleSize, maxConcurrentSearches, firstOnly, geoIpData, actionListener);
             }
 
             @Override
@@ -315,28 +318,20 @@ public class GeoIpDataHelper {
     /**
      * Puts GeoIP data from CSVRecord iterator into a given index in bulk
      *
-     * @param client OpenSearch client
      * @param indexName Index name to puts the GeoIP data
      * @param fields Field name matching with data in CSVRecord in order
      * @param iterator GeoIP data to insert
      * @param bulkSize Bulk size of data to process
-     * @param timeout Timeout
      */
-    public static void putGeoData(
-        final Client client,
-        final String indexName,
-        final String[] fields,
-        final Iterator<CSVRecord> iterator,
-        final int bulkSize,
-        final TimeValue timeout
-    ) {
+    public void putGeoIpData(final String indexName, final String[] fields, final Iterator<CSVRecord> iterator, final int bulkSize) {
+        TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
         BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         while (iterator.hasNext()) {
             CSVRecord record = iterator.next();
             String document = createDocument(fields, record.values());
             IndexRequest request = Requests.indexRequest(indexName).source(document, XContentType.JSON);
             bulkRequest.add(request);
-            if (!iterator.hasNext() || bulkRequest.requests().size() == bulkSize) {
+            if (iterator.hasNext() == false || bulkRequest.requests().size() == bulkSize) {
                 BulkResponse response = client.bulk(bulkRequest).actionGet(timeout);
                 if (response.hasFailures()) {
                     throw new OpenSearchException(
@@ -350,5 +345,21 @@ public class GeoIpDataHelper {
         }
         client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
         client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
+    }
+
+    public AcknowledgedResponse deleteIp2GeoDataIndex(final String index) {
+        if (index == null || index.startsWith(IP2GEO_DATA_INDEX_NAME_PREFIX) == false) {
+            throw new OpenSearchException(
+                "the index[{}] is not ip2geo data index which should start with {}",
+                index,
+                IP2GEO_DATA_INDEX_NAME_PREFIX
+            );
+        }
+        return client.admin()
+            .indices()
+            .prepareDelete(index)
+            .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
+            .execute()
+            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
     }
 }

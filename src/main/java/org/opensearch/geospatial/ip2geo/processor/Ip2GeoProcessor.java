@@ -21,17 +21,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.action.ActionListener;
 import org.opensearch.client.Client;
-import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.ClusterSettings;
-import org.opensearch.common.unit.TimeValue;
-import org.opensearch.geospatial.ip2geo.common.DatasourceHelper;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
+import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataHelper;
+import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.ingest.AbstractProcessor;
@@ -52,12 +52,10 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     private final Set<String> properties;
     private final boolean ignoreMissing;
     private final boolean firstOnly;
-    private final Ip2GeoCache cache;
     private final Client client;
-    private final ClusterService clusterService;
-
-    private int maxBundleSize;
-    private int maxConcurrentSearches;
+    private final ClusterSettings clusterSettings;
+    private final DatasourceFacade datasourceFacade;
+    private final GeoIpDataFacade geoIpDataFacade;
 
     /**
      * Ip2Geo processor type
@@ -74,9 +72,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param properties     the properties
      * @param ignoreMissing  true if documents with a missing value for the field should be ignored
      * @param firstOnly      true if only first result should be returned in case of array
-     * @param cache          the Ip2Geo cache
      * @param client         the client
-     * @param clusterService the cluster service
+     * @param clusterSettings the cluster settings
      */
     public Ip2GeoProcessor(
         final String tag,
@@ -87,9 +84,10 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final Set<String> properties,
         final boolean ignoreMissing,
         final boolean firstOnly,
-        final Ip2GeoCache cache,
         final Client client,
-        final ClusterService clusterService
+        final ClusterSettings clusterSettings,
+        final DatasourceFacade datasourceFacade,
+        final GeoIpDataFacade geoIpDataFacade
     ) {
         super(tag, description);
         this.field = field;
@@ -98,15 +96,10 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         this.properties = properties;
         this.ignoreMissing = ignoreMissing;
         this.firstOnly = firstOnly;
-        this.cache = cache;
         this.client = client;
-        this.clusterService = clusterService;
-
-        maxBundleSize = clusterService.getClusterSettings().get(Ip2GeoSettings.MAX_BUNDLE_SIZE);
-        clusterService.getClusterSettings().addSettingsUpdateConsumer(Ip2GeoSettings.MAX_BUNDLE_SIZE, newValue -> maxBundleSize = newValue);
-        maxConcurrentSearches = clusterService.getClusterSettings().get(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES);
-        clusterService.getClusterSettings()
-            .addSettingsUpdateConsumer(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES, newValue -> maxConcurrentSearches = newValue);
+        this.clusterSettings = clusterSettings;
+        this.datasourceFacade = datasourceFacade;
+        this.geoIpDataFacade = geoIpDataFacade;
     }
 
     /**
@@ -119,11 +112,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     public void execute(IngestDocument ingestDocument, BiConsumer<IngestDocument, Exception> handler) {
         Object ip = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
 
-        if (ip == null && ignoreMissing) {
+        if (ip == null) {
             handler.accept(ingestDocument, null);
-            return;
-        } else if (ip == null) {
-            handler.accept(null, new IllegalArgumentException("field [" + field + "] is null, cannot extract geo information."));
             return;
         }
 
@@ -147,49 +137,23 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         throw new IllegalStateException("Not implemented");
     }
 
-    /**
-     * Handle single ip
-     *
-     * @param ingestDocument the document
-     * @param handler the handler
-     * @param ip the ip
-     */
-    private void executeInternal(
+    @VisibleForTesting
+    protected void executeInternal(
         final IngestDocument ingestDocument,
         final BiConsumer<IngestDocument, Exception> handler,
         final String ip
     ) {
-        Map<String, Object> geoData = cache.get(ip, datasourceName);
-        if (geoData != null) {
-            if (!geoData.isEmpty()) {
-                ingestDocument.setFieldValue(targetField, filteredGeoData(geoData, ip));
-            }
-            handler.accept(ingestDocument, null);
-            return;
-        }
-
-        DatasourceHelper.getDatasource(client, datasourceName, new ActionListener<>() {
+        datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
             @Override
             public void onResponse(final Datasource datasource) {
-                if (datasource == null) {
-                    handler.accept(null, new IllegalStateException("datasource does not exist"));
+                if (handleInvalidDatasource(ingestDocument, datasource, handler)) {
                     return;
                 }
 
-                if (datasource.isExpired()) {
-                    ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
-                    handler.accept(ingestDocument, null);
-                    return;
-                }
-
-                GeoIpDataHelper.getGeoData(client, datasource.currentIndexName(), ip, new ActionListener<>() {
+                geoIpDataFacade.getGeoIpData(datasource.currentIndexName(), ip, new ActionListener<>() {
                     @Override
-                    public void onResponse(final Map<String, Object> stringObjectMap) {
-                        cache.put(ip, datasourceName, stringObjectMap);
-                        if (!stringObjectMap.isEmpty()) {
-                            ingestDocument.setFieldValue(targetField, filteredGeoData(stringObjectMap, ip));
-                        }
-                        handler.accept(ingestDocument, null);
+                    public void onResponse(final Map<String, Object> ipToGeoData) {
+                        handleSingleIp(ip, ipToGeoData, ingestDocument, handler);
                     }
 
                     @Override
@@ -206,6 +170,34 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         });
     }
 
+    @VisibleForTesting
+    protected void handleSingleIp(
+        final String ip,
+        final Map<String, Object> ipToGeoData,
+        final IngestDocument ingestDocument,
+        final BiConsumer<IngestDocument, Exception> handler
+    ) {
+        if (ipToGeoData.isEmpty() == false) {
+            ingestDocument.setFieldValue(targetField, filteredGeoData(ipToGeoData, ip));
+        }
+        handler.accept(ingestDocument, null);
+    }
+
+    private Map<String, Object> filteredGeoData(final Map<String, Object> geoData, final String ip) {
+        Map<String, Object> filteredGeoData;
+        if (properties == null) {
+            return geoData;
+        }
+
+        filteredGeoData = properties.stream()
+            .filter(p -> p.equals(PROPERTY_IP) == false)
+            .collect(Collectors.toMap(p -> p, p -> geoData.get(p)));
+        if (properties.contains(PROPERTY_IP)) {
+            filteredGeoData.put(PROPERTY_IP, ip);
+        }
+        return filteredGeoData;
+    }
+
     /**
      * Handle multiple ips
      *
@@ -213,7 +205,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param handler the handler
      * @param ips the ip list
      */
-    private void executeInternal(
+    @VisibleForTesting
+    protected void executeInternal(
         final IngestDocument ingestDocument,
         final BiConsumer<IngestDocument, Exception> handler,
         final List<?> ips
@@ -223,72 +216,23 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             if (ip instanceof String == false) {
                 throw new IllegalArgumentException("array in field [" + field + "] should only contain strings");
             }
-            String ipAddr = (String) ip;
-            data.put(ipAddr, cache.get(ipAddr, datasourceName));
         }
         List<String> ipList = (List<String>) ips;
-        DatasourceHelper.getDatasource(client, datasourceName, new ActionListener<>() {
+        datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
             @Override
             public void onResponse(final Datasource datasource) {
-                if (datasource == null) {
-                    handler.accept(null, new IllegalStateException("datasource does not exist"));
+                if (handleInvalidDatasource(ingestDocument, datasource, handler)) {
                     return;
                 }
 
-                if (datasource.isExpired()) {
-                    ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
-                    handler.accept(ingestDocument, null);
-                    return;
-                }
-                GeoIpDataHelper.getGeoData(
-                    client,
+                geoIpDataFacade.getGeoIpData(
                     datasource.currentIndexName(),
                     ipList.iterator(),
-                    maxBundleSize,
-                    maxConcurrentSearches,
+                    clusterSettings.get(Ip2GeoSettings.MAX_BUNDLE_SIZE),
+                    clusterSettings.get(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES),
                     firstOnly,
                     data,
-                    new ActionListener<>() {
-                        @Override
-                        public void onResponse(final Object obj) {
-                            for (Map.Entry<String, Map<String, Object>> entry : data.entrySet()) {
-                                cache.put(entry.getKey(), datasourceName, entry.getValue());
-                            }
-
-                            if (firstOnly) {
-                                for (String ipAddr : ipList) {
-                                    Map<String, Object> geoData = data.get(ipAddr);
-                                    // GeoData for ipAddr won't be null
-                                    if (!geoData.isEmpty()) {
-                                        ingestDocument.setFieldValue(targetField, geoData);
-                                        handler.accept(ingestDocument, null);
-                                        return;
-                                    }
-                                }
-                                handler.accept(ingestDocument, null);
-                            } else {
-                                boolean match = false;
-                                List<Map<String, Object>> geoDataList = new ArrayList<>(ipList.size());
-                                for (String ipAddr : ipList) {
-                                    Map<String, Object> geoData = data.get(ipAddr);
-                                    // GeoData for ipAddr won't be null
-                                    geoDataList.add(geoData.isEmpty() ? null : geoData);
-                                    if (!geoData.isEmpty()) {
-                                        match = true;
-                                    }
-                                }
-                                if (match) {
-                                    ingestDocument.setFieldValue(targetField, geoDataList);
-                                }
-                                handler.accept(ingestDocument, null);
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(final Exception e) {
-                            handler.accept(null, e);
-                        }
-                    }
+                    listenerToAppendDataToDocument(data, ipList, ingestDocument, handler)
                 );
             }
 
@@ -299,21 +243,70 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         });
     }
 
-    private Map<String, Object> filteredGeoData(final Map<String, Object> geoData, final String ip) {
-        Map<String, Object> filteredGeoData;
-        if (properties == null) {
-            filteredGeoData = geoData;
-        } else {
-            filteredGeoData = new HashMap<>();
-            for (String property : this.properties) {
-                if (property.equals(PROPERTY_IP)) {
-                    filteredGeoData.put(PROPERTY_IP, ip);
+    @VisibleForTesting
+    protected ActionListener<Map<String, Map<String, Object>>> listenerToAppendDataToDocument(
+        final Map<String, Map<String, Object>> data,
+        final List<String> ipList,
+        final IngestDocument ingestDocument,
+        final BiConsumer<IngestDocument, Exception> handler
+    ) {
+        return new ActionListener<>() {
+            @Override
+            public void onResponse(final Map<String, Map<String, Object>> response) {
+                if (firstOnly) {
+                    for (String ipAddr : ipList) {
+                        Map<String, Object> geoData = data.get(ipAddr);
+                        // GeoData for ipAddr won't be null
+                        if (geoData.isEmpty() == false) {
+                            ingestDocument.setFieldValue(targetField, filteredGeoData(geoData, ipAddr));
+                            handler.accept(ingestDocument, null);
+                            return;
+                        }
+                    }
                 } else {
-                    filteredGeoData.put(property, geoData.get(property));
+                    boolean match = false;
+                    List<Map<String, Object>> geoDataList = new ArrayList<>(ipList.size());
+                    for (String ipAddr : ipList) {
+                        Map<String, Object> geoData = data.get(ipAddr);
+                        // GeoData for ipAddr won't be null
+                        geoDataList.add(geoData.isEmpty() ? null : filteredGeoData(geoData, ipAddr));
+                        if (geoData.isEmpty() == false) {
+                            match = true;
+                        }
+                    }
+                    if (match) {
+                        ingestDocument.setFieldValue(targetField, geoDataList);
+                        handler.accept(ingestDocument, null);
+                        return;
+                    }
                 }
+                handler.accept(ingestDocument, null);
             }
+
+            @Override
+            public void onFailure(final Exception e) {
+                handler.accept(null, e);
+            }
+        };
+    }
+
+    @VisibleForTesting
+    protected boolean handleInvalidDatasource(
+        final IngestDocument ingestDocument,
+        final Datasource datasource,
+        final BiConsumer<IngestDocument, Exception> handler
+    ) {
+        if (datasource == null) {
+            handler.accept(null, new IllegalStateException("datasource does not exist"));
+            return true;
         }
-        return filteredGeoData;
+
+        if (datasource.isExpired()) {
+            ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
+            handler.accept(ingestDocument, null);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -325,26 +318,27 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * Ip2Geo processor factory
      */
     public static final class Factory implements Processor.Factory {
-        private final Ip2GeoCache cache;
         private final Client client;
         private final IngestService ingestService;
-        private TimeValue timeout;
+        private final DatasourceFacade datasourceFacade;
+        private final GeoIpDataFacade geoIpDataFacade;
 
         /**
          * Default constructor
          *
-         * @param cache the cache
          * @param client the client
          * @param ingestService the ingest service
          */
-        public Factory(final Ip2GeoCache cache, final Client client, final IngestService ingestService) {
-            this.cache = cache;
+        public Factory(
+            final Client client,
+            final IngestService ingestService,
+            final DatasourceFacade datasourceFacade,
+            final GeoIpDataFacade geoIpDataFacade
+        ) {
             this.client = client;
             this.ingestService = ingestService;
-
-            timeout = Ip2GeoSettings.TIMEOUT_IN_SECONDS.get(client.settings());
-            ClusterSettings clusterSettings = ingestService.getClusterService().getClusterSettings();
-            clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.TIMEOUT_IN_SECONDS, newValue -> timeout = newValue);
+            this.datasourceFacade = datasourceFacade;
+            this.geoIpDataFacade = geoIpDataFacade;
         }
 
         /**
@@ -373,7 +367,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             boolean firstOnly = readBooleanProperty(TYPE, processorTag, config, "first_only", true);
 
             // Skip validation for the call by cluster applier service
-            if (!Thread.currentThread().getName().contains(CLUSTER_UPDATE_THREAD_NAME)) {
+            if (Thread.currentThread().getName().contains(CLUSTER_UPDATE_THREAD_NAME) == false) {
                 validate(processorTag, datasourceName, propertyNames);
             }
 
@@ -386,20 +380,21 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 propertyNames == null ? null : new HashSet<>(propertyNames),
                 ignoreMissing,
                 firstOnly,
-                cache,
                 client,
-                ingestService.getClusterService()
+                ingestService.getClusterService().getClusterSettings(),
+                datasourceFacade,
+                geoIpDataFacade
             );
         }
 
         private void validate(final String processorTag, final String datasourceName, final List<String> propertyNames) throws IOException {
-            Datasource datasource = DatasourceHelper.getDatasource(client, datasourceName, timeout);
+            Datasource datasource = datasourceFacade.getDatasource(datasourceName);
 
             if (datasource == null) {
                 throw newConfigurationException(TYPE, processorTag, "datasource", "datasource [" + datasourceName + "] doesn't exist");
             }
 
-            if (!DatasourceState.AVAILABLE.equals(datasource.getState())) {
+            if (DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
                 throw newConfigurationException(
                     TYPE,
                     processorTag,
@@ -416,7 +411,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             final Set<String> availableProperties = new HashSet<>(datasource.getDatabase().getFields());
             availableProperties.add(PROPERTY_IP);
             for (String fieldName : propertyNames) {
-                if (!availableProperties.contains(fieldName)) {
+                if (availableProperties.contains(fieldName) == false) {
                     throw newConfigurationException(
                         TYPE,
                         processorTag,

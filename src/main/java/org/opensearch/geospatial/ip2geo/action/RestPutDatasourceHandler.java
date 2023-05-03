@@ -17,7 +17,6 @@ import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.settings.ClusterSettings;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
@@ -41,14 +40,10 @@ import org.opensearch.rest.action.RestToXContentListener;
  */
 public class RestPutDatasourceHandler extends BaseRestHandler {
     private static final String ACTION_NAME = "ip2geo_datasource";
-    private String defaultDatasourceEndpoint;
-    private TimeValue defaultUpdateInterval;
+    private final ClusterSettings clusterSettings;
 
-    public RestPutDatasourceHandler(final Settings settings, final ClusterSettings clusterSettings) {
-        defaultDatasourceEndpoint = Ip2GeoSettings.DATASOURCE_ENDPOINT.get(settings);
-        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.DATASOURCE_ENDPOINT, newValue -> defaultDatasourceEndpoint = newValue);
-        defaultUpdateInterval = Ip2GeoSettings.DATASOURCE_UPDATE_INTERVAL.get(settings);
-        clusterSettings.addSettingsUpdateConsumer(Ip2GeoSettings.DATASOURCE_UPDATE_INTERVAL, newValue -> defaultUpdateInterval = newValue);
+    public RestPutDatasourceHandler(final ClusterSettings clusterSettings) {
+        this.clusterSettings = clusterSettings;
     }
 
     @Override
@@ -65,10 +60,10 @@ public class RestPutDatasourceHandler extends BaseRestHandler {
             }
         }
         if (putDatasourceRequest.getEndpoint() == null) {
-            putDatasourceRequest.setEndpoint(defaultDatasourceEndpoint);
+            putDatasourceRequest.setEndpoint(clusterSettings.get(Ip2GeoSettings.DATASOURCE_ENDPOINT));
         }
-        if (putDatasourceRequest.getUpdateIntervalInDays() == null) {
-            putDatasourceRequest.setUpdateIntervalInDays(defaultUpdateInterval);
+        if (putDatasourceRequest.getUpdateInterval() == null) {
+            putDatasourceRequest.setUpdateInterval(TimeValue.timeValueDays(clusterSettings.get(Ip2GeoSettings.DATASOURCE_UPDATE_INTERVAL)));
         }
         return channel -> client.executeLocally(PutDatasourceAction.INSTANCE, putDatasourceRequest, new RestToXContentListener<>(channel));
     }
