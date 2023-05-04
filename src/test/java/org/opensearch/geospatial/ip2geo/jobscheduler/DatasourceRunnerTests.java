@@ -20,6 +20,7 @@ import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseStri
 import java.time.Instant;
 
 import org.junit.Before;
+import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.jobscheduler.spi.JobDocVersion;
@@ -76,6 +77,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         // Verify
         assertFalse(datasource.isEnabled());
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
+        assertTrue(datasource.getUpdateStats().getLastFailureMessage().contains("not in AVAILABLE"));
         verify(datasourceFacade).updateDatasource(datasource);
     }
 
@@ -91,20 +93,25 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         // Verify
         verify(datasourceUpdateService, times(2)).deleteUnusedIndices(datasource);
         verify(datasourceUpdateService).updateOrCreateGeoIpData(datasource);
+        assertNull(datasource.getUpdateStats().getLastFailedAt());
+        assertNull(datasource.getUpdateStats().getLastFailureMessage());
     }
 
     public void testUpdateDatasourceExceptionHandling() throws Exception {
+        String errMsg = GeospatialTestHelper.randomLowerCaseString();
         Datasource datasource = new Datasource();
+        datasource.setState(DatasourceState.AVAILABLE);
         datasource.setName(randomLowerCaseString());
         datasource.getUpdateStats().setLastFailedAt(null);
         when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
-        doThrow(new RuntimeException("test failure")).when(datasourceUpdateService).deleteUnusedIndices(any());
+        doThrow(new RuntimeException(errMsg)).when(datasourceUpdateService).deleteUnusedIndices(any());
 
         // Run
         DatasourceRunner.getJobRunnerInstance().updateDatasource(datasource);
 
         // Verify
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
+        assertTrue(datasource.getUpdateStats().getLastFailureMessage().contains(errMsg));
         verify(datasourceFacade).updateDatasource(datasource);
     }
 }

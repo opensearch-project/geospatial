@@ -28,10 +28,10 @@ import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 public class DatasourceTests extends Ip2GeoTestCase {
 
     public void testParser() throws Exception {
-        String id = GeospatialTestHelper.randomLowerCaseString();
+        String name = GeospatialTestHelper.randomLowerCaseString();
         IntervalSchedule schedule = new IntervalSchedule(Instant.now().truncatedTo(ChronoUnit.MILLIS), 1, ChronoUnit.DAYS);
         String endpoint = GeospatialTestHelper.randomLowerCaseString();
-        Datasource datasource = new Datasource(id, schedule, endpoint);
+        Datasource datasource = new Datasource(name, schedule, endpoint);
         datasource.enable();
         datasource.getDatabase().setFields(Arrays.asList("field1", "field2"));
         datasource.getDatabase().setProvider("test_provider");
@@ -42,6 +42,7 @@ public class DatasourceTests extends Ip2GeoTestCase {
         datasource.getUpdateStats().setLastSucceededAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
         datasource.getUpdateStats().setLastSkippedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
         datasource.getUpdateStats().setLastFailedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+        datasource.getUpdateStats().setLastFailureMessage(GeospatialTestHelper.randomLowerCaseString());
 
         Datasource anotherDatasource = Datasource.PARSER.parse(
             createParser(datasource.toXContent(XContentFactory.jsonBuilder(), null)),
@@ -110,5 +111,16 @@ public class DatasourceTests extends Ip2GeoTestCase {
     public void testLockDurationSeconds() {
         Datasource datasource = new Datasource();
         assertNotNull(datasource.getLockDurationSeconds());
+    }
+
+    public void testSetAsFailed() {
+        String errMsg = GeospatialTestHelper.randomLowerCaseString();
+        Datasource datasource = new Datasource();
+        Instant before = Instant.now().minusSeconds(1);
+        datasource.setAsFailed(errMsg);
+        Instant after = Instant.now().plusSeconds(1);
+        assertEquals(errMsg, datasource.getUpdateStats().getLastFailureMessage());
+        assertTrue(before.isBefore(datasource.getUpdateStats().getLastFailedAt()));
+        assertTrue(after.isAfter(datasource.getUpdateStats().getLastFailedAt()));
     }
 }

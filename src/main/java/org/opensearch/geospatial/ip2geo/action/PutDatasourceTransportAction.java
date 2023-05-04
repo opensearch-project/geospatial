@@ -9,7 +9,6 @@
 package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
-import java.time.Instant;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -122,7 +121,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
     protected void createDatasource(final Datasource datasource) {
         if (DatasourceState.CREATING.equals(datasource.getState()) == false) {
             log.error("Invalid datasource state. Expecting {} but received {}", DatasourceState.CREATING, datasource.getState());
-            markDatasourceAsCreateFailed(datasource);
+            markDatasourceAsCreateFailed(datasource, "Datasource state is not in CREATING");
             return;
         }
 
@@ -130,12 +129,12 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
             datasourceUpdateService.updateOrCreateGeoIpData(datasource);
         } catch (Exception e) {
             log.error("Failed to create datasource for {}", datasource.getName(), e);
-            markDatasourceAsCreateFailed(datasource);
+            markDatasourceAsCreateFailed(datasource, e.getMessage());
         }
     }
 
-    private void markDatasourceAsCreateFailed(final Datasource datasource) {
-        datasource.getUpdateStats().setLastFailedAt(Instant.now());
+    private void markDatasourceAsCreateFailed(final Datasource datasource, final String errMsg) {
+        datasource.setAsFailed(errMsg);
         datasource.setState(DatasourceState.CREATE_FAILED);
         try {
             datasourceFacade.updateDatasource(datasource);

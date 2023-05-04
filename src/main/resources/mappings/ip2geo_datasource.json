@@ -70,6 +70,9 @@
         },
         "last_succeeded_at_in_epoch_millis" : {
           "type" : "long"
+        },
+        "last_failure_message" : {
+          "type" : "text"
         }
       }
     }

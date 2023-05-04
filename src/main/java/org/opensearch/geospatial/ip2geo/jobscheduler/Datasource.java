@@ -323,6 +323,16 @@ public class Datasource implements Writeable, ScheduledJobParameter {
     }
 
     /**
+     * Set failure message and last failed time as now
+     *
+     * @param failureMessage failure message
+     */
+    public void setAsFailed(String failureMessage) {
+        updateStats.setLastFailedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+        updateStats.setLastFailureMessage(failureMessage);
+    }
+
+    /**
      * Current index name of a datasource
      *
      * @return Current index name of a datasource
@@ -539,25 +549,32 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         private static final ParseField LAST_FAILED_AT_FIELD_READABLE = new ParseField("last_failed_at");
         private static final ParseField LAST_SKIPPED_AT = new ParseField("last_skipped_at_in_epoch_millis");
         private static final ParseField LAST_SKIPPED_AT_READABLE = new ParseField("last_skipped_at");
+        private static final ParseField LAST_FAILURE_MESSAGE_FIELD = new ParseField("last_failure_message");
 
         /**
-         * @param lastSucceededAt The last time when GeoIP data update was succeeded
-         * @return The last time when GeoIP data update was succeeded
+         * @param lastSucceededAt the last time when GeoIP data update was succeeded
+         * @return the last time when GeoIP data update was succeeded
          */
         private Instant lastSucceededAt;
         /**
-         * @param lastProcessingTimeInMillis The last processing time when GeoIP data update was succeeded
-         * @return The last processing time when GeoIP data update was succeeded
+         * @param lastProcessingTimeInMillis the last processing time when GeoIP data update was succeeded
+         * @return the last processing time when GeoIP data update was succeeded
          */
         private Long lastProcessingTimeInMillis;
         /**
-         * @param lastFailedAt The last time when GeoIP data update was failed
-         * @return The last time when GeoIP data update was failed
+         * @param lastFailedAt the last time when GeoIP data update was failed
+         * @return the last time when GeoIP data update was failed
          */
         private Instant lastFailedAt;
+
         /**
-         * @param lastSkippedAt The last time when GeoIP data update was skipped as there was no new update from an endpoint
-         * @return The last time when GeoIP data update was skipped as there was no new update from an endpoint
+         * @param lastFailureMessage the last failure message
+         * @return the last failure message
+         */
+        private String lastFailureMessage;
+        /**
+         * @param lastSkippedAt the last time when GeoIP data update was skipped as there was no new update from an endpoint
+         * @return the last time when GeoIP data update was skipped as there was no new update from an endpoint
          */
         private Instant lastSkippedAt;
 
@@ -568,8 +585,9 @@ public class Datasource implements Writeable, ScheduledJobParameter {
                 Instant lastSucceededAt = args[0] == null ? null : Instant.ofEpochMilli((long) args[0]);
                 Long lastProcessingTimeInMillis = (Long) args[1];
                 Instant lastFailedAt = args[2] == null ? null : Instant.ofEpochMilli((long) args[2]);
-                Instant lastSkippedAt = args[3] == null ? null : Instant.ofEpochMilli((long) args[3]);
-                return new UpdateStats(lastSucceededAt, lastProcessingTimeInMillis, lastFailedAt, lastSkippedAt);
+                String lastFailureMessage = (String) args[3];
+                Instant lastSkippedAt = args[4] == null ? null : Instant.ofEpochMilli((long) args[4]);
+                return new UpdateStats(lastSucceededAt, lastProcessingTimeInMillis, lastFailedAt, lastFailureMessage, lastSkippedAt);
             }
         );
 
@@ -577,6 +595,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
             PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), LAST_SUCCEEDED_AT_FIELD);
             PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), LAST_PROCESSING_TIME_IN_MILLIS_FIELD);
             PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), LAST_FAILED_AT_FIELD);
+            PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), LAST_FAILURE_MESSAGE_FIELD);
             PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), LAST_SKIPPED_AT);
         }
 
@@ -614,6 +633,9 @@ public class Datasource implements Writeable, ScheduledJobParameter {
                     LAST_FAILED_AT_FIELD_READABLE.getPreferredName(),
                     lastFailedAt.toEpochMilli()
                 );
+            }
+            if (lastFailureMessage != null) {
+                builder.field(LAST_FAILURE_MESSAGE_FIELD.getPreferredName(), lastFailureMessage);
             }
             if (lastSkippedAt != null) {
                 builder.timeField(

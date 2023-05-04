@@ -102,12 +102,14 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         assertEquals(DatasourceState.CREATE_FAILED, datasource.getState());
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
+        assertTrue(datasource.getUpdateStats().getLastFailureMessage().contains("not in CREATING"));
         verify(datasourceFacade).updateDatasource(datasource);
     }
 
     public void testCreateDatasourceWithException() throws Exception {
+        String errMsg = GeospatialTestHelper.randomLowerCaseString();
         Datasource datasource = new Datasource();
-        doThrow(new RuntimeException()).when(datasourceUpdateService).updateOrCreateGeoIpData(datasource);
+        doThrow(new RuntimeException(errMsg)).when(datasourceUpdateService).updateOrCreateGeoIpData(datasource);
 
         // Run
         action.createDatasource(datasource);
@@ -115,6 +117,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         assertEquals(DatasourceState.CREATE_FAILED, datasource.getState());
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
+        assertTrue(datasource.getUpdateStats().getLastFailureMessage().contains(errMsg));
         verify(datasourceFacade).updateDatasource(datasource);
     }
 
@@ -127,5 +130,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         verify(datasourceUpdateService).updateOrCreateGeoIpData(datasource);
         assertEquals(DatasourceState.CREATING, datasource.getState());
+        assertNull(datasource.getUpdateStats().getLastFailedAt());
+        assertNull(datasource.getUpdateStats().getLastFailureMessage());
     }
 }

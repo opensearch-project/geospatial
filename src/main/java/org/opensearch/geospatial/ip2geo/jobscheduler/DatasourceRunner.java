@@ -9,7 +9,6 @@
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import java.io.IOException;
-import java.time.Instant;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -143,7 +142,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
         if (DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
             log.error("Invalid datasource state. Expecting {} but received {}", DatasourceState.AVAILABLE, datasource.getState());
             datasource.disable();
-            datasource.getUpdateStats().setLastFailedAt(Instant.now());
+            datasource.setAsFailed("Datasource state is not in AVAILABLE");
             datasourceFacade.updateDatasource(datasource);
             return;
         }
@@ -154,7 +153,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
             datasourceUpdateService.deleteUnusedIndices(datasource);
         } catch (Exception e) {
             log.error("Failed to update datasource for {}", datasource.getName(), e);
-            datasource.getUpdateStats().setLastFailedAt(Instant.now());
+            datasource.setAsFailed(e.getMessage());
             datasourceFacade.updateDatasource(datasource);
         }
     }
