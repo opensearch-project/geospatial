@@ -93,12 +93,12 @@ public class DatasourceManifest {
         }
     );
     static {
-        PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), URL_FIELD);
-        PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), DB_NAME_FIELD);
-        PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), SHA256_HASH_FIELD);
+        PARSER.declareString(ConstructingObjectParser.constructorArg(), URL_FIELD);
+        PARSER.declareString(ConstructingObjectParser.constructorArg(), DB_NAME_FIELD);
+        PARSER.declareString(ConstructingObjectParser.constructorArg(), SHA256_HASH_FIELD);
         PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), VALID_FOR_IN_DAYS_FIELD);
-        PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), UPDATED_AT_FIELD);
-        PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), PROVIDER_FIELD);
+        PARSER.declareLong(ConstructingObjectParser.constructorArg(), UPDATED_AT_FIELD);
+        PARSER.declareString(ConstructingObjectParser.constructorArg(), PROVIDER_FIELD);
     }
 
     /**

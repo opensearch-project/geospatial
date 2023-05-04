@@ -23,7 +23,7 @@ import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 
 public class PutDatasourceRequestTests extends Ip2GeoTestCase {
 
-    public void testValidateWithInvalidUrl() {
+    public void testValidate_whenInvalidUrl_thenFails() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
         request.setEndpoint("invalidUrl");
@@ -33,7 +33,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         assertEquals("Invalid URL format is provided", exception.validationErrors().get(0));
     }
 
-    public void testValidateWithInvalidManifestFile() {
+    public void testValidate_whenInvalidManifestFile_thenFails() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         String domain = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
@@ -41,13 +41,10 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         request.setUpdateInterval(TimeValue.timeValueDays(1));
         ActionRequestValidationException exception = request.validate();
         assertEquals(1, exception.validationErrors().size());
-        assertEquals(
-            String.format(Locale.ROOT, "Error occurred while reading a file from %s", request.getEndpoint()),
-            exception.validationErrors().get(0)
-        );
+        assertTrue(exception.validationErrors().get(0).contains("Error occurred while reading a file"));
     }
 
-    public void testValidate() throws Exception {
+    public void testValidate_whenValidInput_thenSucceed() throws Exception {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
         request.setEndpoint(sampleManifestUrl());
@@ -55,7 +52,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         assertNull(request.validate());
     }
 
-    public void testValidateWithZeroUpdateInterval() throws Exception {
+    public void testValidate_whenZeroUpdateInterval_thenFails() throws Exception {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
         request.setEndpoint(sampleManifestUrl());
@@ -72,7 +69,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         );
     }
 
-    public void testValidateWithLargeUpdateInterval() throws Exception {
+    public void testValidate_whenLargeUpdateInterval_thenFail() throws Exception {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
         request.setEndpoint(sampleManifestUrl());
@@ -86,7 +83,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         assertTrue(exception.validationErrors().get(0).contains("should be smaller"));
     }
 
-    public void testValidateWithInvalidUrlInsideManifest() throws Exception {
+    public void testValidate_whenInvalidUrlInsideManifest_thenFail() throws Exception {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
         request.setEndpoint(sampleManifestUrlWithInvalidUrl());
@@ -100,7 +97,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         assertTrue(exception.validationErrors().get(0).contains("Invalid URL format"));
     }
 
-    public void testValidateDatasourceNames() throws Exception {
+    public void testValidate_whenInvalidDatasourceNames_thenFails() throws Exception {
         String validDatasourceName = GeospatialTestHelper.randomLowerCaseString();
         String domain = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(validDatasourceName);
@@ -154,7 +151,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         }
     }
 
-    public void testStreamInOut() throws Exception {
+    public void testStreamInOut_whenValidInput_thenSucceed() throws Exception {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         String domain = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);

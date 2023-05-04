@@ -176,7 +176,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
             manifest = DatasourceManifest.Builder.build(url);
         } catch (Exception e) {
             log.info("Error occurred while reading a file from {}", url, e);
-            errors.addValidationError(String.format(Locale.ROOT, "Error occurred while reading a file from %s", url));
+            errors.addValidationError(String.format(Locale.ROOT, "Error occurred while reading a file from %s: %s", url, e.getMessage()));
             return;
         }
 
@@ -188,7 +188,7 @@ public class PutDatasourceRequest extends AcknowledgedRequest<PutDatasourceReque
             return;
         }
 
-        if (updateInterval.days() >= manifest.getValidForInDays()) {
+        if (manifest.getValidForInDays() != null && updateInterval.days() >= manifest.getValidForInDays()) {
             errors.addValidationError(
                 String.format(
                     Locale.ROOT,
