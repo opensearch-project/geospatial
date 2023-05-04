@@ -27,6 +27,7 @@ import org.opensearch.action.get.MultiGetResponse;
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.ClusterSettings;
@@ -67,6 +68,7 @@ public class DatasourceFacade {
         IndexRequestBuilder requestBuilder = client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME);
         requestBuilder.setId(datasource.getName());
         requestBuilder.setOpType(DocWriteRequest.OpType.INDEX);
+        requestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         requestBuilder.setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS));
         return client.index(requestBuilder.request()).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
     }

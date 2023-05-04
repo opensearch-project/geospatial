@@ -33,6 +33,7 @@ import org.opensearch.action.get.MultiGetResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.support.WriteRequest;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.ClusterSettings;
@@ -75,6 +76,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
             assertEquals(datasource.getName(), request.id());
             assertEquals(DocWriteRequest.OpType.INDEX, request.opType());
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
+            assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, request.getRefreshPolicy());
             return null;
         });
 

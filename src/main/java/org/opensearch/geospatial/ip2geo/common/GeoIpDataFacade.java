@@ -66,6 +66,11 @@ public class GeoIpDataFacade {
     private static final String DATA_FIELD_NAME = "_data";
     private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_SHARDS = new Tuple<>("index.number_of_shards", 1);
     private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
+    private static final Tuple<String, Boolean> INDEX_SETTING_HIDDEN = new Tuple<>("index.hidden", true);
+    private static final Tuple<String, Boolean> INDEX_SETTING_READ_ONLY_ALLOW_DELETE = new Tuple<>(
+        "index.blocks.read_only_allow_delete",
+        true
+    );
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
     private final Client client;
@@ -88,6 +93,7 @@ public class GeoIpDataFacade {
         final Map<String, Object> indexSettings = new HashMap<>();
         indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
         indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
+        indexSettings.put(INDEX_SETTING_HIDDEN.v1(), INDEX_SETTING_HIDDEN.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings).mapping(getIndexMapping());
         client.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
     }
@@ -345,6 +351,12 @@ public class GeoIpDataFacade {
         }
         client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
         client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
+        client.admin()
+            .indices()
+            .prepareUpdateSettings(indexName)
+            .setSettings(Map.of(INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v1(), INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v2()))
+            .execute()
+            .actionGet(timeout);
     }
 
     public AcknowledgedResponse deleteIp2GeoDataIndex(final String index) {
