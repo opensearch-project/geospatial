@@ -14,9 +14,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import org.junit.Before;
+import org.mockito.ArgumentCaptor;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
+import org.opensearch.action.StepListener;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.action.support.master.AcknowledgedResponse;
@@ -44,7 +46,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         );
     }
 
-    public void testDoExecute() throws Exception {
+    public void testDoExecute_whenValidInput_thenSucceed() throws Exception {
         Task task = mock(Task.class);
         PutDatasourceRequest request = new PutDatasourceRequest("test");
         request.setEndpoint(sampleManifestUrl());
@@ -59,7 +61,18 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
             assertEquals(DocWriteRequest.OpType.CREATE, indexRequest.opType());
             return null;
         });
+
+        // Run
         action.doExecute(task, request, listener);
+
+        // Verify
+        ArgumentCaptor<StepListener> captor = ArgumentCaptor.forClass(StepListener.class);
+        verify(datasourceFacade).createIndexIfNotExists(captor.capture());
+
+        // Run
+        captor.getValue().onResponse(null);
+
+        // Verify
         verify(verifyingClient).index(any(IndexRequest.class), any(ActionListener.class));
         verify(listener).onResponse(new AcknowledgedResponse(true));
     }

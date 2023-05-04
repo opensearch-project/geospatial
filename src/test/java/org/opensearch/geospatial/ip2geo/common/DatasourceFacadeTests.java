@@ -17,14 +17,16 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
+import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
+import org.opensearch.action.StepListener;
+import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.get.MultiGetItemResponse;
@@ -36,8 +38,6 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.bytes.BytesReference;
-import org.opensearch.common.settings.ClusterSettings;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
@@ -54,10 +54,70 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        datasourceFacade = new DatasourceFacade(
-            verifyingClient,
-            new ClusterSettings(Settings.EMPTY, new HashSet<>(Ip2GeoSettings.settings()))
+        datasourceFacade = new DatasourceFacade(verifyingClient, clusterService);
+    }
+
+    public void testCreateIndexIfNotExists_whenIndexExist_thenCreateRequestIsNotCalled() {
+        when(metadata.hasIndex(DatasourceExtension.JOB_INDEX_NAME)).thenReturn(true);
+
+        // Verify
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> { throw new RuntimeException("Shouldn't get called"); });
+
+        // Run
+        StepListener<Void> stepListener = new StepListener<>();
+        datasourceFacade.createIndexIfNotExists(stepListener);
+
+        // Verify stepListener is called
+        stepListener.result();
+    }
+
+    public void testCreateIndexIfNotExists_whenIndexExist_thenCreateRequestIsCalled() {
+        when(metadata.hasIndex(DatasourceExtension.JOB_INDEX_NAME)).thenReturn(false);
+
+        // Verify
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            assertTrue(actionRequest instanceof CreateIndexRequest);
+            CreateIndexRequest request = (CreateIndexRequest) actionRequest;
+            assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
+            assertEquals("1", request.settings().get("index.number_of_shards"));
+            assertEquals("0-all", request.settings().get("index.auto_expand_replicas"));
+            assertEquals("true", request.settings().get("index.hidden"));
+            assertNotNull(request.mappings());
+            return null;
+        });
+
+        // Run
+        StepListener<Void> stepListener = new StepListener<>();
+        datasourceFacade.createIndexIfNotExists(stepListener);
+
+        // Verify stepListener is called
+        stepListener.result();
+    }
+
+    public void testCreateIndexIfNotExists_whenIndexCreatedAlready_thenExceptionIsIgnored() {
+        when(metadata.hasIndex(DatasourceExtension.JOB_INDEX_NAME)).thenReturn(false);
+        verifyingClient.setExecuteVerifier(
+            (actionResponse, actionRequest) -> { throw new ResourceAlreadyExistsException(DatasourceExtension.JOB_INDEX_NAME); }
         );
+
+        // Run
+        StepListener<Void> stepListener = new StepListener<>();
+        datasourceFacade.createIndexIfNotExists(stepListener);
+
+        // Verify stepListener is called
+        stepListener.result();
+    }
+
+    public void testCreateIndexIfNotExists_whenExceptionIsThrown_thenExceptionIsThrown() {
+        when(metadata.hasIndex(DatasourceExtension.JOB_INDEX_NAME)).thenReturn(false);
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> { throw new RuntimeException(); });
+
+        // Run
+        StepListener<Void> stepListener = new StepListener<>();
+        datasourceFacade.createIndexIfNotExists(stepListener);
+
+        // Verify stepListener is called
+        expectThrows(RuntimeException.class, () -> stepListener.result());
     }
 
     public void testUpdateDatasource_whenValidInput_thenSucceed() throws Exception {
@@ -106,7 +166,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         verify(listener).onResponse(eq(datasource));
     }
 
-    public void testGetDatasource_whenExistWithListener_thenListenerIsCalledWithNull() {
+    public void testGetDatasource_whenNotExistWithListener_thenListenerIsCalledWithNull() {
         Datasource datasource = setupClientForGetRequest(false, null);
         ActionListener<Datasource> listener = mock(ActionListener.class);
         datasourceFacade.getDatasource(datasource.getName(), listener);

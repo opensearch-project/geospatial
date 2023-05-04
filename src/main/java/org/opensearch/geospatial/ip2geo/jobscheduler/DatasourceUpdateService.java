@@ -210,7 +210,8 @@ public class DatasourceUpdateService {
      * @return
      */
     private boolean shouldUpdate(final Datasource datasource, final DatasourceManifest manifest) {
-        if (datasource.getDatabase().getUpdatedAt().toEpochMilli() > manifest.getUpdatedAt()) {
+        if (datasource.getDatabase().getUpdatedAt() != null
+            && datasource.getDatabase().getUpdatedAt().toEpochMilli() > manifest.getUpdatedAt()) {
             return false;
         }
 

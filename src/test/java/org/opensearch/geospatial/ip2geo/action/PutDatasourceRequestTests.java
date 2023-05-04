@@ -156,7 +156,7 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         String domain = GeospatialTestHelper.randomLowerCaseString();
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
         request.setEndpoint(String.format(Locale.ROOT, "https://%s.com", domain));
-        request.setUpdateInterval(TimeValue.timeValueDays(Randomness.get().nextInt(30) + 1));
+        request.setUpdateInterval(TimeValue.timeValueDays(Randomness.get().nextInt(29) + 1));
 
         // Run
         BytesStreamOutput output = new BytesStreamOutput();
