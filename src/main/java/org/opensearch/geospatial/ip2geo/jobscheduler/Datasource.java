@@ -182,7 +182,6 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         PARSER.declareStringArray(ConstructingObjectParser.constructorArg(), INDICES_FIELD);
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), Database.PARSER, DATABASE_FIELD);
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), UpdateStats.PARSER, UPDATE_STATS_FIELD);
-
     }
 
     @VisibleForTesting

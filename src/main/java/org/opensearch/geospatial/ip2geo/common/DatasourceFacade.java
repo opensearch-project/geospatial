@@ -8,18 +8,28 @@
 
 package org.opensearch.geospatial.ip2geo.common;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.OpenSearchException;
+import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
+import org.opensearch.action.StepListener;
+import org.opensearch.action.admin.indices.create.CreateIndexRequest;
+import org.opensearch.action.admin.indices.create.CreateIndexResponse;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.get.MultiGetItemResponse;
@@ -29,7 +39,9 @@ import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
+import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -49,12 +61,64 @@ import org.opensearch.search.SearchHit;
 @Log4j2
 public class DatasourceFacade {
     private static final Integer MAX_SIZE = 1000;
+    private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_SHARDS = new Tuple<>("index.number_of_shards", 1);
+    private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
+    private static final Tuple<String, Boolean> INDEX_SETTING_HIDDEN = new Tuple<>("index.hidden", true);
     private final Client client;
+    private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
 
-    public DatasourceFacade(final Client client, final ClusterSettings clusterSettings) {
+    public DatasourceFacade(final Client client, final ClusterService clusterService) {
         this.client = client;
-        this.clusterSettings = clusterSettings;
+        this.clusterService = clusterService;
+        this.clusterSettings = clusterService.getClusterSettings();
+    }
+
+    /**
+     * Create a datasource index of single shard with auto expand replicas to all nodes
+     *
+     * We want the index to expand to all replica so that datasource query request can be executed locally
+     * for faster ingestion time.
+     */
+    public void createIndexIfNotExists(final StepListener<Void> stepListener) {
+        if (clusterService.state().metadata().hasIndex(DatasourceExtension.JOB_INDEX_NAME) == true) {
+            stepListener.onResponse(null);
+            return;
+        }
+        final Map<String, Object> indexSettings = new HashMap<>();
+        indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
+        indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
+        indexSettings.put(INDEX_SETTING_HIDDEN.v1(), INDEX_SETTING_HIDDEN.v2());
+        final CreateIndexRequest createIndexRequest = new CreateIndexRequest(DatasourceExtension.JOB_INDEX_NAME).mapping(getIndexMapping())
+            .settings(indexSettings);
+        client.admin().indices().create(createIndexRequest, new ActionListener<>() {
+            @Override
+            public void onResponse(final CreateIndexResponse createIndexResponse) {
+                stepListener.onResponse(null);
+            }
+
+            @Override
+            public void onFailure(final Exception e) {
+                if (e instanceof ResourceAlreadyExistsException) {
+                    log.info("index[{}] already exist", DatasourceExtension.JOB_INDEX_NAME);
+                    stepListener.onResponse(null);
+                    return;
+                }
+                stepListener.onFailure(e);
+            }
+        });
+    }
+
+    private String getIndexMapping() {
+        try {
+            try (InputStream is = DatasourceFacade.class.getResourceAsStream("/mappings/ip2geo_datasource.json")) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    return reader.lines().map(String::trim).collect(Collectors.joining());
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

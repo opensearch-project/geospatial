@@ -94,7 +94,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
                 new Ip2GeoProcessor.Factory(
                     parameters.client,
                     parameters.ingestService,
-                    new DatasourceFacade(parameters.client, parameters.ingestService.getClusterService().getClusterSettings()),
+                    new DatasourceFacade(parameters.client, parameters.ingestService.getClusterService()),
                     new GeoIpDataFacade(parameters.ingestService.getClusterService(), parameters.client)
                 )
             )
@@ -128,7 +128,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
         GeoIpDataFacade geoIpDataFacade = new GeoIpDataFacade(clusterService, client);
-        DatasourceFacade datasourceFacade = new DatasourceFacade(client, clusterService.getClusterSettings());
+        DatasourceFacade datasourceFacade = new DatasourceFacade(client, clusterService);
         DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(
             clusterService,
             client,
