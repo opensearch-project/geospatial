@@ -36,7 +36,7 @@ public class DatasourceTests extends OpenSearchTestCase {
         datasource.getDatabase().setFields(Arrays.asList("field1", "field2"));
         datasource.getDatabase().setProvider("test_provider");
         datasource.getDatabase().setUpdatedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
-        datasource.getDatabase().setMd5Hash(GeospatialTestHelper.randomLowerCaseString());
+        datasource.getDatabase().setSha256Hash(GeospatialTestHelper.randomLowerCaseString());
         datasource.getDatabase().setValidForInDays(1l);
         datasource.getUpdateStats().setLastProcessingTimeInMillis(Randomness.get().nextLong());
         datasource.getUpdateStats().setLastSucceededAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
@@ -56,7 +56,7 @@ public class DatasourceTests extends OpenSearchTestCase {
         Datasource datasource = new Datasource();
         datasource.setName(id);
         datasource.getDatabase().setProvider("provider");
-        datasource.getDatabase().setMd5Hash("md5Hash");
+        datasource.getDatabase().setSha256Hash("sha256Hash");
         datasource.getDatabase().setUpdatedAt(now);
         datasource.getDatabase().setValidForInDays(10l);
         datasource.getDatabase().setFields(new ArrayList<>());

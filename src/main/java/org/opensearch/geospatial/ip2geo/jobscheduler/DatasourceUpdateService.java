@@ -203,7 +203,7 @@ public class DatasourceUpdateService {
      *
      * Update is needed when all following conditions are met
      * 1. updatedAt value in datasource is equal or before updateAt value in manifest
-     * 2. MD5 hash value in datasource is different with MD5 hash value in manifest
+     * 2. SHA256 hash value in datasource is different with SHA256 hash value in manifest
      *
      * @param datasource
      * @param manifest
@@ -214,7 +214,7 @@ public class DatasourceUpdateService {
             return false;
         }
 
-        if (manifest.getMd5Hash().equals(datasource.getDatabase().getMd5Hash())) {
+        if (manifest.getSha256Hash().equals(datasource.getDatabase().getSha256Hash())) {
             return false;
         }
         return true;

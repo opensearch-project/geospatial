@@ -46,7 +46,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasource.setState(DatasourceState.AVAILABLE);
         datasource.getUpdateStats().setLastSkippedAt(null);
         datasource.getDatabase().setUpdatedAt(Instant.ofEpochMilli(manifest.getUpdatedAt()));
-        datasource.getDatabase().setMd5Hash(manifest.getMd5Hash());
+        datasource.getDatabase().setSha256Hash(manifest.getSha256Hash());
         datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
 
         // Run
@@ -69,7 +69,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
         datasource.getDatabase().setUpdatedAt(Instant.ofEpochMilli(manifest.getUpdatedAt() - 1));
-        datasource.getDatabase().setMd5Hash(manifest.getMd5Hash().substring(1));
+        datasource.getDatabase().setSha256Hash(manifest.getSha256Hash().substring(1));
         datasource.getDatabase().setFields(Arrays.asList("country_name"));
         datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
 
@@ -87,7 +87,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
         datasource.getDatabase().setUpdatedAt(Instant.ofEpochMilli(manifest.getUpdatedAt() - 1));
-        datasource.getDatabase().setMd5Hash(manifest.getMd5Hash().substring(1));
+        datasource.getDatabase().setSha256Hash(manifest.getSha256Hash().substring(1));
         datasource.getDatabase().setFields(Arrays.asList("country_name", "additional_field"));
         datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
 
@@ -105,7 +105,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
         datasource.getDatabase().setUpdatedAt(Instant.ofEpochMilli(manifest.getUpdatedAt() - 1));
-        datasource.getDatabase().setMd5Hash(manifest.getMd5Hash().substring(1));
+        datasource.getDatabase().setSha256Hash(manifest.getSha256Hash().substring(1));
         datasource.getDatabase().setFields(Arrays.asList("country_name"));
         datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
         datasource.getUpdateStats().setLastSucceededAt(null);
@@ -116,7 +116,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
         // Verify
         assertEquals(manifest.getProvider(), datasource.getDatabase().getProvider());
-        assertEquals(manifest.getMd5Hash(), datasource.getDatabase().getMd5Hash());
+        assertEquals(manifest.getSha256Hash(), datasource.getDatabase().getSha256Hash());
         assertEquals(Instant.ofEpochMilli(manifest.getUpdatedAt()), datasource.getDatabase().getUpdatedAt());
         assertEquals(manifest.getValidForInDays(), datasource.getDatabase().getValidForInDays());
         assertNotNull(datasource.getUpdateStats().getLastSucceededAt());
