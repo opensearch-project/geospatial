@@ -42,6 +42,7 @@ import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.opensearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.opensearch.action.admin.indices.refresh.RefreshRequest;
+import org.opensearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.search.MultiSearchRequest;
@@ -86,8 +87,10 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             assertTrue(actionRequest instanceof CreateIndexRequest);
             CreateIndexRequest request = (CreateIndexRequest) actionRequest;
             assertEquals(index, request.index());
-            assertEquals("1", request.settings().get("index.number_of_shards"));
+            assertEquals(1, (int) request.settings().getAsInt("index.number_of_shards", 2));
             assertEquals("0-all", request.settings().get("index.auto_expand_replicas"));
+            assertEquals(true, request.settings().getAsBoolean("index.hidden", false));
+
             assertEquals(
                 "{\"dynamic\": false,\"properties\": {\"_cidr\": {\"type\": \"ip_range\",\"doc_values\": false}}}",
                 request.mappings()
@@ -177,6 +180,12 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
                 assertEquals(1, request.indices().length);
                 assertEquals(index, request.indices()[0]);
                 assertEquals(1, request.maxNumSegments());
+                return null;
+            } else if (actionRequest instanceof UpdateSettingsRequest) {
+                UpdateSettingsRequest request = (UpdateSettingsRequest) actionRequest;
+                assertEquals(1, request.indices().length);
+                assertEquals(index, request.indices()[0]);
+                assertEquals(true, request.settings().getAsBoolean("index.blocks.read_only_allow_delete", false));
                 return null;
             } else {
                 throw new RuntimeException("invalid request is called");
