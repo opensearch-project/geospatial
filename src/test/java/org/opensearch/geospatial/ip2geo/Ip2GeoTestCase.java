@@ -116,7 +116,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         verifyingClient.close();
     }
 
-    public DatasourceState randomStateExcept(DatasourceState state) {
+    protected DatasourceState randomStateExcept(DatasourceState state) {
         assertNotNull(state);
         return Arrays.stream(DatasourceState.values())
             .sequential()
@@ -125,14 +125,14 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             .get(Randomness.createSecure().nextInt(DatasourceState.values().length - 2));
     }
 
-    public DatasourceState randomState() {
+    protected DatasourceState randomState() {
         return Arrays.stream(DatasourceState.values())
             .sequential()
             .collect(Collectors.toList())
             .get(Randomness.createSecure().nextInt(DatasourceState.values().length - 1));
     }
 
-    public String randomIpAddress() {
+    protected String randomIpAddress() {
         return String.format(
             Locale.ROOT,
             "%d.%d.%d.%d",
@@ -144,12 +144,12 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     }
 
     @SuppressForbidden(reason = "unit test")
-    public String sampleManifestUrl() throws Exception {
+    protected String sampleManifestUrl() throws Exception {
         return Paths.get(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").toURI()).toUri().toURL().toExternalForm();
     }
 
     @SuppressForbidden(reason = "unit test")
-    public String sampleManifestUrlWithInvalidUrl() throws Exception {
+    protected String sampleManifestUrlWithInvalidUrl() throws Exception {
         return Paths.get(this.getClass().getClassLoader().getResource("ip2geo/manifest_invalid_url.json").toURI())
             .toUri()
             .toURL()
@@ -157,11 +157,16 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     }
 
     @SuppressForbidden(reason = "unit test")
-    public File sampleIp2GeoFile() {
+    protected File sampleIp2GeoFile() {
         return new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
     }
 
-    public Datasource randomDatasource() {
+    protected long randomPositiveLong() {
+        long value = Randomness.get().nextLong();
+        return value < 0 ? -value : value;
+    }
+
+    protected Datasource randomDatasource() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Datasource datasource = new Datasource();
         datasource.setName(GeospatialTestHelper.randomLowerCaseString());
@@ -178,7 +183,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         datasource.getUpdateStats().setLastSkippedAt(now);
         datasource.getUpdateStats().setLastSucceededAt(now);
         datasource.getUpdateStats().setLastFailedAt(now);
-        datasource.getUpdateStats().setLastProcessingTimeInMillis(Randomness.get().nextLong());
+        datasource.getUpdateStats().setLastProcessingTimeInMillis(randomPositiveLong());
         datasource.setLastUpdateTime(now);
         if (Randomness.get().nextInt() % 2 == 0) {
             datasource.enable();
