@@ -111,7 +111,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         DatasourceManifest manifest = new DatasourceManifest(
             zipFile.toURI().toURL().toExternalForm(),
             "sample_valid.csv",
-            "fake_md5",
+            "fake_sha256",
             1l,
             Instant.now().toEpochMilli(),
             "tester"
@@ -128,7 +128,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         DatasourceManifest manifest = new DatasourceManifest(
             zipFile.toURI().toURL().toExternalForm(),
             "no_file.csv",
-            "fake_md5",
+            "fake_sha256",
             1l,
             Instant.now().toEpochMilli(),
             "tester"
