@@ -173,7 +173,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             .setFields(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.getDatabase().setProvider(GeospatialTestHelper.randomLowerCaseString());
         datasource.getDatabase().setUpdatedAt(now);
-        datasource.getDatabase().setMd5Hash(GeospatialTestHelper.randomLowerCaseString());
+        datasource.getDatabase().setSha256Hash(GeospatialTestHelper.randomLowerCaseString());
         datasource.getDatabase().setValidForInDays(Randomness.get().nextInt(30) + 1l);
         datasource.getUpdateStats().setLastSkippedAt(now);
         datasource.getUpdateStats().setLastSucceededAt(now);

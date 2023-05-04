@@ -345,7 +345,7 @@ public class Datasource implements ScheduledJobParameter {
      */
     public void setDatabase(final DatasourceManifest datasourceManifest, final List<String> fields) {
         this.database.setProvider(datasourceManifest.getProvider());
-        this.database.setMd5Hash(datasourceManifest.getMd5Hash());
+        this.database.setSha256Hash(datasourceManifest.getSha256Hash());
         this.database.setUpdatedAt(Instant.ofEpochMilli(datasourceManifest.getUpdatedAt()));
         this.database.setValidForInDays(datasourceManifest.getValidForInDays());
         this.database.setFields(fields);
@@ -389,7 +389,7 @@ public class Datasource implements ScheduledJobParameter {
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Database implements ToXContent {
         private static final ParseField PROVIDER_FIELD = new ParseField("provider");
-        private static final ParseField MD5_HASH_FIELD = new ParseField("md5_hash");
+        private static final ParseField SHA256_HASH_FIELD = new ParseField("sha256_hash");
         private static final ParseField UPDATED_AT_FIELD = new ParseField("updated_at");
         private static final ParseField UPDATED_AT_FIELD_READABLE = new ParseField("updated_at_field");
         private static final ParseField FIELDS_FIELD = new ParseField("fields");
@@ -401,10 +401,10 @@ public class Datasource implements ScheduledJobParameter {
          */
         private String provider;
         /**
-         * @param md5Hash MD5 hash value of a database file
-         * @return MD5 hash value of a database file
+         * @param sha256Hash SHA256 hash value of a database file
+         * @return SHA256 hash value of a database file
          */
-        private String md5Hash;
+        private String sha256Hash;
         /**
          * @param updatedAt A date when the database was updated
          * @return A date when the database was updated
@@ -426,16 +426,16 @@ public class Datasource implements ScheduledJobParameter {
             true,
             args -> {
                 String provider = (String) args[0];
-                String md5Hash = (String) args[1];
+                String sha256Hash = (String) args[1];
                 Instant updatedAt = args[2] == null ? null : Instant.ofEpochMilli((Long) args[2]);
                 Long validForInDays = (Long) args[3];
                 List<String> fields = (List<String>) args[4];
-                return new Database(provider, md5Hash, updatedAt, validForInDays, fields);
+                return new Database(provider, sha256Hash, updatedAt, validForInDays, fields);
             }
         );
         static {
             PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), PROVIDER_FIELD);
-            PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), MD5_HASH_FIELD);
+            PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), SHA256_HASH_FIELD);
             PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), UPDATED_AT_FIELD);
             PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), VALID_FOR_IN_DAYS_FIELD);
             PARSER.declareStringArray(ConstructingObjectParser.optionalConstructorArg(), FIELDS_FIELD);
@@ -447,8 +447,8 @@ public class Datasource implements ScheduledJobParameter {
             if (provider != null) {
                 builder.field(PROVIDER_FIELD.getPreferredName(), provider);
             }
-            if (md5Hash != null) {
-                builder.field(MD5_HASH_FIELD.getPreferredName(), md5Hash);
+            if (sha256Hash != null) {
+                builder.field(SHA256_HASH_FIELD.getPreferredName(), sha256Hash);
             }
             if (updatedAt != null) {
                 builder.timeField(

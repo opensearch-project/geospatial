@@ -40,7 +40,7 @@ import org.opensearch.core.xcontent.XContentParser;
 public class DatasourceManifest {
     private static final ParseField URL_FIELD = new ParseField("url");
     private static final ParseField DB_NAME_FIELD = new ParseField("db_name");
-    private static final ParseField MD5_HASH_FIELD = new ParseField("md5_hash");
+    private static final ParseField SHA256_HASH_FIELD = new ParseField("sha256_hash");
     private static final ParseField VALID_FOR_IN_DAYS_FIELD = new ParseField("valid_for_in_days");
     private static final ParseField UPDATED_AT_FIELD = new ParseField("updated_at");
     private static final ParseField PROVIDER_FIELD = new ParseField("provider");
@@ -56,10 +56,10 @@ public class DatasourceManifest {
      */
     private String dbName;
     /**
-     * @param md5Hash MD5 hash value of a database file
-     * @return MD5 hash value of a database file
+     * @param sha256Hash SHA256 hash value of a database file
+     * @return SHA256 hash value of a database file
      */
-    private String md5Hash;
+    private String sha256Hash;
     /**
      * @param validForInDays A duration in which the database file is valid to use
      * @return A duration in which the database file is valid to use
@@ -85,17 +85,17 @@ public class DatasourceManifest {
         args -> {
             String url = (String) args[0];
             String dbName = (String) args[1];
-            String md5hash = (String) args[2];
+            String sha256Hash = (String) args[2];
             Long validForInDays = (Long) args[3];
             Long updatedAt = (Long) args[4];
             String provider = (String) args[5];
-            return new DatasourceManifest(url, dbName, md5hash, validForInDays, updatedAt, provider);
+            return new DatasourceManifest(url, dbName, sha256Hash, validForInDays, updatedAt, provider);
         }
     );
     static {
         PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), URL_FIELD);
         PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), DB_NAME_FIELD);
-        PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), MD5_HASH_FIELD);
+        PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), SHA256_HASH_FIELD);
         PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), VALID_FOR_IN_DAYS_FIELD);
         PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), UPDATED_AT_FIELD);
         PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), PROVIDER_FIELD);
