@@ -39,7 +39,7 @@ import org.opensearch.rest.action.RestToXContentListener;
  *
  */
 public class RestPutDatasourceHandler extends BaseRestHandler {
-    private static final String ACTION_NAME = "ip2geo_datasource";
+    private static final String ACTION_NAME = "ip2geo_datasource_put";
     private final ClusterSettings clusterSettings;
 
     public RestPutDatasourceHandler(final ClusterSettings clusterSettings) {
@@ -53,7 +53,7 @@ public class RestPutDatasourceHandler extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        final PutDatasourceRequest putDatasourceRequest = new PutDatasourceRequest(request.param("id"));
+        final PutDatasourceRequest putDatasourceRequest = new PutDatasourceRequest(request.param("name"));
         if (request.hasContentOrSourceParam()) {
             try (XContentParser parser = request.contentOrSourceParamParser()) {
                 PutDatasourceRequest.PARSER.parse(parser, putDatasourceRequest, null);
@@ -70,7 +70,7 @@ public class RestPutDatasourceHandler extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), "ip2geo/datasource/{id}");
+        String path = String.join(URL_DELIMITER, getPluginURLPrefix(), "ip2geo/datasource/{name}");
         return List.of(new Route(PUT, path));
     }
 }
