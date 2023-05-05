@@ -47,7 +47,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        factory = new Ip2GeoProcessor.Factory(client, ingestService, datasourceFacade, geoIpDataFacade);
+        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceFacade, geoIpDataFacade);
     }
 
     public void testCreateWithNoDatasource() {

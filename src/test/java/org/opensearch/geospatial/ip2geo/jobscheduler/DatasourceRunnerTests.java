@@ -29,8 +29,7 @@ import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 public class DatasourceRunnerTests extends Ip2GeoTestCase {
     @Before
     public void init() {
-        DatasourceRunner.getJobRunnerInstance()
-            .initialize(clusterService, client, datasourceUpdateService, ip2GeoExecutor, datasourceFacade);
+        DatasourceRunner.getJobRunnerInstance().initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceFacade);
     }
 
     public void testRunJobInvalidClass() {
