@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.action.ActionListener;
@@ -44,6 +45,10 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     private static final String PROPERTY_IP = "ip";
     private final String field;
     private final String targetField;
+    /**
+     * @return The datasource name
+     */
+    @Getter
     private final String datasourceName;
     private final Set<String> properties;
     private final boolean ignoreMissing;

@@ -32,6 +32,7 @@ import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
+import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
@@ -62,7 +63,8 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         new RestUploadGeoJSONAction(),
         new RestUploadStatsAction(),
         new RestPutDatasourceHandler(clusterSettings),
-        new RestGetDatasourceHandler()
+        new RestGetDatasourceHandler(),
+        new RestDeleteDatasourceHandler()
     );
 
     private final Set<String> SUPPORTED_SYSTEM_INDEX_PATTERN = Set.of(IP2GEO_DATA_INDEX_NAME_PREFIX);

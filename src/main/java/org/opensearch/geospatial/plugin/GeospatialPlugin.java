@@ -36,10 +36,13 @@ import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldTypeParser;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
+import org.opensearch.geospatial.ip2geo.action.DeleteDatasourceAction;
+import org.opensearch.geospatial.ip2geo.action.DeleteDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.GetDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.GetDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceTransportAction;
+import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
@@ -163,7 +166,8 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             new RestUploadStatsAction(),
             new RestUploadGeoJSONAction(),
             new RestPutDatasourceHandler(clusterSettings),
-            new RestGetDatasourceHandler()
+            new RestGetDatasourceHandler(),
+            new RestDeleteDatasourceHandler()
         );
     }
 
@@ -173,7 +177,8 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             new ActionHandler<>(UploadGeoJSONAction.INSTANCE, UploadGeoJSONTransportAction.class),
             new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class),
             new ActionHandler<>(PutDatasourceAction.INSTANCE, PutDatasourceTransportAction.class),
-            new ActionHandler<>(GetDatasourceAction.INSTANCE, GetDatasourceTransportAction.class)
+            new ActionHandler<>(GetDatasourceAction.INSTANCE, GetDatasourceTransportAction.class),
+            new ActionHandler<>(DeleteDatasourceAction.INSTANCE, DeleteDatasourceTransportAction.class)
         );
     }
 
