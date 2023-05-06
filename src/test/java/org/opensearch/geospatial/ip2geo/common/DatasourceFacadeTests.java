@@ -19,6 +19,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 
+import lombok.SneakyThrows;
+
 import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
@@ -141,6 +143,26 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         });
 
         datasourceFacade.updateDatasource(datasource);
+        assertTrue(previousTime.isBefore(datasource.getLastUpdateTime()));
+    }
+
+    @SneakyThrows
+    public void testPutDatasource_whenValidInpu_thenSucceed() {
+        Datasource datasource = randomDatasource();
+        Instant previousTime = Instant.now().minusMillis(1);
+        datasource.setLastUpdateTime(previousTime);
+
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            assertTrue(actionRequest instanceof IndexRequest);
+            IndexRequest indexRequest = (IndexRequest) actionRequest;
+            assertEquals(DatasourceExtension.JOB_INDEX_NAME, indexRequest.index());
+            assertEquals(datasource.getName(), indexRequest.id());
+            assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, indexRequest.getRefreshPolicy());
+            assertEquals(DocWriteRequest.OpType.CREATE, indexRequest.opType());
+            return null;
+        });
+
+        datasourceFacade.putDatasource(datasource, mock(ActionListener.class));
         assertTrue(previousTime.isBefore(datasource.getLastUpdateTime()));
     }
 

@@ -92,7 +92,6 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             .put(
                 Ip2GeoProcessor.TYPE,
                 new Ip2GeoProcessor.Factory(
-                    parameters.client,
                     parameters.ingestService,
                     new DatasourceFacade(parameters.client, parameters.ingestService.getClusterService()),
                     new GeoIpDataFacade(parameters.ingestService.getClusterService(), parameters.client)
@@ -129,19 +128,13 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     ) {
         GeoIpDataFacade geoIpDataFacade = new GeoIpDataFacade(clusterService, client);
         DatasourceFacade datasourceFacade = new DatasourceFacade(client, clusterService);
-        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(
-            clusterService,
-            client,
-            datasourceFacade,
-            geoIpDataFacade
-        );
+        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceFacade, geoIpDataFacade);
         Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         /**
          * We don't need to return datasource runner because it is used only by job scheduler and job scheduler
          * does not use DI but it calls DatasourceExtension#getJobRunner to get DatasourceRunner instance.
          */
-        DatasourceRunner.getJobRunnerInstance()
-            .initialize(clusterService, client, datasourceUpdateService, ip2GeoExecutor, datasourceFacade);
+        DatasourceRunner.getJobRunnerInstance().initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceFacade);
 
         return List.of(UploadStats.getInstance(), datasourceUpdateService, datasourceFacade, ip2GeoExecutor, geoIpDataFacade);
     }

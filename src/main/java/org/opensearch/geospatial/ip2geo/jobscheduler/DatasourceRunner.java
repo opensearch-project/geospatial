@@ -14,7 +14,6 @@ import java.time.Instant;
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.action.ActionListener;
-import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
@@ -53,7 +52,6 @@ public class DatasourceRunner implements ScheduledJobRunner {
     }
 
     private ClusterService clusterService;
-    private Client client;
     private DatasourceUpdateService datasourceUpdateService;
     private Ip2GeoExecutor ip2GeoExecutor;
     private DatasourceFacade datasourceFacade;
@@ -68,13 +66,11 @@ public class DatasourceRunner implements ScheduledJobRunner {
      */
     public void initialize(
         final ClusterService clusterService,
-        final Client client,
         final DatasourceUpdateService datasourceUpdateService,
         final Ip2GeoExecutor ip2GeoExecutor,
         final DatasourceFacade datasourceFacade
     ) {
         this.clusterService = clusterService;
-        this.client = client;
         this.datasourceUpdateService = datasourceUpdateService;
         this.ip2GeoExecutor = ip2GeoExecutor;
         this.datasourceFacade = datasourceFacade;
