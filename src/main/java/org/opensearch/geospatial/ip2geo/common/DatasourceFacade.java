@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.swing.*;
+
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.OpenSearchException;
@@ -34,7 +36,6 @@ import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.get.MultiGetItemResponse;
 import org.opensearch.action.get.MultiGetResponse;
-import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest;
@@ -129,12 +130,30 @@ public class DatasourceFacade {
      */
     public IndexResponse updateDatasource(final Datasource datasource) throws IOException {
         datasource.setLastUpdateTime(Instant.now());
-        IndexRequestBuilder requestBuilder = client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME);
-        requestBuilder.setId(datasource.getName());
-        requestBuilder.setOpType(DocWriteRequest.OpType.INDEX);
-        requestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-        requestBuilder.setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS));
-        return client.index(requestBuilder.request()).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+        return client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
+            .setId(datasource.getName())
+            .setOpType(DocWriteRequest.OpType.INDEX)
+            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+            .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
+            .execute()
+            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+    }
+
+    /**
+     * Put datasource in an index {@code DatasourceExtension.JOB_INDEX_NAME}
+     *
+     * @param datasource the datasource
+     * @param listener the listener
+     * @throws IOException exception
+     */
+    public void putDatasource(final Datasource datasource, final ActionListener listener) throws IOException {
+        datasource.setLastUpdateTime(Instant.now());
+        client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
+            .setId(datasource.getName())
+            .setOpType(DocWriteRequest.OpType.CREATE)
+            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+            .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
+            .execute(listener);
     }
 
     /**

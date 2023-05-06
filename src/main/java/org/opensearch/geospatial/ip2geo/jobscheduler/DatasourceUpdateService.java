@@ -22,7 +22,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.opensearch.OpenSearchException;
-import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
@@ -35,19 +34,16 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 public class DatasourceUpdateService {
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
-    private final Client client;
     private final DatasourceFacade datasourceFacade;
     private final GeoIpDataFacade geoIpDataFacade;
 
     public DatasourceUpdateService(
         final ClusterService clusterService,
-        final Client client,
         final DatasourceFacade datasourceFacade,
         final GeoIpDataFacade geoIpDataFacade
     ) {
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
-        this.client = client;
         this.datasourceFacade = datasourceFacade;
         this.geoIpDataFacade = geoIpDataFacade;
     }

@@ -35,7 +35,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        datasourceUpdateService = new DatasourceUpdateService(clusterService, client, datasourceFacade, geoIpDataFacade);
+        datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceFacade, geoIpDataFacade);
     }
 
     public void testUpdateDatasourceSkip() throws Exception {

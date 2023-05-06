@@ -15,22 +15,16 @@ import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
-import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.StepListener;
-import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
-import org.opensearch.action.support.WriteRequest;
 import org.opensearch.action.support.master.AcknowledgedResponse;
-import org.opensearch.client.Client;
 import org.opensearch.common.inject.Inject;
-import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
-import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.index.engine.VersionConflictEngineException;
 import org.opensearch.tasks.Task;
@@ -42,7 +36,6 @@ import org.opensearch.transport.TransportService;
  */
 @Log4j2
 public class PutDatasourceTransportAction extends HandledTransportAction<PutDatasourceRequest, AcknowledgedResponse> {
-    private final Client client;
     private final ThreadPool threadPool;
     private final DatasourceFacade datasourceFacade;
     private final DatasourceUpdateService datasourceUpdateService;
@@ -51,20 +44,19 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
      * Default constructor
      * @param transportService the transport service
      * @param actionFilters the action filters
-     * @param client the client
      * @param threadPool the thread pool
+     * @param datasourceFacade the datasource facade
+     * @param datasourceUpdateService the datasource update service
      */
     @Inject
     public PutDatasourceTransportAction(
         final TransportService transportService,
         final ActionFilters actionFilters,
-        final Client client,
         final ThreadPool threadPool,
         final DatasourceFacade datasourceFacade,
         final DatasourceUpdateService datasourceUpdateService
     ) {
         super(PutDatasourceAction.NAME, transportService, actionFilters, PutDatasourceRequest::new);
-        this.client = client;
         this.threadPool = threadPool;
         this.datasourceFacade = datasourceFacade;
         this.datasourceUpdateService = datasourceUpdateService;
@@ -85,12 +77,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
     protected void putDatasource(final PutDatasourceRequest request, final ActionListener<AcknowledgedResponse> listener)
         throws IOException {
         Datasource datasource = Datasource.Builder.build(request);
-        IndexRequest indexRequest = new IndexRequest().index(DatasourceExtension.JOB_INDEX_NAME)
-            .id(datasource.getName())
-            .source(datasource.toXContent(JsonXContent.contentBuilder(), null))
-            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
-            .opType(DocWriteRequest.OpType.CREATE);
-        client.index(indexRequest, getIndexResponseListener(datasource, listener));
+        datasourceFacade.putDatasource(datasource, getIndexResponseListener(datasource, listener));
     }
 
     @VisibleForTesting

@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.action.ActionListener;
-import org.opensearch.client.Client;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
@@ -52,7 +51,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     private final Set<String> properties;
     private final boolean ignoreMissing;
     private final boolean firstOnly;
-    private final Client client;
     private final ClusterSettings clusterSettings;
     private final DatasourceFacade datasourceFacade;
     private final GeoIpDataFacade geoIpDataFacade;
@@ -72,8 +70,9 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param properties     the properties
      * @param ignoreMissing  true if documents with a missing value for the field should be ignored
      * @param firstOnly      true if only first result should be returned in case of array
-     * @param client         the client
      * @param clusterSettings the cluster settings
+     * @param datasourceFacade the datasource facade
+     * @param geoIpDataFacade the geoip data facade
      */
     public Ip2GeoProcessor(
         final String tag,
@@ -84,7 +83,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final Set<String> properties,
         final boolean ignoreMissing,
         final boolean firstOnly,
-        final Client client,
         final ClusterSettings clusterSettings,
         final DatasourceFacade datasourceFacade,
         final GeoIpDataFacade geoIpDataFacade
@@ -96,7 +94,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         this.properties = properties;
         this.ignoreMissing = ignoreMissing;
         this.firstOnly = firstOnly;
-        this.client = client;
         this.clusterSettings = clusterSettings;
         this.datasourceFacade = datasourceFacade;
         this.geoIpDataFacade = geoIpDataFacade;
@@ -318,7 +315,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * Ip2Geo processor factory
      */
     public static final class Factory implements Processor.Factory {
-        private final Client client;
         private final IngestService ingestService;
         private final DatasourceFacade datasourceFacade;
         private final GeoIpDataFacade geoIpDataFacade;
@@ -326,16 +322,11 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         /**
          * Default constructor
          *
-         * @param client the client
          * @param ingestService the ingest service
+         * @param datasourceFacade the datasource facade
+         * @param geoIpDataFacade the geoip data facade
          */
-        public Factory(
-            final Client client,
-            final IngestService ingestService,
-            final DatasourceFacade datasourceFacade,
-            final GeoIpDataFacade geoIpDataFacade
-        ) {
-            this.client = client;
+        public Factory(final IngestService ingestService, final DatasourceFacade datasourceFacade, final GeoIpDataFacade geoIpDataFacade) {
             this.ingestService = ingestService;
             this.datasourceFacade = datasourceFacade;
             this.geoIpDataFacade = geoIpDataFacade;
@@ -380,7 +371,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 propertyNames == null ? null : new HashSet<>(propertyNames),
                 ignoreMissing,
                 firstOnly,
-                client,
                 ingestService.getClusterService().getClusterSettings(),
                 datasourceFacade,
                 geoIpDataFacade
