@@ -7,15 +7,15 @@ package org.opensearch.geospatial.ip2geo.common;
 
 import static org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension.JOB_INDEX_NAME;
 
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.inject.Inject;
-import org.opensearch.common.unit.TimeValue;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.utils.LockService;
 
@@ -23,8 +23,9 @@ import org.opensearch.jobscheduler.spi.utils.LockService;
  * A wrapper of job scheduler's lock service for datasource
  */
 public class Ip2GeoLockService {
+    public static final long LOCK_DURATION_IN_SECONDS = 300l;
+    public static final long RENEW_AFTER_IN_SECONDS = 120l;
     private final ClusterService clusterService;
-    private final Client client;
     private final LockService lockService;
 
     /**
@@ -33,10 +34,8 @@ public class Ip2GeoLockService {
      * @param clusterService the cluster service
      * @param client the client
      */
-    @Inject
     public Ip2GeoLockService(final ClusterService clusterService, final Client client) {
         this.clusterService = clusterService;
-        this.client = client;
         this.lockService = new LockService(client, clusterService);
     }
 
@@ -68,10 +67,9 @@ public class Ip2GeoLockService {
      * Synchronous method of LockService#renewLock
      *
      * @param lockModel lock to renew
-     * @param timeout timeout in milliseconds precise
      * @return renewed lock if renew succeed and null otherwise
      */
-    public LockModel renewLock(final LockModel lockModel, final TimeValue timeout) {
+    public LockModel renewLock(final LockModel lockModel) {
         AtomicReference<LockModel> lockReference = new AtomicReference();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         lockService.renewLock(lockModel, new ActionListener<>() {
@@ -89,10 +87,34 @@ public class Ip2GeoLockService {
         });
 
         try {
-            countDownLatch.await(timeout.getMillis(), TimeUnit.MILLISECONDS);
+            countDownLatch.await(clusterService.getClusterSettings().get(Ip2GeoSettings.TIMEOUT).getSeconds(), TimeUnit.SECONDS);
             return lockReference.get();
         } catch (InterruptedException e) {
             return null;
         }
+    }
+
+    /**
+     * Return a runnable which can renew the given lock model
+     *
+     * The runnable renews the lock and store the renewed lock in the AtomicReference.
+     * It only renews the lock when it passed {@code RENEW_AFTER_IN_SECONDS} since
+     * the last time the lock was renewed to avoid resource abuse.
+     *
+     * @param lockModel lock model to renew
+     * @return runnable which can renew the given lock for every call
+     */
+    public Runnable getRenewLockRunnable(final AtomicReference<LockModel> lockModel) {
+        return () -> {
+            LockModel preLock = lockModel.get();
+            if (Instant.now().isBefore(preLock.getLockTime().plusSeconds(RENEW_AFTER_IN_SECONDS))) {
+                return;
+            }
+
+            lockModel.set(renewLock(lockModel.get()));
+            if (lockModel.get() == null) {
+                new OpenSearchException("failed to renew a lock [{}]", preLock);
+            }
+        };
     }
 }

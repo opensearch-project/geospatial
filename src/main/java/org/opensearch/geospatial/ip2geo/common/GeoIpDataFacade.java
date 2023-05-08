@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
 
 import org.apache.commons.csv.CSVFormat;
@@ -332,8 +333,15 @@ public class GeoIpDataFacade {
      * @param fields Field name matching with data in CSVRecord in order
      * @param iterator GeoIP data to insert
      * @param bulkSize Bulk size of data to process
+     * @param renewLock Runnable to renew lock
      */
-    public void putGeoIpData(final String indexName, final String[] fields, final Iterator<CSVRecord> iterator, final int bulkSize) {
+    public void putGeoIpData(
+        @NonNull final String indexName,
+        @NonNull final String[] fields,
+        @NonNull final Iterator<CSVRecord> iterator,
+        final int bulkSize,
+        @NonNull final Runnable renewLock
+    ) {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
         final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         while (iterator.hasNext()) {
@@ -352,6 +360,7 @@ public class GeoIpDataFacade {
                 }
                 bulkRequest.requests().clear();
             }
+            renewLock.run();
         }
         StashedThreadContext.run(client, () -> {
             client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);

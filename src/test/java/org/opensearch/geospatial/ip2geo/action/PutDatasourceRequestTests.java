@@ -36,7 +36,11 @@ public class PutDatasourceRequestTests extends Ip2GeoTestCase {
         PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
         request.setEndpoint(String.format(Locale.ROOT, "https://%s.com", domain));
         request.setUpdateInterval(TimeValue.timeValueDays(1));
+
+        // Run
         ActionRequestValidationException exception = request.validate();
+
+        // Verify
         assertEquals(1, exception.validationErrors().size());
         assertTrue(exception.validationErrors().get(0).contains("Error occurred while reading a file"));
     }

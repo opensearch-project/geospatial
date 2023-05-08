@@ -15,7 +15,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -43,10 +42,12 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.ingest.IngestService;
+import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.jobscheduler.spi.utils.LockService;
 import org.opensearch.tasks.Task;
@@ -66,8 +67,6 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     @Mock
     protected Ip2GeoExecutor ip2GeoExecutor;
     @Mock
-    protected ExecutorService executorService;
-    @Mock
     protected GeoIpDataFacade geoIpDataFacade;
     @Mock
     protected ClusterState clusterState;
@@ -81,6 +80,8 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     protected ThreadPool threadPool;
     @Mock
     protected TransportService transportService;
+    @Mock
+    protected Ip2GeoLockService ip2GeoLockService;
     protected NoOpNodeClient client;
     protected VerifyingClient verifyingClient;
     protected LockService lockService;
@@ -101,7 +102,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         when(clusterService.state()).thenReturn(clusterState);
         when(clusterState.metadata()).thenReturn(metadata);
         when(clusterState.routingTable()).thenReturn(RoutingTable.EMPTY_ROUTING_TABLE);
-        when(ip2GeoExecutor.forDatasourceUpdate()).thenReturn(executorService);
+        when(ip2GeoExecutor.forDatasourceUpdate()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
         when(ingestService.getClusterService()).thenReturn(clusterService);
         when(threadPool.generic()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
     }
@@ -188,6 +189,17 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             datasource.disable();
         }
         return datasource;
+    }
+
+    protected LockModel randomLockModel() {
+        LockModel lockModel = new LockModel(
+            GeospatialTestHelper.randomLowerCaseString(),
+            GeospatialTestHelper.randomLowerCaseString(),
+            Instant.now(),
+            randomPositiveLong(),
+            false
+        );
+        return lockModel;
     }
 
     /**
