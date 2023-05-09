@@ -23,8 +23,7 @@ public class Ip2GeoSettings {
      */
     public static final Setting<String> DATASOURCE_ENDPOINT = Setting.simpleString(
         "plugins.geospatial.ip2geo.datasource.endpoint",
-        // TODO: This value is not correct. Update it later once CDN server is ready.
-        "https://geoip.maps.opensearch.org/v1/geolite-2/manifest.json",
+        "https://geoip.maps.opensearch.org/v1/geolite2-city/manifest.json",
         new DatasourceEndpointValidator(),
         Setting.Property.NodeScope,
         Setting.Property.Dynamic
