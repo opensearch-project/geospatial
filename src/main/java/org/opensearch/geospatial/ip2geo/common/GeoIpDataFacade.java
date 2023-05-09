@@ -52,6 +52,7 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.query.QueryBuilders;
 
 /**
@@ -92,7 +93,10 @@ public class GeoIpDataFacade {
         indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
         indexSettings.put(INDEX_SETTING_HIDDEN.v1(), INDEX_SETTING_HIDDEN.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings).mapping(getIndexMapping());
-        client.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+        StashedThreadContext.run(
+            client,
+            () -> client.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
+        );
     }
 
     /**
@@ -207,31 +211,34 @@ public class GeoIpDataFacade {
      * @param actionListener action listener
      */
     public void getGeoIpData(final String indexName, final String ip, final ActionListener<Map<String, Object>> actionListener) {
-        client.prepareSearch(indexName)
-            .setSize(1)
-            .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
-            .setPreference("_local")
-            .setRequestCache(true)
-            .execute(new ActionListener<>() {
-                @Override
-                public void onResponse(final SearchResponse searchResponse) {
-                    if (searchResponse.getHits().getHits().length == 0) {
-                        actionListener.onResponse(Collections.emptyMap());
-                    } else {
-                        Map<String, Object> geoIpData = (Map<String, Object>) XContentHelper.convertToMap(
-                            searchResponse.getHits().getAt(0).getSourceRef(),
-                            false,
-                            XContentType.JSON
-                        ).v2().get(DATA_FIELD_NAME);
-                        actionListener.onResponse(geoIpData);
+        StashedThreadContext.run(
+            client,
+            () -> client.prepareSearch(indexName)
+                .setSize(1)
+                .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
+                .setPreference("_local")
+                .setRequestCache(true)
+                .execute(new ActionListener<>() {
+                    @Override
+                    public void onResponse(final SearchResponse searchResponse) {
+                        if (searchResponse.getHits().getHits().length == 0) {
+                            actionListener.onResponse(Collections.emptyMap());
+                        } else {
+                            Map<String, Object> geoIpData = (Map<String, Object>) XContentHelper.convertToMap(
+                                searchResponse.getHits().getAt(0).getSourceRef(),
+                                false,
+                                XContentType.JSON
+                            ).v2().get(DATA_FIELD_NAME);
+                            actionListener.onResponse(geoIpData);
+                        }
                     }
-                }
 
-                @Override
-                public void onFailure(final Exception e) {
-                    actionListener.onFailure(e);
-                }
-            });
+                    @Override
+                    public void onFailure(final Exception e) {
+                        actionListener.onFailure(e);
+                    }
+                })
+        );
     }
 
     /**
@@ -281,7 +288,7 @@ public class GeoIpDataFacade {
             return;
         }
 
-        mRequestBuilder.execute(new ActionListener<>() {
+        StashedThreadContext.run(client, () -> mRequestBuilder.execute(new ActionListener<>() {
             @Override
             public void onResponse(final MultiSearchResponse items) {
                 for (int i = 0; i < ipsToSearch.size(); i++) {
@@ -315,7 +322,7 @@ public class GeoIpDataFacade {
             public void onFailure(final Exception e) {
                 actionListener.onFailure(e);
             }
-        });
+        }));
     }
 
     /**
@@ -328,14 +335,14 @@ public class GeoIpDataFacade {
      */
     public void putGeoIpData(final String indexName, final String[] fields, final Iterator<CSVRecord> iterator, final int bulkSize) {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
-        BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
+        final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         while (iterator.hasNext()) {
             CSVRecord record = iterator.next();
             String document = createDocument(fields, record.values());
             IndexRequest request = Requests.indexRequest(indexName).source(document, XContentType.JSON);
             bulkRequest.add(request);
             if (iterator.hasNext() == false || bulkRequest.requests().size() == bulkSize) {
-                BulkResponse response = client.bulk(bulkRequest).actionGet(timeout);
+                BulkResponse response = StashedThreadContext.run(client, () -> client.bulk(bulkRequest).actionGet(timeout));
                 if (response.hasFailures()) {
                     throw new OpenSearchException(
                         "error occurred while ingesting GeoIP data in {} with an error {}",
@@ -343,17 +350,19 @@ public class GeoIpDataFacade {
                         response.buildFailureMessage()
                     );
                 }
-                bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
+                bulkRequest.requests().clear();
             }
         }
-        client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
-        client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
-        client.admin()
-            .indices()
-            .prepareUpdateSettings(indexName)
-            .setSettings(Map.of(INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v1(), INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v2()))
-            .execute()
-            .actionGet(timeout);
+        StashedThreadContext.run(client, () -> {
+            client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
+            client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
+            client.admin()
+                .indices()
+                .prepareUpdateSettings(indexName)
+                .setSettings(Map.of(INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v1(), INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v2()))
+                .execute()
+                .actionGet(timeout);
+        });
     }
 
     public AcknowledgedResponse deleteIp2GeoDataIndex(final String index) {
@@ -364,11 +373,14 @@ public class GeoIpDataFacade {
                 IP2GEO_DATA_INDEX_NAME_PREFIX
             );
         }
-        return client.admin()
-            .indices()
-            .prepareDelete(index)
-            .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
-            .execute()
-            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+        return StashedThreadContext.run(
+            client,
+            () -> client.admin()
+                .indices()
+                .prepareDelete(index)
+                .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
+                .execute()
+                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
+        );
     }
 }
