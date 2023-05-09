@@ -49,6 +49,7 @@ import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
+import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
@@ -89,7 +90,7 @@ public class DatasourceFacade {
         indexSettings.put(INDEX_SETTING_HIDDEN.v1(), INDEX_SETTING_HIDDEN.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(DatasourceExtension.JOB_INDEX_NAME).mapping(getIndexMapping())
             .settings(indexSettings);
-        client.admin().indices().create(createIndexRequest, new ActionListener<>() {
+        StashedThreadContext.run(client, () -> client.admin().indices().create(createIndexRequest, new ActionListener<>() {
             @Override
             public void onResponse(final CreateIndexResponse createIndexResponse) {
                 stepListener.onResponse(null);
@@ -104,7 +105,7 @@ public class DatasourceFacade {
                 }
                 stepListener.onFailure(e);
             }
-        });
+        }));
     }
 
     private String getIndexMapping() {
@@ -123,17 +124,22 @@ public class DatasourceFacade {
      * Update datasource in an index {@code DatasourceExtension.JOB_INDEX_NAME}
      * @param datasource the datasource
      * @return index response
-     * @throws IOException exception
      */
-    public IndexResponse updateDatasource(final Datasource datasource) throws IOException {
+    public IndexResponse updateDatasource(final Datasource datasource) {
         datasource.setLastUpdateTime(Instant.now());
-        return client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
-            .setId(datasource.getName())
-            .setOpType(DocWriteRequest.OpType.INDEX)
-            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
-            .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
-            .execute()
-            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+        return StashedThreadContext.run(client, () -> {
+            try {
+                return client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
+                    .setId(datasource.getName())
+                    .setOpType(DocWriteRequest.OpType.INDEX)
+                    .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+                    .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
+                    .execute()
+                    .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     /**
@@ -141,16 +147,21 @@ public class DatasourceFacade {
      *
      * @param datasource the datasource
      * @param listener the listener
-     * @throws IOException exception
      */
-    public void putDatasource(final Datasource datasource, final ActionListener listener) throws IOException {
+    public void putDatasource(final Datasource datasource, final ActionListener listener) {
         datasource.setLastUpdateTime(Instant.now());
-        client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
-            .setId(datasource.getName())
-            .setOpType(DocWriteRequest.OpType.CREATE)
-            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
-            .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
-            .execute(listener);
+        StashedThreadContext.run(client, () -> {
+            try {
+                client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
+                    .setId(datasource.getName())
+                    .setOpType(DocWriteRequest.OpType.CREATE)
+                    .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+                    .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
+                    .execute(listener);
+            } catch (IOException e) {
+                new RuntimeException(e);
+            }
+        });
     }
 
     /**
@@ -163,7 +174,7 @@ public class DatasourceFacade {
         GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
         GetResponse response;
         try {
-            response = client.get(request).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+            response = StashedThreadContext.run(client, () -> client.get(request).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT)));
             if (response.isExists() == false) {
                 log.error("Datasource[{}] does not exist in an index[{}]", name, DatasourceExtension.JOB_INDEX_NAME);
                 return null;
@@ -188,7 +199,7 @@ public class DatasourceFacade {
      */
     public void getDatasource(final String name, final ActionListener<Datasource> actionListener) {
         GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
-        client.get(request, new ActionListener<GetResponse>() {
+        StashedThreadContext.run(client, () -> client.get(request, new ActionListener<>() {
             @Override
             public void onResponse(final GetResponse response) {
                 if (response.isExists() == false) {
@@ -212,7 +223,7 @@ public class DatasourceFacade {
             public void onFailure(final Exception e) {
                 actionListener.onFailure(e);
             }
-        });
+        }));
     }
 
     /**
@@ -221,9 +232,12 @@ public class DatasourceFacade {
      * @param actionListener the action listener
      */
     public void getDatasources(final String[] names, final ActionListener<List<Datasource>> actionListener) {
-        client.prepareMultiGet()
-            .add(DatasourceExtension.JOB_INDEX_NAME, names)
-            .execute(createGetDataSourceQueryActionLister(MultiGetResponse.class, actionListener));
+        StashedThreadContext.run(
+            client,
+            () -> client.prepareMultiGet()
+                .add(DatasourceExtension.JOB_INDEX_NAME, names)
+                .execute(createGetDataSourceQueryActionLister(MultiGetResponse.class, actionListener))
+        );
     }
 
     /**
@@ -231,10 +245,13 @@ public class DatasourceFacade {
      * @param actionListener the action listener
      */
     public void getAllDatasources(final ActionListener<List<Datasource>> actionListener) {
-        client.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
-            .setQuery(QueryBuilders.matchAllQuery())
-            .setSize(MAX_SIZE)
-            .execute(createGetDataSourceQueryActionLister(SearchResponse.class, actionListener));
+        StashedThreadContext.run(
+            client,
+            () -> client.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
+                .setQuery(QueryBuilders.matchAllQuery())
+                .setSize(MAX_SIZE)
+                .execute(createGetDataSourceQueryActionLister(SearchResponse.class, actionListener))
+        );
     }
 
     private <T> ActionListener<T> createGetDataSourceQueryActionLister(
