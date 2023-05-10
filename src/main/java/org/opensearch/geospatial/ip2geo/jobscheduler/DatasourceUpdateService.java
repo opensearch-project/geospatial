@@ -48,10 +48,11 @@ public class DatasourceUpdateService {
     /**
      * Update GeoIp data
      *
-     * @param datasource
+     * @param datasource the datasource
+     * @param renewLock runnable to renew lock
      * @throws Exception
      */
-    public void updateOrCreateGeoIpData(final Datasource datasource) throws Exception {
+    public void updateOrCreateGeoIpData(final Datasource datasource, final Runnable renewLock) throws Exception {
         URL url = new URL(datasource.getEndpoint());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
 
@@ -77,7 +78,13 @@ public class DatasourceUpdateService {
                     datasource.getDatabase().getFields().toString()
                 );
             }
-            geoIpDataFacade.putGeoIpData(indexName, header, reader.iterator(), clusterSettings.get(Ip2GeoSettings.INDEXING_BULK_SIZE));
+            geoIpDataFacade.putGeoIpData(
+                indexName,
+                header,
+                reader.iterator(),
+                clusterSettings.get(Ip2GeoSettings.INDEXING_BULK_SIZE),
+                renewLock
+            );
         }
 
         Instant endTime = Instant.now();

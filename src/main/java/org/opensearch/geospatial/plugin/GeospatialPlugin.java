@@ -45,6 +45,7 @@ import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceRunner;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
@@ -130,13 +131,22 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         DatasourceFacade datasourceFacade = new DatasourceFacade(client, clusterService);
         DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceFacade, geoIpDataFacade);
         Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
+        Ip2GeoLockService ip2GeoLockService = new Ip2GeoLockService(clusterService, client);
         /**
          * We don't need to return datasource runner because it is used only by job scheduler and job scheduler
          * does not use DI but it calls DatasourceExtension#getJobRunner to get DatasourceRunner instance.
          */
-        DatasourceRunner.getJobRunnerInstance().initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceFacade);
+        DatasourceRunner.getJobRunnerInstance()
+            .initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceFacade, ip2GeoLockService);
 
-        return List.of(UploadStats.getInstance(), datasourceUpdateService, datasourceFacade, ip2GeoExecutor, geoIpDataFacade);
+        return List.of(
+            UploadStats.getInstance(),
+            datasourceUpdateService,
+            datasourceFacade,
+            ip2GeoExecutor,
+            geoIpDataFacade,
+            ip2GeoLockService
+        );
     }
 
     @Override

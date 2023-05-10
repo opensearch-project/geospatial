@@ -37,6 +37,7 @@ import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.processor.FeatureProcessor;
@@ -71,7 +72,8 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         DatasourceUpdateService.class,
         DatasourceFacade.class,
         Ip2GeoExecutor.class,
-        GeoIpDataFacade.class
+        GeoIpDataFacade.class,
+        Ip2GeoLockService.class
     );
 
     @Mock

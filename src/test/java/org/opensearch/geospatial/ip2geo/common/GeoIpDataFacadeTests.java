@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import lombok.SneakyThrows;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -157,7 +159,8 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         verify(verifyingClient, never()).index(any());
     }
 
-    public void testPutGeoIpData() throws Exception {
+    @SneakyThrows
+    public void testPutGeoIpData_whenValidInput_thenSucceed() {
         String index = GeospatialTestHelper.randomLowerCaseString();
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             if (actionRequest instanceof BulkRequest) {
@@ -188,10 +191,12 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
                 throw new RuntimeException("invalid request is called");
             }
         });
+        Runnable renewLock = mock(Runnable.class);
         try (CSVParser csvParser = CSVParser.parse(sampleIp2GeoFile(), StandardCharsets.UTF_8, CSVFormat.RFC4180)) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
             String[] fields = iterator.next().values();
-            verifyingGeoIpDataFacade.putGeoIpData(index, fields, iterator, 1);
+            verifyingGeoIpDataFacade.putGeoIpData(index, fields, iterator, 1, renewLock);
+            verify(renewLock, times(2)).run();
         }
     }
 

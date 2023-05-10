@@ -7,6 +7,7 @@ package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -16,10 +17,10 @@ import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.jobscheduler.spi.JobExecutionContext;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.ScheduledJobRunner;
-import org.opensearch.jobscheduler.spi.utils.LockService;
 
 /**
  * Datasource update task
@@ -52,6 +53,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
     private DatasourceUpdateService datasourceUpdateService;
     private Ip2GeoExecutor ip2GeoExecutor;
     private DatasourceFacade datasourceFacade;
+    private Ip2GeoLockService ip2GeoLockService;
     private boolean initialized;
 
     private DatasourceRunner() {
@@ -65,12 +67,14 @@ public class DatasourceRunner implements ScheduledJobRunner {
         final ClusterService clusterService,
         final DatasourceUpdateService datasourceUpdateService,
         final Ip2GeoExecutor ip2GeoExecutor,
-        final DatasourceFacade datasourceFacade
+        final DatasourceFacade datasourceFacade,
+        final Ip2GeoLockService ip2GeoLockService
     ) {
         this.clusterService = clusterService;
         this.datasourceUpdateService = datasourceUpdateService;
         this.ip2GeoExecutor = ip2GeoExecutor;
         this.datasourceFacade = datasourceFacade;
+        this.ip2GeoLockService = ip2GeoLockService;
         this.initialized = true;
     }
 
@@ -87,30 +91,27 @@ public class DatasourceRunner implements ScheduledJobRunner {
             );
         }
 
-        ip2GeoExecutor.forDatasourceUpdate().submit(updateDatasourceRunner(jobParameter, context));
+        ip2GeoExecutor.forDatasourceUpdate().submit(updateDatasourceRunner(jobParameter));
     }
 
     /**
      * Update GeoIP data
      *
      * Lock is used so that only one of nodes run this task.
-     * Lock duration is 1 hour to avoid refreshing. This is okay because update interval is 1 day minimum.
      *
      * @param jobParameter job parameter
-     * @param context context
      */
     @VisibleForTesting
-    protected Runnable updateDatasourceRunner(final ScheduledJobParameter jobParameter, final JobExecutionContext context) {
-        final LockService lockService = context.getLockService();
+    protected Runnable updateDatasourceRunner(final ScheduledJobParameter jobParameter) {
         return () -> {
-            lockService.acquireLock(jobParameter, context, ActionListener.wrap(lock -> {
+            ip2GeoLockService.acquireLock(jobParameter.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS, ActionListener.wrap(lock -> {
                 if (lock == null) {
                     return;
                 }
                 try {
-                    updateDatasource(jobParameter);
+                    updateDatasource(jobParameter, ip2GeoLockService.getRenewLockRunnable(new AtomicReference<>(lock)));
                 } finally {
-                    lockService.release(
+                    ip2GeoLockService.releaseLock(
                         lock,
                         ActionListener.wrap(released -> {}, exception -> { log.error("Failed to release lock [{}]", lock, exception); })
                     );
@@ -120,7 +121,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
     }
 
     @VisibleForTesting
-    protected void updateDatasource(final ScheduledJobParameter jobParameter) throws IOException {
+    protected void updateDatasource(final ScheduledJobParameter jobParameter, final Runnable renewLock) throws IOException {
         Datasource datasource = datasourceFacade.getDatasource(jobParameter.getName());
         /**
          * If delete request comes while update task is waiting on a queue for other update tasks to complete,
@@ -143,7 +144,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
 
         try {
             datasourceUpdateService.deleteUnusedIndices(datasource);
-            datasourceUpdateService.updateOrCreateGeoIpData(datasource);
+            datasourceUpdateService.updateOrCreateGeoIpData(datasource, renewLock);
             datasourceUpdateService.deleteUnusedIndices(datasource);
         } catch (Exception e) {
             log.error("Failed to update datasource for {}", datasource.getName(), e);

@@ -33,6 +33,7 @@ import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceRequest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.jobscheduler.spi.schedule.ScheduleParser;
@@ -50,7 +51,6 @@ public class Datasource implements Writeable, ScheduledJobParameter {
      * Prefix of indices having Ip2Geo data
      */
     public static final String IP2GEO_DATA_INDEX_NAME_PREFIX = ".ip2geo-data";
-    private static final long LOCK_DURATION_IN_SECONDS = 60 * 60;
     private static final long MAX_JITTER_IN_MINUTES = 5;
     private static final long ONE_DAY_IN_HOURS = 24;
     private static final long ONE_HOUR_IN_MINUTES = 60;
@@ -282,7 +282,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
 
     @Override
     public Long getLockDurationSeconds() {
-        return LOCK_DURATION_IN_SECONDS;
+        return Ip2GeoLockService.LOCK_DURATION_IN_SECONDS;
     }
 
     /**
