@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,6 +47,7 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
+import org.opensearch.ingest.IngestMetadata;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
@@ -82,6 +84,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     protected TransportService transportService;
     @Mock
     protected Ip2GeoLockService ip2GeoLockService;
+    protected IngestMetadata ingestMetadata;
     protected NoOpNodeClient client;
     protected VerifyingClient verifyingClient;
     protected LockService lockService;
@@ -97,10 +100,13 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         verifyingClient = spy(new VerifyingClient(this.getTestName()));
         clusterSettings = new ClusterSettings(settings, new HashSet<>(Ip2GeoSettings.settings()));
         lockService = new LockService(client, clusterService);
+        ingestMetadata = new IngestMetadata(Collections.emptyMap());
+        when(metadata.custom(IngestMetadata.TYPE)).thenReturn(ingestMetadata);
         when(clusterService.getSettings()).thenReturn(Settings.EMPTY);
         when(clusterService.getClusterSettings()).thenReturn(clusterSettings);
         when(clusterService.state()).thenReturn(clusterState);
         when(clusterState.metadata()).thenReturn(metadata);
+        when(clusterState.getMetadata()).thenReturn(metadata);
         when(clusterState.routingTable()).thenReturn(RoutingTable.EMPTY_ROUTING_TABLE);
         when(ip2GeoExecutor.forDatasourceUpdate()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
         when(ingestService.getClusterService()).thenReturn(clusterService);

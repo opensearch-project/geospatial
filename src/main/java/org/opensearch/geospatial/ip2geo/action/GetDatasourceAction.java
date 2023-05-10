@@ -16,7 +16,7 @@ public class GetDatasourceAction extends ActionType<GetDatasourceResponse> {
      */
     public static final GetDatasourceAction INSTANCE = new GetDatasourceAction();
     /**
-     * Name of a get datasource action
+     * Get datasource action name
      */
     public static final String NAME = "cluster:admin/geospatial/datasource/get";
 
