@@ -11,10 +11,10 @@ import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomLinearRing;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomMultiLine;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomMultiPoint;
-import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomMultiPolygon;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomMultiXYPolygon;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomPoint;
-import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomPolygon;
 import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomRectangle;
+import static org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder.randomXYPolygon;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -110,14 +110,14 @@ public class XYShapeIndexableFieldsVisitorTests extends OpenSearchTestCase {
     }
 
     public void testIndexingPolygon() throws IOException, ParseException {
-        Polygon geometry = randomPolygon();
+        Polygon geometry = randomXYPolygon();
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         assertTrue("indexable field list cannot be empty", indexableFields.length > 0);
     }
 
     public void testIndexingMultiPolygon() throws IOException, ParseException {
-        MultiPolygon geometry = randomMultiPolygon();
+        MultiPolygon geometry = randomMultiXYPolygon();
         final IndexableField[] indexableFields = visitor.visit(geometry);
         assertNotNull("indexable field cannot be null", indexableFields);
         assertTrue("indexable field list cannot be empty", indexableFields.length >= geometry.size());

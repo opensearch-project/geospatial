@@ -7,6 +7,7 @@ package org.opensearch.geospatial.index.common.xyshape;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.randomDouble;
 import static com.carrotsearch.randomizedtesting.RandomizedTest.randomIntBetween;
+import static org.opensearch.test.OpenSearchTestCase.randomValueOtherThanMany;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -31,6 +32,8 @@ import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
 import org.opensearch.geometry.utils.WellKnownText;
+import org.opensearch.geospatial.GeospatialTestHelper;
+import org.opensearch.geospatial.ShapeTestUtil;
 import org.opensearch.test.OpenSearchTestCase;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
@@ -111,7 +114,18 @@ public class ShapeObjectBuilder {
         return new MultiLine(lines);
     }
 
-    // Generating truly random polygon is complicated, hence, will be randomly selecting from with holes, without holes and geo-polygon
+    /**
+     * Generate polygon in double range
+     *
+     * Generating truly random polygon is complicated, hence, will be randomly selecting from with holes, without holes and geo-polygon
+     * If you try to index the polygon returned by this method, it might fail because
+     * polygon point will be cast to float type and lose its original value to form a correct polygon.
+     * Use {@link #randomXYPolygon()} if you need to index a polygon.
+     *
+     * @return Randomly generated polygon in double range
+     * @throws IOException
+     * @throws ParseException
+     */
     public static Polygon randomPolygon() throws IOException, ParseException {
         return (Polygon) RandomPicks.randomFrom(
             Randomness.get(),
@@ -120,12 +134,125 @@ public class ShapeObjectBuilder {
         );
     }
 
+    /**
+     * Generate polygon in float range
+     *
+     * Generating truly random polygon is complicated, hence, will be randomly selecting from with holes, without holes and geo-polygon
+     * You need to use this method to test indexing polygon as lucene XYPolygon support only float range.
+     *
+     * @return Randomly generated polygon in float range
+     * @throws IOException
+     * @throws ParseException
+     */
+    public static Polygon randomXYPolygon() throws IOException, ParseException {
+        return (Polygon) RandomPicks.randomFrom(
+            Randomness.get(),
+            // TODO: Support z coordinates to be added to polygon
+            List.of(getPolygonWithHoles(), getPolygonWithoutHoles(), randomXYPolygon(false))
+        );
+    }
+
+    /**
+     * Generate multi polygon in double range
+     *
+     * If you try to index the multi polygon returned by this method, it might fail because
+     * polygon point will be cast to float type and lose its original value to form a correct polygon.
+     *
+     * Use {@link #randomMultiXYPolygon()} if you need to index a multi polygon.
+     *
+     * @return Randomly generated multi polygon in double range
+     * @throws IOException
+     * @throws ParseException
+     */
     public static MultiPolygon randomMultiPolygon() throws IOException, ParseException {
         return (MultiPolygon) RandomPicks.randomFrom(
             Randomness.get(),
             // TODO: Support z coordinates to be added to Multi polygon
             List.of(getMultiPolygon(), GeometryTestUtils.randomMultiPolygon(false))
         );
+    }
+
+    /**
+     * Generate multi polygon in float range
+     *
+     * You need to use this method to test indexing multi polygon as lucene XYPolygon support only float range.
+     *
+     * @return Randomly generated multi polygon in float range
+     * @throws IOException
+     * @throws ParseException
+     */
+    public static MultiPolygon randomMultiXYPolygon() throws IOException, ParseException {
+        return (MultiPolygon) RandomPicks.randomFrom(
+            Randomness.get(),
+            // TODO: Support z coordinates to be added to Multi polygon
+            List.of(getMultiPolygon(), randomMultiXYPolygon(false))
+        );
+    }
+
+    /**
+     * Copied from {@code org.opensearch.geo.GeometryTestUtils#randomMultiPolygon} with changes
+     * from calling {@code org.opensearch.geo.GeometryTestUtils#randomPolygon} to
+     * calling {@code org.opensearch.geospatial.index.common.xyshape.ShapeObjectBuilder#randomXyPolygon}
+     */
+    private static MultiPolygon randomMultiXYPolygon(final boolean hasAlt) {
+        int size = OpenSearchTestCase.randomIntBetween(3, 10);
+        List<Polygon> polygons = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            polygons.add(randomXYPolygon(hasAlt));
+        }
+        return new MultiPolygon(polygons);
+    }
+
+    /**
+     * Copied from {@code org.opensearch.geo.GeometryTestUtils#randomPolygon} with changes
+     * from {@code org.apache.lucene.geo.Polygon} to {@code org.apache.lucene.geo.XYPolygon}
+     */
+    private static Polygon randomXYPolygon(boolean hasAlt) {
+        org.apache.lucene.geo.XYPolygon luceneXYPolygon = randomValueOtherThanMany(p -> area(p) == 0, ShapeTestUtil::nextPolygon);
+        if (luceneXYPolygon.numHoles() > 0) {
+            org.apache.lucene.geo.XYPolygon[] luceneHoles = luceneXYPolygon.getHoles();
+            List<LinearRing> holes = new ArrayList<>();
+            for (int i = 0; i < luceneXYPolygon.numHoles(); i++) {
+                org.apache.lucene.geo.XYPolygon xyPoly = luceneHoles[i];
+                holes.add(
+                    GeometryTestUtils.linearRing(
+                        GeospatialTestHelper.toDoubleArray(xyPoly.getPolyX()),
+                        GeospatialTestHelper.toDoubleArray(xyPoly.getPolyY()),
+                        hasAlt
+                    )
+                );
+            }
+            return new Polygon(
+                GeometryTestUtils.linearRing(
+                    GeospatialTestHelper.toDoubleArray(luceneXYPolygon.getPolyX()),
+                    GeospatialTestHelper.toDoubleArray(luceneXYPolygon.getPolyY()),
+                    hasAlt
+                ),
+                holes
+            );
+        }
+        return new Polygon(
+            GeometryTestUtils.linearRing(
+                GeospatialTestHelper.toDoubleArray(luceneXYPolygon.getPolyX()),
+                GeospatialTestHelper.toDoubleArray(luceneXYPolygon.getPolyY()),
+                hasAlt
+            )
+        );
+    }
+
+    /**
+     * Copied from {@code org.opensearch.geo.GeometryTestUtils#area} with changes
+     * from {@code org.apache.lucene.geo.Polygon} to {@code org.apache.lucene.geo.XYPolygon}
+     */
+    private static double area(org.apache.lucene.geo.XYPolygon luceneXYPolygon) {
+        double windingSum = 0;
+        final int numPts = luceneXYPolygon.numPoints() - 1;
+        for (int i = 0; i < numPts; i++) {
+            // compute signed area
+            windingSum += luceneXYPolygon.getPolyX(i) * luceneXYPolygon.getPolyY(i + 1) - luceneXYPolygon.getPolyY(i) * luceneXYPolygon
+                .getPolyX(i + 1);
+        }
+        return Math.abs(windingSum / 2);
     }
 
     public static ShapeRelation randomShapeRelation() {
