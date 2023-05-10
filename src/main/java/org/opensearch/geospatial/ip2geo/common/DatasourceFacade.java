@@ -18,23 +18,24 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.swing.*;
-
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceAlreadyExistsException;
+import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.create.CreateIndexResponse;
+import org.opensearch.action.delete.DeleteResponse;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.get.MultiGetItemResponse;
 import org.opensearch.action.get.MultiGetResponse;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
@@ -52,6 +53,7 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchHit;
 
 /**
@@ -162,6 +164,38 @@ public class DatasourceFacade {
                 new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * Delete datasource in an index {@code DatasourceExtension.JOB_INDEX_NAME}
+     *
+     * @param datasource the datasource
+     *
+     */
+    public void deleteDatasource(final Datasource datasource) {
+        if (client.admin()
+            .indices()
+            .prepareDelete(datasource.getIndices().toArray(new String[0]))
+            .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
+            .execute()
+            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
+            .isAcknowledged() == false) {
+            throw new OpenSearchException("failed to delete data[{}] in datasource", String.join(",", datasource.getIndices()));
+        }
+        DeleteResponse response = client.prepareDelete()
+            .setIndex(DatasourceExtension.JOB_INDEX_NAME)
+            .setId(datasource.getName())
+            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+            .execute()
+            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+
+        if (response.status().equals(RestStatus.OK)) {
+            log.info("deleted datasource[{}] successfully", datasource.getName());
+        } else if (response.status().equals(RestStatus.NOT_FOUND)) {
+            throw new ResourceNotFoundException("datasource[{}] does not exist", datasource.getName());
+        } else {
+            throw new OpenSearchException("failed to delete datasource[{}] with status[{}]", datasource.getName(), response.status());
+        }
     }
 
     /**

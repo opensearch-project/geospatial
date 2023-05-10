@@ -26,6 +26,9 @@ import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
+import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.opensearch.action.delete.DeleteRequest;
+import org.opensearch.action.delete.DeleteResponse;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.get.MultiGetItemResponse;
@@ -34,7 +37,9 @@ import org.opensearch.action.get.MultiGetResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
+import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.action.support.WriteRequest;
+import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.json.JsonXContent;
@@ -45,6 +50,7 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 
@@ -207,6 +213,38 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
             return response;
         });
         return datasource;
+    }
+
+    public void testDeleteDatasource_whenValidInput_thenSucceed() {
+        Datasource datasource = randomDatasource();
+        verifyingClient.setExecuteVerifier(
+            (actionResponse, actionRequest) -> {
+                // Verify
+                if (actionRequest instanceof DeleteIndexRequest) {
+                    DeleteIndexRequest request = (DeleteIndexRequest) actionRequest;
+                    assertEquals(datasource.getIndices().size(), request.indices().length);
+                    assertEquals(IndicesOptions.LENIENT_EXPAND_OPEN, request.indicesOptions());
+
+                    AcknowledgedResponse response = new AcknowledgedResponse(true);
+                    return response;
+                } else if (actionRequest instanceof DeleteRequest) {
+                    DeleteRequest request = (DeleteRequest) actionRequest;
+                    assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
+                    assertEquals(DocWriteRequest.OpType.DELETE, request.opType());
+                    assertEquals(datasource.getName(), request.id());
+                    assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, request.getRefreshPolicy());
+
+                    DeleteResponse response = mock(DeleteResponse.class);
+                    when(response.status()).thenReturn(RestStatus.OK);
+                    return response;
+                } else {
+                    throw new RuntimeException("Not expected request type is passed" + actionRequest.getClass());
+                }
+            }
+        );
+
+        // Run
+        datasourceFacade.deleteDatasource(datasource);
     }
 
     public void testGetDatasources_whenValidInput_thenSucceed() {
