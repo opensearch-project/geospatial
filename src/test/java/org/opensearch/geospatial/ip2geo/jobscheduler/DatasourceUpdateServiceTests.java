@@ -6,6 +6,10 @@
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,6 +18,9 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Iterator;
+
+import lombok.SneakyThrows;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -35,7 +42,8 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceFacade, geoIpDataFacade);
     }
 
-    public void testUpdateDatasourceSkip() throws Exception {
+    @SneakyThrows
+    public void testUpdateOrCreateGeoIpData_whenHashValueIsSame_thenSkipUpdate() {
         File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
 
@@ -47,14 +55,15 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
 
         // Run
-        datasourceUpdateService.updateOrCreateGeoIpData(datasource);
+        datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class));
 
         // Verify
         assertNotNull(datasource.getUpdateStats().getLastSkippedAt());
         verify(datasourceFacade).updateDatasource(datasource);
     }
 
-    public void testUpdateDatasourceInvalidFile() throws Exception {
+    @SneakyThrows
+    public void testUpdateOrCreateGeoIpData_whenInvalidData_thenThrowException() {
         File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
 
@@ -71,10 +80,11 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
 
         // Run
-        expectThrows(OpenSearchException.class, () -> datasourceUpdateService.updateOrCreateGeoIpData(datasource));
+        expectThrows(OpenSearchException.class, () -> datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class)));
     }
 
-    public void testUpdateDatasourceIncompatibleFields() throws Exception {
+    @SneakyThrows
+    public void testUpdateOrCreateGeoIpData_whenIncompatibleFields_thenThrowException() {
         File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
 
@@ -89,10 +99,11 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
 
         // Run
-        expectThrows(OpenSearchException.class, () -> datasourceUpdateService.updateOrCreateGeoIpData(datasource));
+        expectThrows(OpenSearchException.class, () -> datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class)));
     }
 
-    public void testUpdateDatasource() throws Exception {
+    @SneakyThrows
+    public void testUpdateOrCreateGeoIpData_whenValidInput_thenSucceed() {
         File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
 
@@ -109,7 +120,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasource.getUpdateStats().setLastProcessingTimeInMillis(null);
 
         // Run
-        datasourceUpdateService.updateOrCreateGeoIpData(datasource);
+        datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class));
 
         // Verify
         assertEquals(manifest.getProvider(), datasource.getDatabase().getProvider());
@@ -119,9 +130,17 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         assertNotNull(datasource.getUpdateStats().getLastSucceededAt());
         assertNotNull(datasource.getUpdateStats().getLastProcessingTimeInMillis());
         verify(datasourceFacade, times(2)).updateDatasource(datasource);
+        verify(geoIpDataFacade).putGeoIpData(
+            eq(datasource.currentIndexName()),
+            isA(String[].class),
+            any(Iterator.class),
+            anyInt(),
+            any(Runnable.class)
+        );
     }
 
-    public void testDeleteUnusedIndices() throws Exception {
+    @SneakyThrows
+    public void testDeleteUnusedIndices_whenValidInput_thenSucceed() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         String indexPrefix = String.format(".ip2geo-data.%s.", datasourceName);
         Instant now = Instant.now();
