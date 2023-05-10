@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.CharBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -25,6 +26,8 @@ import org.opensearch.core.xcontent.ConstructingObjectParser;
 import org.opensearch.core.xcontent.DeprecationHandler;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
+import org.opensearch.geospatial.shared.Constants;
 
 /**
  * Ip2Geo datasource manifest file object
@@ -39,7 +42,7 @@ public class DatasourceManifest {
     private static final ParseField DB_NAME_FIELD = new ParseField("db_name");
     private static final ParseField SHA256_HASH_FIELD = new ParseField("sha256_hash");
     private static final ParseField VALID_FOR_IN_DAYS_FIELD = new ParseField("valid_for_in_days");
-    private static final ParseField UPDATED_AT_FIELD = new ParseField("updated_at");
+    private static final ParseField UPDATED_AT_FIELD = new ParseField("updated_at_in_epoch_milli");
     private static final ParseField PROVIDER_FIELD = new ParseField("provider");
 
     /**
@@ -114,20 +117,31 @@ public class DatasourceManifest {
         public static DatasourceManifest build(final URL url) {
             SpecialPermission.check();
             return AccessController.doPrivileged((PrivilegedAction<DatasourceManifest>) () -> {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
-                    CharBuffer charBuffer = CharBuffer.allocate(MANIFEST_FILE_MAX_BYTES);
-                    reader.read(charBuffer);
-                    charBuffer.flip();
-                    XContentParser parser = JsonXContent.jsonXContent.createParser(
-                        NamedXContentRegistry.EMPTY,
-                        DeprecationHandler.IGNORE_DEPRECATIONS,
-                        charBuffer.toString()
-                    );
-                    return PARSER.parse(parser, null);
+                try {
+                    URLConnection connection = url.openConnection();
+                    return internalBuild(connection);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
+        }
+
+        @VisibleForTesting
+        @SuppressForbidden(reason = "Need to connect to http endpoint to read manifest file")
+        protected static DatasourceManifest internalBuild(final URLConnection connection) throws IOException {
+            connection.addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
+            InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
+            try (BufferedReader reader = new BufferedReader(inputStreamReader)) {
+                CharBuffer charBuffer = CharBuffer.allocate(MANIFEST_FILE_MAX_BYTES);
+                reader.read(charBuffer);
+                charBuffer.flip();
+                XContentParser parser = JsonXContent.jsonXContent.createParser(
+                    NamedXContentRegistry.EMPTY,
+                    DeprecationHandler.IGNORE_DEPRECATIONS,
+                    charBuffer.toString()
+                );
+                return PARSER.parse(parser, null);
+            }
         }
     }
 }

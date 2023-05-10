@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -53,6 +54,8 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
+import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.query.QueryBuilders;
 
@@ -139,24 +142,27 @@ public class GeoIpDataFacade {
         return AccessController.doPrivileged((PrivilegedAction<CSVParser>) () -> {
             try {
                 URL zipUrl = new URL(manifest.getUrl());
-                ZipInputStream zipIn = new ZipInputStream(zipUrl.openStream());
-                ZipEntry zipEntry = zipIn.getNextEntry();
-                while (zipEntry != null) {
-                    if (zipEntry.getName().equalsIgnoreCase(manifest.getDbName()) == false) {
-                        zipEntry = zipIn.getNextEntry();
-                        continue;
-                    }
-                    return new CSVParser(new BufferedReader(new InputStreamReader(zipIn)), CSVFormat.RFC4180);
-                }
+                return internalGetDatabaseReader(manifest, zipUrl.openConnection());
             } catch (IOException e) {
                 throw new OpenSearchException("failed to read geoip data from {}", manifest.getUrl(), e);
             }
-            throw new OpenSearchException(
-                "database file [{}] does not exist in the zip file [{}]",
-                manifest.getDbName(),
-                manifest.getUrl()
-            );
         });
+    }
+
+    @VisibleForTesting
+    @SuppressForbidden(reason = "Need to connect to http endpoint to read GeoIP database file")
+    protected CSVParser internalGetDatabaseReader(final DatasourceManifest manifest, final URLConnection connection) throws IOException {
+        connection.addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
+        ZipInputStream zipIn = new ZipInputStream(connection.getInputStream());
+        ZipEntry zipEntry = zipIn.getNextEntry();
+        while (zipEntry != null) {
+            if (zipEntry.getName().equalsIgnoreCase(manifest.getDbName()) == false) {
+                zipEntry = zipIn.getNextEntry();
+                continue;
+            }
+            return new CSVParser(new BufferedReader(new InputStreamReader(zipIn)), CSVFormat.RFC4180);
+        }
+        throw new OpenSearchException("database file [{}] does not exist in the zip file [{}]", manifest.getDbName(), manifest.getUrl());
     }
 
     /**

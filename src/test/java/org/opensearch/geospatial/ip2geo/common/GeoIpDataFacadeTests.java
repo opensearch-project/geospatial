@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -55,6 +57,7 @@ import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
+import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
@@ -137,6 +140,28 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         );
         OpenSearchException exception = expectThrows(OpenSearchException.class, () -> noOpsGeoIpDataFacade.getDatabaseReader(manifest));
         assertTrue(exception.getMessage().contains("does not exist"));
+    }
+
+    @SneakyThrows
+    public void testInternalGetDatabaseReader_whenCalled_thenSetUserAgent() {
+        File zipFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.zip").getFile());
+        DatasourceManifest manifest = new DatasourceManifest(
+            zipFile.toURI().toURL().toExternalForm(),
+            "sample_valid.csv",
+            "fake_sha256",
+            1l,
+            Instant.now().toEpochMilli(),
+            "tester"
+        );
+
+        URLConnection connection = mock(URLConnection.class);
+        when(connection.getInputStream()).thenReturn(new FileInputStream(zipFile));
+
+        // Run
+        noOpsGeoIpDataFacade.internalGetDatabaseReader(manifest, connection);
+
+        // Verify
+        verify(connection).addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
     }
 
     public void testDeleteIp2GeoDataIndex() {

@@ -69,7 +69,7 @@ public class RestPutDatasourceHandlerTests extends RestActionTestCase {
         verifyingClient.setExecuteLocallyVerifier((actionResponse, actionRequest) -> {
             assertTrue(actionRequest instanceof PutDatasourceRequest);
             PutDatasourceRequest putDatasourceRequest = (PutDatasourceRequest) actionRequest;
-            assertEquals("https://geoip.maps.opensearch.org/v1/geolite-2/manifest.json", putDatasourceRequest.getEndpoint());
+            assertEquals("https://geoip.maps.opensearch.org/v1/geolite2-city/manifest.json", putDatasourceRequest.getEndpoint());
             assertEquals(TimeValue.timeValueDays(3), putDatasourceRequest.getUpdateInterval());
             assertEquals(datasourceName, putDatasourceRequest.getName());
             isExecuted.set(true);
