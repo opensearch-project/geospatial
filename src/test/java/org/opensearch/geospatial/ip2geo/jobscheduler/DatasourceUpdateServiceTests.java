@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import lombok.SneakyThrows;
 
@@ -140,6 +141,17 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
     }
 
     @SneakyThrows
+    public void testGetHeaderFields_whenValidInput_thenReturnCorrectValue() {
+        File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
+
+        File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
+        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+
+        // Run
+        assertEquals(Arrays.asList("country_name"), datasourceUpdateService.getHeaderFields(manifestFile.toURI().toURL().toExternalForm()));
+    }
+
+    @SneakyThrows
     public void testDeleteUnusedIndices_whenValidInput_thenSucceed() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         String indexPrefix = String.format(".ip2geo-data.%s.", datasourceName);
@@ -164,5 +176,19 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         assertEquals(1, datasource.getIndices().size());
         assertEquals(currentIndex, datasource.getIndices().get(0));
         verify(datasourceFacade).updateDatasource(datasource);
+    }
+
+    @SneakyThrows
+    public void testGetHeaderFields_whenValidInput_thenSucceed() {
+        File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
+        File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
+        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+
+        // Run
+        List<String> fields = datasourceUpdateService.getHeaderFields(manifestFile.toURI().toURL().toExternalForm());
+
+        // Verify
+        List<String> expectedFields = Arrays.asList("country_name");
+        assertEquals(expectedFields, fields);
     }
 }

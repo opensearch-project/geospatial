@@ -45,6 +45,9 @@ import org.opensearch.geospatial.ip2geo.action.PutDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
+import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
+import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceAction;
+import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
@@ -162,24 +165,39 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<DiscoveryNodes> nodesInCluster
     ) {
-        return List.of(
-            new RestUploadStatsAction(),
-            new RestUploadGeoJSONAction(),
+        List<RestHandler> geoJsonHandlers = List.of(new RestUploadStatsAction(), new RestUploadGeoJSONAction());
+
+        List<RestHandler> ip2geoHandlers = List.of(
             new RestPutDatasourceHandler(clusterSettings),
             new RestGetDatasourceHandler(),
+            new RestUpdateDatasourceHandler(),
             new RestDeleteDatasourceHandler()
         );
+
+        List<RestHandler> allHandlers = new ArrayList<>();
+        allHandlers.addAll(geoJsonHandlers);
+        allHandlers.addAll(ip2geoHandlers);
+        return allHandlers;
     }
 
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
-        return List.of(
+        List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> geoJsonHandlers = List.of(
             new ActionHandler<>(UploadGeoJSONAction.INSTANCE, UploadGeoJSONTransportAction.class),
-            new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class),
+            new ActionHandler<>(UploadStatsAction.INSTANCE, UploadStatsTransportAction.class)
+        );
+
+        List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> ip2geoHandlers = List.of(
             new ActionHandler<>(PutDatasourceAction.INSTANCE, PutDatasourceTransportAction.class),
             new ActionHandler<>(GetDatasourceAction.INSTANCE, GetDatasourceTransportAction.class),
+            new ActionHandler<>(UpdateDatasourceAction.INSTANCE, UpdateDatasourceTransportAction.class),
             new ActionHandler<>(DeleteDatasourceAction.INSTANCE, DeleteDatasourceTransportAction.class)
         );
+
+        List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> allHandlers = new ArrayList<>();
+        allHandlers.addAll(geoJsonHandlers);
+        allHandlers.addAll(ip2geoHandlers);
+        return allHandlers;
     }
 
     @Override

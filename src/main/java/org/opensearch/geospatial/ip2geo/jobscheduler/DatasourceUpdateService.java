@@ -48,11 +48,15 @@ public class DatasourceUpdateService {
     /**
      * Update GeoIp data
      *
+     * The first column is ip range field regardless its header name.
+     * Therefore, we don't store the first column's header name.
+     *
      * @param datasource the datasource
      * @param renewLock runnable to renew lock
-     * @throws Exception
+     *
+     * @throws IOException
      */
-    public void updateOrCreateGeoIpData(final Datasource datasource, final Runnable renewLock) throws Exception {
+    public void updateOrCreateGeoIpData(final Datasource datasource, final Runnable renewLock) throws IOException {
         URL url = new URL(datasource.getEndpoint());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
 
@@ -89,6 +93,25 @@ public class DatasourceUpdateService {
 
         Instant endTime = Instant.now();
         updateDatasourceAsSucceeded(datasource, manifest, fieldsToStore, startTime, endTime);
+    }
+
+    /**
+     * Return header fields of geo data with given url of a manifest file
+     *
+     * The first column is ip range field regardless its header name.
+     * Therefore, we don't store the first column's header name.
+     *
+     * @param manifestUrl the url of a manifest file
+     * @return header fields of geo data
+     */
+    public List<String> getHeaderFields(String manifestUrl) throws IOException {
+        URL url = new URL(manifestUrl);
+        DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
+
+        try (CSVParser reader = geoIpDataFacade.getDatabaseReader(manifest)) {
+            String[] fields = reader.iterator().next().values();
+            return Arrays.asList(fields).subList(1, fields.length);
+        }
     }
 
     /**
