@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import lombok.SneakyThrows;
+
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -147,8 +149,9 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         );
     }
 
+    @SneakyThrows
     @SuppressForbidden(reason = "unit test")
-    protected String sampleManifestUrl() throws Exception {
+    protected String sampleManifestUrl() {
         return Paths.get(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").toURI()).toUri().toURL().toExternalForm();
     }
 
@@ -174,10 +177,10 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Datasource datasource = new Datasource();
         datasource.setName(GeospatialTestHelper.randomLowerCaseString());
-        datasource.setSchedule(new IntervalSchedule(now, Randomness.get().nextInt(30) + 1, ChronoUnit.DAYS));
+        datasource.setSchedule(new IntervalSchedule(now, Randomness.get().nextInt(10) + 1, ChronoUnit.DAYS));
         datasource.setState(randomState());
         datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
-        datasource.setEndpoint(GeospatialTestHelper.randomLowerCaseString());
+        datasource.setEndpoint(String.format(Locale.ROOT, "https://%s.com/manifest.json", GeospatialTestHelper.randomLowerCaseString()));
         datasource.getDatabase()
             .setFields(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.getDatabase().setProvider(GeospatialTestHelper.randomLowerCaseString());

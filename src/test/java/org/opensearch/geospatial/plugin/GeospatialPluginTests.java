@@ -35,6 +35,7 @@ import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
+import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
@@ -64,6 +65,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         new RestUploadStatsAction(),
         new RestPutDatasourceHandler(clusterSettings),
         new RestGetDatasourceHandler(),
+        new RestUpdateDatasourceHandler(),
         new RestDeleteDatasourceHandler()
     );
 
