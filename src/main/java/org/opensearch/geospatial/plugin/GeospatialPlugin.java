@@ -36,10 +36,13 @@ import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldTypeParser;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldTypeParser;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
+import org.opensearch.geospatial.ip2geo.action.DeleteDatasourceAction;
+import org.opensearch.geospatial.ip2geo.action.DeleteDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.GetDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.GetDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceTransportAction;
+import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
@@ -167,7 +170,8 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         List<RestHandler> ip2geoHandlers = List.of(
             new RestPutDatasourceHandler(clusterSettings),
             new RestGetDatasourceHandler(),
-            new RestUpdateDatasourceHandler()
+            new RestUpdateDatasourceHandler(),
+            new RestDeleteDatasourceHandler()
         );
 
         List<RestHandler> allHandlers = new ArrayList<>();
@@ -186,7 +190,8 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> ip2geoHandlers = List.of(
             new ActionHandler<>(PutDatasourceAction.INSTANCE, PutDatasourceTransportAction.class),
             new ActionHandler<>(GetDatasourceAction.INSTANCE, GetDatasourceTransportAction.class),
-            new ActionHandler<>(UpdateDatasourceAction.INSTANCE, UpdateDatasourceTransportAction.class)
+            new ActionHandler<>(UpdateDatasourceAction.INSTANCE, UpdateDatasourceTransportAction.class),
+            new ActionHandler<>(DeleteDatasourceAction.INSTANCE, DeleteDatasourceTransportAction.class)
         );
 
         List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> allHandlers = new ArrayList<>();
