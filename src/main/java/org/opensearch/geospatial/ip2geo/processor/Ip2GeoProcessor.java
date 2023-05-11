@@ -43,6 +43,14 @@ import org.opensearch.ingest.Processor;
 public final class Ip2GeoProcessor extends AbstractProcessor {
     private static final Map<String, Object> DATA_EXPIRED = Map.of("error", "ip2geo_data_expired");
     private static final String PROPERTY_IP = "ip";
+
+    public static final String CONFIG_FIELD = "field";
+    public static final String CONFIG_TARGET_FIELD = "target_field";
+    public static final String CONFIG_DATASOURCE = "datasource";
+    public static final String CONFIG_PROPERTIES = "target_field";
+    public static final String CONFIG_IGNORE_MISSING = "ignore_missing";
+    public static final String CONFIG_FIRST_ONLY = "first_only";
+
     private final String field;
     private final String targetField;
     /**
@@ -352,12 +360,12 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             final String description,
             final Map<String, Object> config
         ) throws IOException {
-            String ipField = readStringProperty(TYPE, processorTag, config, "field");
-            String targetField = readStringProperty(TYPE, processorTag, config, "target_field", "ip2geo");
-            String datasourceName = readStringProperty(TYPE, processorTag, config, "datasource");
-            List<String> propertyNames = readOptionalList(TYPE, processorTag, config, "properties");
-            boolean ignoreMissing = readBooleanProperty(TYPE, processorTag, config, "ignore_missing", false);
-            boolean firstOnly = readBooleanProperty(TYPE, processorTag, config, "first_only", true);
+            String ipField = readStringProperty(TYPE, processorTag, config, CONFIG_FIELD);
+            String targetField = readStringProperty(TYPE, processorTag, config, CONFIG_TARGET_FIELD, "ip2geo");
+            String datasourceName = readStringProperty(TYPE, processorTag, config, CONFIG_DATASOURCE);
+            List<String> propertyNames = readOptionalList(TYPE, processorTag, config, CONFIG_PROPERTIES);
+            boolean ignoreMissing = readBooleanProperty(TYPE, processorTag, config, CONFIG_IGNORE_MISSING, false);
+            boolean firstOnly = readBooleanProperty(TYPE, processorTag, config, CONFIG_FIRST_ONLY, true);
 
             // Skip validation for the call by cluster applier service
             if (Thread.currentThread().getName().contains(CLUSTER_UPDATE_THREAD_NAME) == false) {
