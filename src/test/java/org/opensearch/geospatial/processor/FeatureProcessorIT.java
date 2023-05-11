@@ -49,7 +49,7 @@ public class FeatureProcessorIT extends GeospatialRestTestCase {
 
         Map<String, String> processorProperties = new HashMap<>();
         processorProperties.put(FeatureProcessor.FIELD_KEY, geoShapeField);
-        Map<String, Object> geoJSONProcessorConfig = buildGeoJSONFeatureProcessorConfig(processorProperties);
+        Map<String, Object> geoJSONProcessorConfig = buildProcessorConfig(FeatureProcessor.TYPE, processorProperties);
         List<Map<String, Object>> configs = new ArrayList<>();
         configs.add(geoJSONProcessorConfig);
 

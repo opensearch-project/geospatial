@@ -47,7 +47,6 @@ import org.opensearch.geometry.Geometry;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
-import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.ingest.Pipeline;
 
@@ -75,7 +74,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
     }
 
-    protected static void createPipeline(String name, Optional<String> description, List<Map<String, Object>> processorConfigs)
+    protected static Response createPipeline(String name, Optional<String> description, List<Map<String, Object>> processorConfigs)
         throws IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
         if (description.isPresent()) {
@@ -88,7 +87,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
 
         Request request = new Request("PUT", buildPipelinePath(name));
         request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
-        client().performRequest(request);
+        return client().performRequest(request);
     }
 
     protected static void deletePipeline(String name) throws IOException {
@@ -137,9 +136,9 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         return docID;
     }
 
-    protected Map<String, Object> buildGeoJSONFeatureProcessorConfig(Map<String, String> properties) {
+    protected Map<String, Object> buildProcessorConfig(final String processorType, final Map<String, String> properties) {
         Map<String, Object> featureProcessor = new HashMap<>();
-        featureProcessor.put(FeatureProcessor.TYPE, properties);
+        featureProcessor.put(processorType, properties);
         return featureProcessor;
     }
 
