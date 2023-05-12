@@ -47,7 +47,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     public static final String CONFIG_FIELD = "field";
     public static final String CONFIG_TARGET_FIELD = "target_field";
     public static final String CONFIG_DATASOURCE = "datasource";
-    public static final String CONFIG_PROPERTIES = "target_field";
+    public static final String CONFIG_PROPERTIES = "properties";
     public static final String CONFIG_IGNORE_MISSING = "ignore_missing";
     public static final String CONFIG_FIRST_ONLY = "first_only";
 
