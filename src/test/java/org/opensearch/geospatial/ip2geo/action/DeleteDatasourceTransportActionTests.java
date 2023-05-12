@@ -15,14 +15,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import lombok.SneakyThrows;
 
@@ -32,15 +27,10 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.master.AcknowledgedResponse;
-import org.opensearch.common.bytes.BytesReference;
-import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
-import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
-import org.opensearch.ingest.IngestMetadata;
-import org.opensearch.ingest.PipelineConfiguration;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.tasks.Task;
 
@@ -49,7 +39,14 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        action = new DeleteDatasourceTransportAction(transportService, actionFilters, ip2GeoLockService, ingestService, datasourceFacade);
+        action = new DeleteDatasourceTransportAction(
+            transportService,
+            actionFilters,
+            ip2GeoLockService,
+            ingestService,
+            datasourceFacade,
+            ip2GeoProcessorFacade
+        );
     }
 
     @SneakyThrows
@@ -113,6 +110,7 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
     public void testDeleteDatasource_whenSafeToDelete_thenDelete() {
         Datasource datasource = randomDatasource();
         when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(ip2GeoProcessorFacade.getProcessors(datasource.getName())).thenReturn(Collections.emptyList());
 
         // Run
         action.deleteDatasource(datasource.getName());
@@ -128,14 +126,8 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
         when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
-
-        String pipelineId = GeospatialTestHelper.randomLowerCaseString();
-        Map<String, PipelineConfiguration> pipelines = new HashMap<>();
-        pipelines.put(pipelineId, createPipelineConfiguration());
-        IngestMetadata ingestMetadata = new IngestMetadata(pipelines);
-        when(metadata.custom(IngestMetadata.TYPE)).thenReturn(ingestMetadata);
-        when(ingestService.getProcessorsInPipeline(pipelineId, Ip2GeoProcessor.class)).thenReturn(
-            Arrays.asList(createIp2GeoProcessor(datasource.getName()))
+        when(ip2GeoProcessorFacade.getProcessors(datasource.getName())).thenReturn(
+            Arrays.asList(randomIp2GeoProcessor(datasource.getName()))
         );
 
         // Run
@@ -152,15 +144,9 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
         when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
-
-        String pipelineId = GeospatialTestHelper.randomLowerCaseString();
-        Map<String, PipelineConfiguration> pipelines = new HashMap<>();
-        pipelines.put(pipelineId, createPipelineConfiguration());
-        IngestMetadata ingestMetadata = new IngestMetadata(pipelines);
-        when(metadata.custom(IngestMetadata.TYPE)).thenReturn(ingestMetadata);
-        when(ingestService.getProcessorsInPipeline(pipelineId, Ip2GeoProcessor.class)).thenReturn(
+        when(ip2GeoProcessorFacade.getProcessors(datasource.getName())).thenReturn(
             Collections.emptyList(),
-            Arrays.asList(createIp2GeoProcessor(datasource.getName()))
+            Arrays.asList(randomIp2GeoProcessor(datasource.getName()))
         );
 
         // Run
@@ -169,34 +155,5 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         verify(datasourceFacade, times(2)).updateDatasource(datasource);
         verify(datasourceFacade, never()).deleteDatasource(datasource);
-    }
-
-    private PipelineConfiguration createPipelineConfiguration() {
-        String id = GeospatialTestHelper.randomLowerCaseString();
-        ByteBuffer byteBuffer = ByteBuffer.wrap(GeospatialTestHelper.randomLowerCaseString().getBytes(StandardCharsets.US_ASCII));
-        BytesReference config = BytesReference.fromByteBuffer(byteBuffer);
-        return new PipelineConfiguration(id, config, XContentType.JSON);
-    }
-
-    private Ip2GeoProcessor createIp2GeoProcessor(String datasourceName) {
-        String tag = GeospatialTestHelper.randomLowerCaseString();
-        String description = GeospatialTestHelper.randomLowerCaseString();
-        String field = GeospatialTestHelper.randomLowerCaseString();
-        String targetField = GeospatialTestHelper.randomLowerCaseString();
-        Set<String> properties = Set.of(GeospatialTestHelper.randomLowerCaseString());
-        Ip2GeoProcessor ip2GeoProcessor = new Ip2GeoProcessor(
-            tag,
-            description,
-            field,
-            targetField,
-            datasourceName,
-            properties,
-            true,
-            true,
-            clusterSettings,
-            datasourceFacade,
-            geoIpDataFacade
-        );
-        return ip2GeoProcessor;
     }
 }
