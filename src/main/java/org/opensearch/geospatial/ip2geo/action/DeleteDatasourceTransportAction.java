@@ -20,9 +20,8 @@ import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoProcessorFacade;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
-import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
-import org.opensearch.ingest.IngestMetadata;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
@@ -36,6 +35,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
     private final Ip2GeoLockService lockService;
     private final IngestService ingestService;
     private final DatasourceFacade datasourceFacade;
+    private final Ip2GeoProcessorFacade ip2GeoProcessorFacade;
 
     /**
      * Constructor
@@ -51,12 +51,14 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         final ActionFilters actionFilters,
         final Ip2GeoLockService lockService,
         final IngestService ingestService,
-        final DatasourceFacade datasourceFacade
+        final DatasourceFacade datasourceFacade,
+        final Ip2GeoProcessorFacade ip2GeoProcessorFacade
     ) {
         super(DeleteDatasourceAction.NAME, transportService, actionFilters, DeleteDatasourceRequest::new);
         this.lockService = lockService;
         this.ingestService = ingestService;
         this.datasourceFacade = datasourceFacade;
+        this.ip2GeoProcessorFacade = ip2GeoProcessorFacade;
     }
 
     /**
@@ -101,8 +103,8 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         datasourceFacade.deleteDatasource(datasource);
     }
 
-    private void setDatasourceStateAsDeleting(final Datasource datasource) throws IOException {
-        if (isSafeToDelete(datasource) == false) {
+    private void setDatasourceStateAsDeleting(final Datasource datasource) {
+        if (ip2GeoProcessorFacade.getProcessors(datasource.getName()).isEmpty() == false) {
             throw new OpenSearchException("datasource is being used by one of processors");
         }
 
@@ -114,21 +116,10 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         // If it fails to update the state back to the previous state, the new processor
         // will fail to convert an ip to a geo data.
         // In such case, user have to delete the processor and delete this datasource again.
-        if (isSafeToDelete(datasource) == false) {
+        if (ip2GeoProcessorFacade.getProcessors(datasource.getName()).isEmpty() == false) {
             datasource.setState(previousState);
             datasourceFacade.updateDatasource(datasource);
             throw new OpenSearchException("datasource is being used by one of processors");
         }
-    }
-
-    private boolean isSafeToDelete(Datasource datasource) {
-        IngestMetadata ingestMetadata = ingestService.getClusterService().state().getMetadata().custom(IngestMetadata.TYPE);
-        return ingestMetadata.getPipelines()
-            .keySet()
-            .stream()
-            .flatMap(pipelineId -> ingestService.getProcessorsInPipeline(pipelineId, Ip2GeoProcessor.class).stream())
-            .filter(ip2GeoProcessor -> ip2GeoProcessor.getDatasourceName().equals(datasource.getName()))
-            .findAny()
-            .isEmpty();
     }
 }

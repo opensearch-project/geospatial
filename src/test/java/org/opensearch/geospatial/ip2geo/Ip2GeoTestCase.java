@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -46,9 +47,11 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoProcessorFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
+import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
 import org.opensearch.ingest.IngestMetadata;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.jobscheduler.spi.LockModel;
@@ -86,6 +89,8 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     protected TransportService transportService;
     @Mock
     protected Ip2GeoLockService ip2GeoLockService;
+    @Mock
+    protected Ip2GeoProcessorFacade ip2GeoProcessorFacade;
     protected IngestMetadata ingestMetadata;
     protected NoOpNodeClient client;
     protected VerifyingClient verifyingClient;
@@ -174,10 +179,11 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     }
 
     protected Datasource randomDatasource() {
+        int validForInDays = Randomness.get().nextInt(30) + 2;
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Datasource datasource = new Datasource();
         datasource.setName(GeospatialTestHelper.randomLowerCaseString());
-        datasource.setSchedule(new IntervalSchedule(now, Randomness.get().nextInt(10) + 1, ChronoUnit.DAYS));
+        datasource.setSchedule(new IntervalSchedule(now, validForInDays - 1, ChronoUnit.DAYS));
         datasource.setState(randomState());
         datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.setEndpoint(String.format(Locale.ROOT, "https://%s.com/manifest.json", GeospatialTestHelper.randomLowerCaseString()));
@@ -186,7 +192,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         datasource.getDatabase().setProvider(GeospatialTestHelper.randomLowerCaseString());
         datasource.getDatabase().setUpdatedAt(now);
         datasource.getDatabase().setSha256Hash(GeospatialTestHelper.randomLowerCaseString());
-        datasource.getDatabase().setValidForInDays(Randomness.get().nextInt(30) + 1l);
+        datasource.getDatabase().setValidForInDays((long) validForInDays);
         datasource.getUpdateStats().setLastSkippedAt(now);
         datasource.getUpdateStats().setLastSucceededAt(now);
         datasource.getUpdateStats().setLastFailedAt(now);
@@ -209,6 +215,28 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             false
         );
         return lockModel;
+    }
+
+    protected Ip2GeoProcessor randomIp2GeoProcessor(String datasourceName) {
+        String tag = GeospatialTestHelper.randomLowerCaseString();
+        String description = GeospatialTestHelper.randomLowerCaseString();
+        String field = GeospatialTestHelper.randomLowerCaseString();
+        String targetField = GeospatialTestHelper.randomLowerCaseString();
+        Set<String> properties = Set.of(GeospatialTestHelper.randomLowerCaseString());
+        Ip2GeoProcessor ip2GeoProcessor = new Ip2GeoProcessor(
+            tag,
+            description,
+            field,
+            targetField,
+            datasourceName,
+            properties,
+            true,
+            true,
+            clusterSettings,
+            datasourceFacade,
+            geoIpDataFacade
+        );
+        return ip2GeoProcessor;
     }
 
     /**
