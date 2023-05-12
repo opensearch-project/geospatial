@@ -179,11 +179,11 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     }
 
     protected Datasource randomDatasource() {
-        int validForInDays = Randomness.get().nextInt(30) + 2;
+        int validForInDays = Randomness.get().nextInt(30);
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Datasource datasource = new Datasource();
         datasource.setName(GeospatialTestHelper.randomLowerCaseString());
-        datasource.setSchedule(new IntervalSchedule(now, validForInDays - 1, ChronoUnit.DAYS));
+        datasource.setSchedule(new IntervalSchedule(now, Randomness.get().nextInt(29), ChronoUnit.DAYS));
         datasource.setState(randomState());
         datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.setEndpoint(String.format(Locale.ROOT, "https://%s.com/manifest.json", GeospatialTestHelper.randomLowerCaseString()));
