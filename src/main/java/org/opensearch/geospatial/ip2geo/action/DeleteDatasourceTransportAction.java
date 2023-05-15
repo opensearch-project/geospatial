@@ -17,6 +17,7 @@ import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
+import org.opensearch.geospatial.exceptions.ResourceInUseException;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
@@ -105,7 +106,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
 
     private void setDatasourceStateAsDeleting(final Datasource datasource) {
         if (ip2GeoProcessorFacade.getProcessors(datasource.getName()).isEmpty() == false) {
-            throw new OpenSearchException("datasource is being used by one of processors");
+            throw new ResourceInUseException("datasource is being used by one of processors");
         }
 
         DatasourceState previousState = datasource.getState();
@@ -119,7 +120,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         if (ip2GeoProcessorFacade.getProcessors(datasource.getName()).isEmpty() == false) {
             datasource.setState(previousState);
             datasourceFacade.updateDatasource(datasource);
-            throw new OpenSearchException("datasource is being used by one of processors");
+            throw new ResourceInUseException("datasource is being used by one of processors");
         }
     }
 }
