@@ -25,6 +25,7 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.master.AcknowledgedResponse;
+import org.opensearch.common.Randomness;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
@@ -83,8 +84,9 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
     public void testDoExecute_whenValidInput_thenUpdate() {
         Datasource datasource = randomDatasource();
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
-        request.setUpdateInterval(TimeValue.timeValueDays(datasource.getSchedule().getInterval() + 1));
         request.setEndpoint(sampleManifestUrl());
+        // Sample manifest has validForDays of 30. Update interval should be less than that.
+        request.setUpdateInterval(TimeValue.timeValueDays(Randomness.get().nextInt(29)));
 
         Task task = mock(Task.class);
         when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);

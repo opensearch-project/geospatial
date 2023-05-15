@@ -17,9 +17,12 @@ import static org.opensearch.rest.action.search.RestSearchAction.TYPED_KEYS_PARA
 import static org.opensearch.search.aggregations.Aggregations.AGGREGATIONS_FIELD;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -47,11 +50,11 @@ import org.opensearch.geometry.Geometry;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
+import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.ingest.Pipeline;
 
 public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCase {
-
     public static final String SOURCE = "_source";
     public static final String DOC = "_doc";
     public static final String URL_DELIMITER = "/";
@@ -69,9 +72,21 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
     public static final String SHAPE_ID_FIELD = "id";
     public static final String SHAPE_INDEX_PATH_FIELD = "path";
     public static final String QUERY_PARAM_TOKEN = "?";
+    private static final String SETTINGS = "_settings";
+    private static final String SIMULATE = "_simulate";
+    private static final String DOCS = "docs";
+    private static final String DATASOURCES = "datasources";
+    private static final String STATE = "state";
+    private static final String PUT = "PUT";
+    private static final String GET = "GET";
+    private static final String DELETE = "DELETE";
 
     private static String buildPipelinePath(String name) {
         return String.join(URL_DELIMITER, "_ingest", "pipeline", name);
+    }
+
+    private static String buildDatasourcePath(String name) {
+        return String.join(URL_DELIMITER, getPluginURLPrefix(), "ip2geo/datasource", name);
     }
 
     protected static Response createPipeline(String name, Optional<String> description, List<Map<String, Object>> processorConfigs)
@@ -93,6 +108,74 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
     protected static void deletePipeline(String name) throws IOException {
         Request request = new Request("DELETE", buildPipelinePath(name));
         client().performRequest(request);
+    }
+
+    protected Response createDatasource(final String name, Map<String, String> properties) throws IOException {
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
+        for (Map.Entry<String, String> config : properties.entrySet()) {
+            builder.field(config.getKey(), config.getValue());
+        }
+        builder.endObject();
+
+        Request request = new Request(PUT, buildDatasourcePath(name));
+        request.setJsonEntity(Strings.toString(builder));
+        return client().performRequest(request);
+    }
+
+    protected void waitForDatasourceToBeAvailable(final String name, final Duration timeout) throws Exception {
+        Instant start = Instant.now();
+        while (DatasourceState.AVAILABLE.equals(getDatasourceState(name)) == false) {
+            if (Duration.between(start, Instant.now()).compareTo(timeout) > 0) {
+                throw new RuntimeException(
+                    String.format(
+                        Locale.ROOT,
+                        "Datasource state didn't change to %s after %d seconds",
+                        DatasourceState.AVAILABLE.name(),
+                        timeout.toSeconds()
+                    )
+                );
+            }
+            Thread.sleep(1000);
+        }
+    }
+
+    private DatasourceState getDatasourceState(final String name) throws Exception {
+        List<Map<String, Object>> datasources = (List<Map<String, Object>>) getDatasource(name).get(DATASOURCES);
+        return DatasourceState.valueOf((String) datasources.get(0).get(STATE));
+    }
+
+    protected Response deleteDatasource(final String name) throws IOException {
+        Request request = new Request(DELETE, buildDatasourcePath(name));
+        return client().performRequest(request);
+    }
+
+    protected Map<String, Object> getDatasource(final String name) throws Exception {
+        Request request = new Request(GET, buildDatasourcePath(name));
+        Response response = client().performRequest(request);
+        return createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())).map();
+    }
+
+    protected Response updateDatasource(final String name, Map<String, Object> config) throws IOException {
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
+        if (config != null && !config.isEmpty()) {
+            builder.value(config);
+        }
+        builder.endObject();
+
+        Request request = new Request(PUT, String.join(URL_DELIMITER, buildDatasourcePath(name), SETTINGS));
+        request.setJsonEntity(Strings.toString(builder));
+        return client().performRequest(request);
+    }
+
+    protected Map<String, Object> simulatePipeline(final String name, List<Object> docs) throws Exception {
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
+        builder.field(DOCS, docs);
+        builder.endObject();
+
+        Request request = new Request(GET, String.join(URL_DELIMITER, buildPipelinePath(name), SIMULATE));
+        request.setJsonEntity(Strings.toString(builder));
+        Response response = client().performRequest(request);
+        return createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())).map();
     }
 
     protected static void createIndex(String name, Settings settings, Map<String, String> fieldMap) throws IOException {
@@ -136,7 +219,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         return docID;
     }
 
-    protected Map<String, Object> buildProcessorConfig(final String processorType, final Map<String, String> properties) {
+    protected Map<String, Object> buildProcessorConfig(final String processorType, final Map<String, Object> properties) {
         Map<String, Object> featureProcessor = new HashMap<>();
         featureProcessor.put(processorType, properties);
         return featureProcessor;
