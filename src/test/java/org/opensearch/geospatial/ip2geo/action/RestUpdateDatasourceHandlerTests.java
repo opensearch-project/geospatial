@@ -41,11 +41,34 @@ public class RestUpdateDatasourceHandlerTests extends RestActionTestCase {
         AtomicBoolean isExecuted = new AtomicBoolean(false);
 
         verifyingClient.setExecuteLocallyVerifier((actionResponse, actionRequest) -> {
-            assertTrue(actionRequest instanceof PutDatasourceRequest);
-            PutDatasourceRequest putDatasourceRequest = (PutDatasourceRequest) actionRequest;
-            assertEquals("https://test.com", putDatasourceRequest.getEndpoint());
-            assertEquals(TimeValue.timeValueDays(1), putDatasourceRequest.getUpdateInterval());
-            assertEquals(datasourceName, putDatasourceRequest.getName());
+            assertTrue(actionRequest instanceof UpdateDatasourceRequest);
+            UpdateDatasourceRequest updateDatasourceRequest = (UpdateDatasourceRequest) actionRequest;
+            assertEquals("https://test.com", updateDatasourceRequest.getEndpoint());
+            assertEquals(TimeValue.timeValueDays(1), updateDatasourceRequest.getUpdateInterval());
+            assertEquals(datasourceName, updateDatasourceRequest.getName());
+            isExecuted.set(true);
+            return null;
+        });
+
+        dispatchRequest(request);
+        assertTrue(isExecuted.get());
+    }
+
+    public void testPrepareRequest_whenNullInput_thenSucceed() {
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        String content = "{}";
+        RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withMethod(RestRequest.Method.PUT)
+            .withPath(String.format(Locale.ROOT, path, datasourceName))
+            .withContent(new BytesArray(content), XContentType.JSON)
+            .build();
+        AtomicBoolean isExecuted = new AtomicBoolean(false);
+
+        verifyingClient.setExecuteLocallyVerifier((actionResponse, actionRequest) -> {
+            assertTrue(actionRequest instanceof UpdateDatasourceRequest);
+            UpdateDatasourceRequest updateDatasourceRequest = (UpdateDatasourceRequest) actionRequest;
+            assertNull(updateDatasourceRequest.getEndpoint());
+            assertNull(updateDatasourceRequest.getUpdateInterval());
+            assertEquals(datasourceName, updateDatasourceRequest.getName());
             isExecuted.set(true);
             return null;
         });

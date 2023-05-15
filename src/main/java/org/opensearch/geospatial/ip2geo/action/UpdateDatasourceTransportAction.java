@@ -21,6 +21,7 @@ import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
+import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
@@ -146,7 +147,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
 
         List<String> fields = datasourceUpdateService.getHeaderFields(request.getEndpoint());
         if (datasource.isCompatible(fields) == false) {
-            throw new OpenSearchException(
+            throw new IncompatibleDatasourceException(
                 "new fields [{}] does not contain all old fields [{}]",
                 fields.toString(),
                 datasource.getDatabase().getFields().toString()
