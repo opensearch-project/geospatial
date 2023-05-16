@@ -27,6 +27,7 @@ import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.unit.TimeValue;
+import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.jobscheduler.spi.LockModel;
@@ -197,7 +198,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         ArgumentCaptor<Exception> exceptionCaptor = ArgumentCaptor.forClass(Exception.class);
         verify(listener).onFailure(exceptionCaptor.capture());
-        assertEquals(OpenSearchException.class, exceptionCaptor.getValue().getClass());
+        assertEquals(IncompatibleDatasourceException.class, exceptionCaptor.getValue().getClass());
         exceptionCaptor.getValue().getMessage().contains("does not contain");
         verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
     }

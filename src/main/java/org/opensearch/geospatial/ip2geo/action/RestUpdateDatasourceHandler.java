@@ -31,15 +31,15 @@ public class RestUpdateDatasourceHandler extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        final PutDatasourceRequest putDatasourceRequest = new PutDatasourceRequest(request.param("name"));
+        final UpdateDatasourceRequest updateDatasourceRequest = new UpdateDatasourceRequest(request.param("name"));
         if (request.hasContentOrSourceParam()) {
             try (XContentParser parser = request.contentOrSourceParamParser()) {
-                PutDatasourceRequest.PARSER.parse(parser, putDatasourceRequest, null);
+                UpdateDatasourceRequest.PARSER.parse(parser, updateDatasourceRequest, null);
             }
         }
         return channel -> client.executeLocally(
             UpdateDatasourceAction.INSTANCE,
-            putDatasourceRequest,
+            updateDatasourceRequest,
             new RestToXContentListener<>(channel)
         );
     }

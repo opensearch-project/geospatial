@@ -25,8 +25,11 @@ import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoDataServer;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceRequest;
+import org.opensearch.rest.RestStatus;
 
 public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
+    // Use this value in resource name to avoid name conflict among tests
+    private static final String PREFIX = Ip2GeoProcessorIT.class.getSimpleName().toLowerCase(Locale.ROOT);
     private static final String CITY = "city";
     private static final String COUNTRY = "country";
     private static final String IP = "ip";
@@ -34,7 +37,7 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
 
     @SneakyThrows
     public void testCreateIp2GeoProcessor_whenNoSuchDatasourceExist_thenFails() {
-        String pipelineName = GeospatialTestHelper.randomLowerCaseString();
+        String pipelineName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
 
         // Run
         ResponseException exception = expectThrows(
@@ -44,25 +47,35 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
 
         // Verify
         assertTrue(exception.getMessage().contains("doesn't exist"));
-        assertEquals(400, exception.getResponse().getStatusLine().getStatusCode());
+        assertEquals(RestStatus.BAD_REQUEST.getStatus(), exception.getResponse().getStatusLine().getStatusCode());
     }
 
     @SneakyThrows
     public void testCreateIp2GeoProcessor_whenValidInput_thenAddData() {
         Ip2GeoDataServer.start();
+        boolean isDatasourceCreated = false;
+        boolean isProcessorCreated = false;
+        String pipelineName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
+        String datasourceName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
         try {
-            String pipelineName = GeospatialTestHelper.randomLowerCaseString();
-            String datasourceName = GeospatialTestHelper.randomLowerCaseString();
             String targetField = GeospatialTestHelper.randomLowerCaseString();
             String field = GeospatialTestHelper.randomLowerCaseString();
 
-            Map<String, String> datasourceProperties = Map.of(
+            Map<String, Object> datasourceProperties = Map.of(
                 PutDatasourceRequest.ENDPOINT_FIELD.getPreferredName(),
                 Ip2GeoDataServer.getEndpointCity()
             );
 
             // Create datasource and wait for it to be available
             createDatasource(datasourceName, datasourceProperties);
+            isDatasourceCreated = true;
+            // Creation of datasource with same name should fail
+            ResponseException createException = expectThrows(
+                ResponseException.class,
+                () -> createDatasource(datasourceName, datasourceProperties)
+            );
+            // Verify
+            assertEquals(RestStatus.BAD_REQUEST.getStatus(), createException.getResponse().getStatusLine().getStatusCode());
             waitForDatasourceToBeAvailable(datasourceName, Duration.ofSeconds(10));
 
             Map<String, Object> processorProperties = Map.of(
@@ -78,6 +91,7 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
 
             // Create ip2geo processor
             createIp2GeoProcessorPipeline(pipelineName, processorProperties);
+            isProcessorCreated = true;
 
             Map<String, Map<String, String>> sampleData = getSampleData();
             List<Object> docs = sampleData.entrySet()
@@ -96,21 +110,31 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
             });
 
             // Delete datasource fails when there is a process using it
-            ResponseException exception = expectThrows(ResponseException.class, () -> deleteDatasource(datasourceName));
+            ResponseException deleteException = expectThrows(ResponseException.class, () -> deleteDatasource(datasourceName));
             // Verify
-            assertEquals(400, exception.getResponse().getStatusLine().getStatusCode());
-
-            // Delete resources
-            deletePipeline(pipelineName);
-            deleteDatasource(datasourceName);
+            assertEquals(RestStatus.BAD_REQUEST.getStatus(), deleteException.getResponse().getStatusLine().getStatusCode());
         } finally {
+            Exception exception = null;
+            try {
+                if (isProcessorCreated) {
+                    deletePipeline(pipelineName);
+                }
+                if (isDatasourceCreated) {
+                    deleteDatasource(datasourceName, 3);
+                }
+            } catch (Exception e) {
+                exception = e;
+            }
             Ip2GeoDataServer.stop();
+            if (exception != null) {
+                throw exception;
+            }
         }
     }
 
     private Response createIp2GeoProcessorPipeline(final String pipelineName, final Map<String, Object> properties) throws IOException {
         String field = GeospatialTestHelper.randomLowerCaseString();
-        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        String datasourceName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
         Map<String, Object> defaultProperties = Map.of(
             Ip2GeoProcessor.CONFIG_FIELD,
             field,
