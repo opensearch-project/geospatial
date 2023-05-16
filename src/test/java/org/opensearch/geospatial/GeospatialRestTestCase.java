@@ -110,9 +110,9 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         client().performRequest(request);
     }
 
-    protected Response createDatasource(final String name, Map<String, String> properties) throws IOException {
+    protected Response createDatasource(final String name, Map<String, Object> properties) throws IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
-        for (Map.Entry<String, String> config : properties.entrySet()) {
+        for (Map.Entry<String, Object> config : properties.entrySet()) {
             builder.field(config.getKey(), config.getValue());
         }
         builder.endObject();
@@ -149,16 +149,31 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         return client().performRequest(request);
     }
 
+    protected Response deleteDatasource(final String name, final int retry) throws Exception {
+        for (int i = 0; i < retry; i++) {
+            try {
+                Request request = new Request(DELETE, buildDatasourcePath(name));
+                return client().performRequest(request);
+            } catch (Exception e) {
+                if (i + 1 == retry) {
+                    throw e;
+                }
+                Thread.sleep(1000);
+            }
+        }
+        throw new RuntimeException("should not reach here");
+    }
+
     protected Map<String, Object> getDatasource(final String name) throws Exception {
         Request request = new Request(GET, buildDatasourcePath(name));
         Response response = client().performRequest(request);
         return createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())).map();
     }
 
-    protected Response updateDatasource(final String name, Map<String, Object> config) throws IOException {
+    protected Response updateDatasource(final String name, Map<String, Object> properties) throws IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
-        if (config != null && !config.isEmpty()) {
-            builder.value(config);
+        for (Map.Entry<String, Object> config : properties.entrySet()) {
+            builder.field(config.getKey(), config.getValue());
         }
         builder.endObject();
 

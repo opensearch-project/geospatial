@@ -33,8 +33,8 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 @Log4j2
 @EqualsAndHashCode(callSuper = false)
 public class UpdateDatasourceRequest extends AcknowledgedRequest<UpdateDatasourceRequest> {
-    private static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
-    private static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
+    public static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
+    public static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
     private static final int MAX_DATASOURCE_NAME_BYTES = 255;
     /**
      * @param name the datasource name
