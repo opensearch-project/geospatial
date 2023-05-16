@@ -112,7 +112,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         assertEquals(request.getEndpoint(), datasource.getEndpoint());
         assertEquals(request.getUpdateInterval().days(), datasource.getSchedule().getInterval());
         verify(listener).onResponse(new AcknowledgedResponse(true));
-        verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
+        verify(ip2GeoLockService).releaseLock(eq(lockModel));
     }
 
     @SneakyThrows
@@ -142,7 +142,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         verify(datasourceUpdateService, never()).getHeaderFields(anyString());
         verify(datasourceFacade, never()).updateDatasource(datasource);
         verify(listener).onResponse(new AcknowledgedResponse(true));
-        verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
+        verify(ip2GeoLockService).releaseLock(eq(lockModel));
     }
 
     @SneakyThrows
@@ -169,7 +169,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         verify(listener).onFailure(exceptionCaptor.capture());
         assertEquals(ResourceNotFoundException.class, exceptionCaptor.getValue().getClass());
         exceptionCaptor.getValue().getMessage().contains("no such datasource exist");
-        verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
+        verify(ip2GeoLockService).releaseLock(eq(lockModel));
     }
 
     @SneakyThrows
@@ -200,7 +200,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         verify(listener).onFailure(exceptionCaptor.capture());
         assertEquals(IncompatibleDatasourceException.class, exceptionCaptor.getValue().getClass());
         exceptionCaptor.getValue().getMessage().contains("does not contain");
-        verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
+        verify(ip2GeoLockService).releaseLock(eq(lockModel));
     }
 
     @SneakyThrows
@@ -229,6 +229,6 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         verify(listener).onFailure(exceptionCaptor.capture());
         assertEquals(InvalidParameterException.class, exceptionCaptor.getValue().getClass());
         exceptionCaptor.getValue().getMessage().contains("should be smaller");
-        verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
+        verify(ip2GeoLockService).releaseLock(eq(lockModel));
     }
 }

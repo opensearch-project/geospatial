@@ -43,7 +43,6 @@ import org.opensearch.action.search.MultiSearchRequestBuilder;
 import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.IndicesOptions;
-import org.opensearch.action.support.WriteRequest;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.client.Client;
 import org.opensearch.client.Requests;
@@ -67,6 +66,8 @@ public class GeoIpDataFacade {
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
     private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_SHARDS = new Tuple<>("index.number_of_shards", 1);
+    private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_REPLICAS = new Tuple<>("index.number_of_replicas", 0);
+    private static final Tuple<String, Integer> INDEX_SETTING_REFRESH_INTERVAL = new Tuple<>("index.refresh_interval", -1);
     private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
     private static final Tuple<String, Boolean> INDEX_SETTING_HIDDEN = new Tuple<>("index.hidden", true);
     private static final Tuple<String, Boolean> INDEX_SETTING_READ_ONLY_ALLOW_DELETE = new Tuple<>(
@@ -84,7 +85,12 @@ public class GeoIpDataFacade {
     }
 
     /**
-     * Create an index of single shard with auto expand replicas to all nodes
+     * Create an index for GeoIP data
+     *
+     * Index setting start with single shard, zero replica, no refresh interval, and hidden.
+     * Once the GeoIP data is indexed, do refresh and force merge.
+     * Then, change the index setting to expand replica to all nodes, and read only allow delete.
+     * See {@link #freezeIndex}
      *
      * @param indexName index name
      */
@@ -94,13 +100,32 @@ public class GeoIpDataFacade {
         }
         final Map<String, Object> indexSettings = new HashMap<>();
         indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
-        indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
+        indexSettings.put(INDEX_SETTING_REFRESH_INTERVAL.v1(), INDEX_SETTING_REFRESH_INTERVAL.v2());
+        indexSettings.put(INDEX_SETTING_NUM_OF_REPLICAS.v1(), INDEX_SETTING_NUM_OF_REPLICAS.v2());
         indexSettings.put(INDEX_SETTING_HIDDEN.v1(), INDEX_SETTING_HIDDEN.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings).mapping(getIndexMapping());
         StashedThreadContext.run(
             client,
             () -> client.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
         );
+    }
+
+    private void freezeIndex(final String indexName) {
+        TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
+        StashedThreadContext.run(client, () -> {
+            client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
+            client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
+            Map<String, Object> settings = new HashMap<>();
+            settings.put(INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v1(), INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v2());
+            settings.put(INDEX_SETTING_NUM_OF_REPLICAS.v1(), null);
+            settings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
+            client.admin()
+                .indices()
+                .prepareUpdateSettings(indexName)
+                .setSettings(settings)
+                .execute()
+                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+        });
     }
 
     /**
@@ -349,7 +374,7 @@ public class GeoIpDataFacade {
         @NonNull final Runnable renewLock
     ) {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
-        final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
+        final BulkRequest bulkRequest = new BulkRequest();
         while (iterator.hasNext()) {
             CSVRecord record = iterator.next();
             String document = createDocument(fields, record.values());
@@ -368,16 +393,7 @@ public class GeoIpDataFacade {
             }
             renewLock.run();
         }
-        StashedThreadContext.run(client, () -> {
-            client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
-            client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
-            client.admin()
-                .indices()
-                .prepareUpdateSettings(indexName)
-                .setSettings(Map.of(INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v1(), INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v2()))
-                .execute()
-                .actionGet(timeout);
-        });
+        freezeIndex(indexName);
     }
 
     public AcknowledgedResponse deleteIp2GeoDataIndex(final String index) {

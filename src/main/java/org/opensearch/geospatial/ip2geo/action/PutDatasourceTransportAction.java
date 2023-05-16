@@ -80,16 +80,16 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
             try {
                 internalDoExecute(request, lock, listener);
             } catch (Exception e) {
+                lockService.releaseLock(lock);
                 listener.onFailure(e);
-            } finally {
-                lockService.releaseLock(
-                    lock,
-                    ActionListener.wrap(released -> {}, exception -> log.error("Failed to release the lock", exception))
-                );
             }
         }, exception -> { listener.onFailure(exception); }));
     }
 
+    /**
+     * This method takes lock as a parameter and is responsible for releasing lock
+     * unless exception is thrown
+     */
     @VisibleForTesting
     protected void internalDoExecute(
         final PutDatasourceRequest request,
@@ -100,17 +100,21 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         datasourceFacade.createIndexIfNotExists(createIndexStep);
         createIndexStep.whenComplete(v -> {
             Datasource datasource = Datasource.Builder.build(request);
-            datasourceFacade.putDatasource(
-                datasource,
-                getIndexResponseListener(datasource, lockService.getRenewLockRunnable(new AtomicReference<>(lock)), listener)
-            );
-        }, exception -> listener.onFailure(exception));
+            datasourceFacade.putDatasource(datasource, getIndexResponseListener(datasource, lock, listener));
+        }, exception -> {
+            lockService.releaseLock(lock);
+            listener.onFailure(exception);
+        });
     }
 
+    /**
+     * This method takes lock as a parameter and is responsible for releasing lock
+     * unless exception is thrown
+     */
     @VisibleForTesting
     protected ActionListener<IndexResponse> getIndexResponseListener(
         final Datasource datasource,
-        final Runnable renewLock,
+        final LockModel lock,
         final ActionListener<AcknowledgedResponse> listener
     ) {
         return new ActionListener<>() {
@@ -118,12 +122,20 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
             public void onResponse(final IndexResponse indexResponse) {
                 // This is user initiated request. Therefore, we want to handle the first datasource update task in a generic thread
                 // pool.
-                threadPool.generic().submit(() -> { createDatasource(datasource, renewLock); });
+                threadPool.generic().submit(() -> {
+                    AtomicReference<LockModel> lockReference = new AtomicReference<>(lock);
+                    try {
+                        createDatasource(datasource, lockService.getRenewLockRunnable(lockReference));
+                    } finally {
+                        lockService.releaseLock(lockReference.get());
+                    }
+                });
                 listener.onResponse(new AcknowledgedResponse(true));
             }
 
             @Override
             public void onFailure(final Exception e) {
+                lockService.releaseLock(lock);
                 if (e instanceof VersionConflictEngineException) {
                     listener.onFailure(new ResourceAlreadyExistsException("datasource [{}] already exists", datasource.getName()));
                 } else {

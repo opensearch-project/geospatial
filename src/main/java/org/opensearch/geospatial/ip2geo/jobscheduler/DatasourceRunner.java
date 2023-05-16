@@ -111,10 +111,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
                 try {
                     updateDatasource(jobParameter, ip2GeoLockService.getRenewLockRunnable(new AtomicReference<>(lock)));
                 } finally {
-                    ip2GeoLockService.releaseLock(
-                        lock,
-                        ActionListener.wrap(released -> {}, exception -> { log.error("Failed to release lock [{}]", lock, exception); })
-                    );
+                    ip2GeoLockService.releaseLock(lock);
                 }
             }, exception -> { log.error("Failed to acquire lock for job [{}]", jobParameter.getName(), exception); }));
         };

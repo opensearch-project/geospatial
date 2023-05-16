@@ -12,6 +12,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import lombok.extern.log4j.Log4j2;
+
 import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.client.Client;
@@ -22,6 +24,7 @@ import org.opensearch.jobscheduler.spi.utils.LockService;
 /**
  * A wrapper of job scheduler's lock service for datasource
  */
+@Log4j2
 public class Ip2GeoLockService {
     public static final long LOCK_DURATION_IN_SECONDS = 300l;
     public static final long RENEW_AFTER_IN_SECONDS = 120l;
@@ -57,10 +60,12 @@ public class Ip2GeoLockService {
      * Wrapper method of LockService#release
      *
      * @param lockModel the lock model
-     * @param listener the listener
      */
-    public void releaseLock(final LockModel lockModel, final ActionListener<Boolean> listener) {
-        lockService.release(lockModel, listener);
+    public void releaseLock(final LockModel lockModel) {
+        lockService.release(
+            lockModel,
+            ActionListener.wrap(released -> {}, exception -> log.error("Failed to release the lock", exception))
+        );
     }
 
     /**
@@ -110,7 +115,6 @@ public class Ip2GeoLockService {
             if (Instant.now().isBefore(preLock.getLockTime().plusSeconds(RENEW_AFTER_IN_SECONDS))) {
                 return;
             }
-
             lockModel.set(renewLock(lockModel.get()));
             if (lockModel.get() == null) {
                 new OpenSearchException("failed to renew a lock [{}]", preLock);
