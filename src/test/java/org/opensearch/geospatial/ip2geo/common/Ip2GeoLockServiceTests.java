@@ -41,7 +41,7 @@ public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
     public void testReleaseLock_whenValidInput_thenSucceed() {
         // Cannot test because LockService is final class
         // Simply calling method to increase coverage
-        noOpsLockService.releaseLock(null, mock(ActionListener.class));
+        noOpsLockService.releaseLock(null);
     }
 
     public void testRenewLock_whenCalled_thenNotBlocked() {

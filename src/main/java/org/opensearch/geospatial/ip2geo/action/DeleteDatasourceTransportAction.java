@@ -80,17 +80,11 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
             }
             try {
                 deleteDatasource(request.getName());
+                lockService.releaseLock(lock);
                 listener.onResponse(new AcknowledgedResponse(true));
             } catch (Exception e) {
+                lockService.releaseLock(lock);
                 listener.onFailure(e);
-            } finally {
-                lockService.releaseLock(
-                    lock,
-                    ActionListener.wrap(
-                        released -> { log.info("Released lock for datasource[{}]", request.getName()); },
-                        exception -> { log.error("Failed to release the lock", exception); }
-                    )
-                );
             }
         }, exception -> { listener.onFailure(exception); }));
     }

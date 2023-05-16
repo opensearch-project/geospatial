@@ -12,22 +12,20 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.time.Instant;
 
 import lombok.SneakyThrows;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
-import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.geospatial.GeospatialTestHelper;
+import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
@@ -52,28 +50,32 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
 
     @SneakyThrows
     public void testDoExecute_whenFailedToAcquireLock_thenError() {
-        validateDoExecute(null, null);
+        validateDoExecute(null, null, null);
     }
 
     @SneakyThrows
-    public void testDoExecute_whenValidInput_thenSucceed() {
-        String jobIndexName = GeospatialTestHelper.randomLowerCaseString();
-        String jobId = GeospatialTestHelper.randomLowerCaseString();
-        LockModel lockModel = new LockModel(jobIndexName, jobId, Instant.now(), randomPositiveLong(), false);
-        validateDoExecute(lockModel, null);
+    public void testDoExecute_whenAcquiredLock_thenSucceed() {
+        validateDoExecute(randomLockModel(), null, null);
     }
 
     @SneakyThrows
-    public void testDoExecute_whenException_thenError() {
-        validateDoExecute(null, new RuntimeException());
+    public void testDoExecute_whenExceptionBeforeAcquiringLock_thenError() {
+        validateDoExecute(randomLockModel(), new RuntimeException(), null);
     }
 
-    private void validateDoExecute(final LockModel lockModel, final Exception exception) throws IOException {
+    @SneakyThrows
+    public void testDoExecute_whenExceptionAfterAcquiringLock_thenError() {
+        validateDoExecute(randomLockModel(), null, new RuntimeException());
+    }
+
+    private void validateDoExecute(final LockModel lockModel, final Exception before, final Exception after) throws IOException {
         Task task = mock(Task.class);
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
         PutDatasourceRequest request = new PutDatasourceRequest(datasource.getName());
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+        if (after != null) {
+            doThrow(after).when(datasourceFacade).createIndexIfNotExists(any(StepListener.class));
+        }
 
         // Run
         action.doExecute(task, request, listener);
@@ -82,21 +84,25 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         ArgumentCaptor<ActionListener<LockModel>> captor = ArgumentCaptor.forClass(ActionListener.class);
         verify(ip2GeoLockService).acquireLock(eq(datasource.getName()), anyLong(), captor.capture());
 
-        if (exception == null) {
+        if (before == null) {
             // Run
             captor.getValue().onResponse(lockModel);
 
             // Verify
             if (lockModel == null) {
-                verify(listener).onFailure(any(OpenSearchException.class));
+                verify(listener).onFailure(any(ConcurrentModificationException.class));
+            }
+            if (after != null) {
+                verify(ip2GeoLockService).releaseLock(eq(lockModel));
+                verify(listener).onFailure(after);
             } else {
-                verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
+                verify(ip2GeoLockService, never()).releaseLock(eq(lockModel));
             }
         } else {
             // Run
-            captor.getValue().onFailure(exception);
+            captor.getValue().onFailure(before);
             // Verify
-            verify(listener).onFailure(exception);
+            verify(listener).onFailure(before);
         }
     }
 
@@ -133,7 +139,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
     public void testGetIndexResponseListener_whenVersionConflict_thenFailure() {
         Datasource datasource = new Datasource();
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
-        action.getIndexResponseListener(datasource, mock(Runnable.class), listener)
+        action.getIndexResponseListener(datasource, randomLockModel(), listener)
             .onFailure(
                 new VersionConflictEngineException(
                     null,

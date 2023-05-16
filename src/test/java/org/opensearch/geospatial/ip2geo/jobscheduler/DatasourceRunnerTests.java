@@ -98,13 +98,13 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
             captor.getValue().onResponse(lockModel);
 
             // Verify
-            verify(ip2GeoLockService, lockModel == null ? never() : times(1)).releaseLock(eq(lockModel), any(ActionListener.class));
+            verify(ip2GeoLockService, lockModel == null ? never() : times(1)).releaseLock(eq(lockModel));
         } else {
             // Run
             captor.getValue().onFailure(exception);
 
             // Verify
-            verify(ip2GeoLockService, never()).releaseLock(eq(lockModel), any(ActionListener.class));
+            verify(ip2GeoLockService, never()).releaseLock(eq(lockModel));
         }
     }
 

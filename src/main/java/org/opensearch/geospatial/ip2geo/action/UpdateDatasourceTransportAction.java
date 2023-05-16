@@ -14,15 +14,14 @@ import java.util.Locale;
 
 import lombok.extern.log4j.Log4j2;
 
-import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
-import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
+import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
@@ -81,27 +80,21 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
                 );
                 return;
             }
+
             try {
                 Datasource datasource = datasourceFacade.getDatasource(request.getName());
                 if (datasource == null) {
-                    listener.onFailure(new ResourceNotFoundException("no such datasource exist"));
-                    return;
+                    throw new ResourceNotFoundException("no such datasource exist");
                 }
                 validate(request, datasource);
                 updateIfChanged(request, datasource);
+                lockService.releaseLock(lock);
                 listener.onResponse(new AcknowledgedResponse(true));
             } catch (Exception e) {
+                lockService.releaseLock(lock);
                 listener.onFailure(e);
-            } finally {
-                lockService.releaseLock(
-                    lock,
-                    ActionListener.wrap(
-                        released -> { log.info("Released lock for datasource[{}]", request.getName()); },
-                        exception -> { log.error("Failed to release the lock", exception); }
-                    )
-                );
             }
-        }, exception -> { listener.onFailure(exception); }));
+        }, exception -> listener.onFailure(exception)));
     }
 
     private void updateIfChanged(final UpdateDatasourceRequest request, final Datasource datasource) throws IOException {
