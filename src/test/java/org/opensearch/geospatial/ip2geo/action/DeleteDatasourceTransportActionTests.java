@@ -90,7 +90,7 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
                 verify(listener).onFailure(any(OpenSearchException.class));
             } else {
                 verify(listener).onResponse(new AcknowledgedResponse(true));
-                verify(ip2GeoLockService).releaseLock(eq(lockModel), any(ActionListener.class));
+                verify(ip2GeoLockService).releaseLock(eq(lockModel));
             }
         } else {
             // Run

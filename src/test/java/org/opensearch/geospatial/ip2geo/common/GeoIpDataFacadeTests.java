@@ -51,7 +51,6 @@ import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.IndicesOptions;
-import org.opensearch.action.support.WriteRequest;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.bytes.BytesReference;
@@ -89,8 +88,10 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             assertTrue(actionRequest instanceof CreateIndexRequest);
             CreateIndexRequest request = (CreateIndexRequest) actionRequest;
             assertEquals(index, request.index());
-            assertEquals(1, (int) request.settings().getAsInt("index.number_of_shards", 2));
-            assertEquals("0-all", request.settings().get("index.auto_expand_replicas"));
+            assertEquals(1, (int) request.settings().getAsInt("index.number_of_shards", 0));
+            assertNull(request.settings().get("index.auto_expand_replicas"));
+            assertEquals(0, (int) request.settings().getAsInt("index.number_of_replicas", 1));
+            assertEquals(-1, (int) request.settings().getAsInt("index.refresh_interval", 0));
             assertEquals(true, request.settings().getAsBoolean("index.hidden", false));
 
             assertEquals(
@@ -191,7 +192,6 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             if (actionRequest instanceof BulkRequest) {
                 BulkRequest request = (BulkRequest) actionRequest;
                 assertEquals(1, request.numberOfActions());
-                assertEquals(WriteRequest.RefreshPolicy.WAIT_UNTIL, request.getRefreshPolicy());
                 BulkResponse response = mock(BulkResponse.class);
                 when(response.hasFailures()).thenReturn(false);
                 return response;
@@ -211,6 +211,8 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
                 assertEquals(1, request.indices().length);
                 assertEquals(index, request.indices()[0]);
                 assertEquals(true, request.settings().getAsBoolean("index.blocks.read_only_allow_delete", false));
+                assertNull(request.settings().get("index.num_of_replica"));
+                assertEquals("0-all", request.settings().get("index.auto_expand_replicas"));
                 return null;
             } else {
                 throw new RuntimeException("invalid request is called");
