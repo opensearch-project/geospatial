@@ -21,6 +21,7 @@ import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
+import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
@@ -74,7 +75,9 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
     protected void doExecute(final Task task, final UpdateDatasourceRequest request, final ActionListener<AcknowledgedResponse> listener) {
         lockService.acquireLock(request.getName(), LOCK_DURATION_IN_SECONDS, ActionListener.wrap(lock -> {
             if (lock == null) {
-                listener.onFailure(new OpenSearchException("another processor is holding a lock on the resource. Try again later"));
+                listener.onFailure(
+                    new ConcurrentModificationException("another processor is holding a lock on the resource. Try again later")
+                );
                 return;
             }
             try {
