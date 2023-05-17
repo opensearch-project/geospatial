@@ -70,10 +70,7 @@ public class GeoIpDataFacade {
     private static final Tuple<String, Integer> INDEX_SETTING_REFRESH_INTERVAL = new Tuple<>("index.refresh_interval", -1);
     private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
     private static final Tuple<String, Boolean> INDEX_SETTING_HIDDEN = new Tuple<>("index.hidden", true);
-    private static final Tuple<String, Boolean> INDEX_SETTING_READ_ONLY_ALLOW_DELETE = new Tuple<>(
-        "index.blocks.read_only_allow_delete",
-        true
-    );
+    private static final Tuple<String, Boolean> INDEX_SETTING_BLOCKS_WRITE = new Tuple<>("index.blocks.write", true);
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
     private final Client client;
@@ -116,8 +113,7 @@ public class GeoIpDataFacade {
             client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
             client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
             Map<String, Object> settings = new HashMap<>();
-            settings.put(INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v1(), INDEX_SETTING_READ_ONLY_ALLOW_DELETE.v2());
-            settings.put(INDEX_SETTING_NUM_OF_REPLICAS.v1(), null);
+            settings.put(INDEX_SETTING_BLOCKS_WRITE.v1(), INDEX_SETTING_BLOCKS_WRITE.v2());
             settings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
             client.admin()
                 .indices()
