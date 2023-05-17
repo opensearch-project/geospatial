@@ -210,7 +210,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
                 UpdateSettingsRequest request = (UpdateSettingsRequest) actionRequest;
                 assertEquals(1, request.indices().length);
                 assertEquals(index, request.indices()[0]);
-                assertEquals(true, request.settings().getAsBoolean("index.blocks.read_only_allow_delete", false));
+                assertEquals(true, request.settings().getAsBoolean("index.blocks.write", false));
                 assertNull(request.settings().get("index.num_of_replica"));
                 assertEquals("0-all", request.settings().get("index.auto_expand_replicas"));
                 return null;
