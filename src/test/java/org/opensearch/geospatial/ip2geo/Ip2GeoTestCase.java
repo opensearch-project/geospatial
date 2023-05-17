@@ -116,6 +116,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         when(clusterState.getMetadata()).thenReturn(metadata);
         when(clusterState.routingTable()).thenReturn(RoutingTable.EMPTY_ROUTING_TABLE);
         when(ip2GeoExecutor.forDatasourceUpdate()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
+        when(ip2GeoExecutor.forDatasourceCreate()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
         when(ingestService.getClusterService()).thenReturn(clusterService);
         when(threadPool.generic()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
     }

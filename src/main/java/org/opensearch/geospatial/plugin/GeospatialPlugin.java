@@ -110,7 +110,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     @Override
     public List<ExecutorBuilder<?>> getExecutorBuilders(Settings settings) {
         List<ExecutorBuilder<?>> executorBuilders = new ArrayList<>();
-        executorBuilders.add(Ip2GeoExecutor.executorBuilder(settings));
+        executorBuilders.addAll(Ip2GeoExecutor.executorBuilder(settings));
         return executorBuilders;
     }
 

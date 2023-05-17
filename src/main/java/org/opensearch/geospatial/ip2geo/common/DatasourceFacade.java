@@ -173,13 +173,14 @@ public class DatasourceFacade {
      *
      */
     public void deleteDatasource(final Datasource datasource) {
-        if (client.admin()
-            .indices()
-            .prepareDelete(datasource.getIndices().toArray(new String[0]))
-            .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
-            .execute()
-            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
-            .isAcknowledged() == false) {
+        if (datasource.getIndices().size() != 0
+            && client.admin()
+                .indices()
+                .prepareDelete(datasource.getIndices().toArray(new String[0]))
+                .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
+                .execute()
+                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
+                .isAcknowledged() == false) {
             throw new OpenSearchException("failed to delete data[{}] in datasource", String.join(",", datasource.getIndices()));
         }
         DeleteResponse response = client.prepareDelete()

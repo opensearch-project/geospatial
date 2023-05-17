@@ -12,8 +12,10 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.concurrent.RejectedExecutionException;
 
 import lombok.SneakyThrows;
 
@@ -22,8 +24,10 @@ import org.mockito.ArgumentCaptor;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
+import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.unit.TimeValue;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
@@ -44,7 +48,8 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
             threadPool,
             datasourceFacade,
             datasourceUpdateService,
-            ip2GeoLockService
+            ip2GeoLockService,
+            ip2GeoExecutor
         );
     }
 
@@ -148,6 +153,21 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
                 )
             );
         verify(listener).onFailure(any(ResourceAlreadyExistsException.class));
+    }
+
+    public void testGetIndexResponseListener_whenRejectedExecutionException_thenDeleteDatasourceAndReleaseLock() {
+        Datasource datasource = randomDatasource();
+        LockModel lockModel = randomLockModel();
+        when(ip2GeoExecutor.forDatasourceCreate()).thenThrow(new RejectedExecutionException());
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        action.getIndexResponseListener(datasource, lockModel, listener).onResponse(mock(IndexResponse.class));
+
+        // Verify
+        verify(ip2GeoLockService).releaseLock(lockModel);
+        verify(datasourceFacade).deleteDatasource(datasource);
+        verify(listener).onFailure(any(OpenSearchRejectedExecutionException.class));
     }
 
     @SneakyThrows

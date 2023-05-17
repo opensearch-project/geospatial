@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import lombok.SneakyThrows;
@@ -228,6 +229,32 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
                     AcknowledgedResponse response = new AcknowledgedResponse(true);
                     return response;
                 } else if (actionRequest instanceof DeleteRequest) {
+                    DeleteRequest request = (DeleteRequest) actionRequest;
+                    assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
+                    assertEquals(DocWriteRequest.OpType.DELETE, request.opType());
+                    assertEquals(datasource.getName(), request.id());
+                    assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, request.getRefreshPolicy());
+
+                    DeleteResponse response = mock(DeleteResponse.class);
+                    when(response.status()).thenReturn(RestStatus.OK);
+                    return response;
+                } else {
+                    throw new RuntimeException("Not expected request type is passed" + actionRequest.getClass());
+                }
+            }
+        );
+
+        // Run
+        datasourceFacade.deleteDatasource(datasource);
+    }
+
+    public void testDeleteDatasource_whenNoIndices_thenSucceed() {
+        Datasource datasource = randomDatasource();
+        datasource.setIndices(Collections.emptyList());
+        verifyingClient.setExecuteVerifier(
+            (actionResponse, actionRequest) -> {
+                // Verify
+                if (actionRequest instanceof DeleteRequest) {
                     DeleteRequest request = (DeleteRequest) actionRequest;
                     assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
                     assertEquals(DocWriteRequest.OpType.DELETE, request.opType());

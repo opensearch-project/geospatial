@@ -8,6 +8,7 @@ package org.opensearch.geospatial.ip2geo.action;
 import static org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService.LOCK_DURATION_IN_SECONDS;
 
 import java.time.Instant;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.extern.log4j.Log4j2;
@@ -20,10 +21,12 @@ import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
+import org.opensearch.core.concurrency.OpenSearchRejectedExecutionException;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
@@ -42,6 +45,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
     private final DatasourceFacade datasourceFacade;
     private final DatasourceUpdateService datasourceUpdateService;
     private final Ip2GeoLockService lockService;
+    private final Ip2GeoExecutor ip2GeoExecutor;
 
     /**
      * Default constructor
@@ -51,6 +55,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
      * @param datasourceFacade the datasource facade
      * @param datasourceUpdateService the datasource update service
      * @param lockService the lock service
+     * @param ip2GeoExecutor the ip2Geo executor
      */
     @Inject
     public PutDatasourceTransportAction(
@@ -59,13 +64,15 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         final ThreadPool threadPool,
         final DatasourceFacade datasourceFacade,
         final DatasourceUpdateService datasourceUpdateService,
-        final Ip2GeoLockService lockService
+        final Ip2GeoLockService lockService,
+        final Ip2GeoExecutor ip2GeoExecutor
     ) {
         super(PutDatasourceAction.NAME, transportService, actionFilters, PutDatasourceRequest::new);
         this.threadPool = threadPool;
         this.datasourceFacade = datasourceFacade;
         this.datasourceUpdateService = datasourceUpdateService;
         this.lockService = lockService;
+        this.ip2GeoExecutor = ip2GeoExecutor;
     }
 
     @Override
@@ -120,16 +127,23 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         return new ActionListener<>() {
             @Override
             public void onResponse(final IndexResponse indexResponse) {
-                // This is user initiated request. Therefore, we want to handle the first datasource update task in a generic thread
-                // pool.
-                threadPool.generic().submit(() -> {
-                    AtomicReference<LockModel> lockReference = new AtomicReference<>(lock);
-                    try {
-                        createDatasource(datasource, lockService.getRenewLockRunnable(lockReference));
-                    } finally {
-                        lockService.releaseLock(lockReference.get());
-                    }
-                });
+                try {
+                    ip2GeoExecutor.forDatasourceCreate().submit(() -> {
+                        AtomicReference<LockModel> lockReference = new AtomicReference<>(lock);
+                        try {
+                            createDatasource(datasource, lockService.getRenewLockRunnable(lockReference));
+                        } finally {
+                            lockService.releaseLock(lockReference.get());
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    lockService.releaseLock(lock);
+                    datasourceFacade.deleteDatasource(datasource);
+                    listener.onFailure(
+                        new OpenSearchRejectedExecutionException("another datasource creation is in progress in current node")
+                    );
+                    return;
+                }
                 listener.onResponse(new AcknowledgedResponse(true));
             }
 

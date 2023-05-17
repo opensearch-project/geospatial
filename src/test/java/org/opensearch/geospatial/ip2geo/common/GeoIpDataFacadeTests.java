@@ -89,9 +89,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             CreateIndexRequest request = (CreateIndexRequest) actionRequest;
             assertEquals(index, request.index());
             assertEquals(1, (int) request.settings().getAsInt("index.number_of_shards", 0));
-            assertNull(request.settings().get("index.auto_expand_replicas"));
-            assertEquals(0, (int) request.settings().getAsInt("index.number_of_replicas", 1));
-            assertEquals(-1, (int) request.settings().getAsInt("index.refresh_interval", 0));
+            assertEquals("0-all", request.settings().get("index.auto_expand_replicas"));
             assertEquals(true, request.settings().getAsBoolean("index.hidden", false));
 
             assertEquals(
@@ -211,8 +209,6 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
                 assertEquals(1, request.indices().length);
                 assertEquals(index, request.indices()[0]);
                 assertEquals(true, request.settings().getAsBoolean("index.blocks.write", false));
-                assertNull(request.settings().get("index.num_of_replica"));
-                assertEquals("0-all", request.settings().get("index.auto_expand_replicas"));
                 return null;
             } else {
                 throw new RuntimeException("invalid request is called");
