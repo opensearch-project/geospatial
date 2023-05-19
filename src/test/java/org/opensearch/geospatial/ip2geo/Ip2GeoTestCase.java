@@ -52,6 +52,7 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
+import org.opensearch.geospatial.plugin.GeospatialPlugin;
 import org.opensearch.ingest.IngestMetadata;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.jobscheduler.spi.LockModel;
