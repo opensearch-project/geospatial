@@ -5,6 +5,7 @@
 
 package org.opensearch.geospatial.ip2geo.action;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.opensearch.OpenSearchException;
@@ -12,8 +13,10 @@ import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.common.inject.Inject;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
 
@@ -57,7 +60,8 @@ public class GetDatasourceTransportAction extends HandledTransportAction<GetData
         return request.getNames().length == 0 || (request.getNames().length == 1 && "_all".equals(request.getNames()[0]));
     }
 
-    private ActionListener<List<Datasource>> newActionListener(final ActionListener<GetDatasourceResponse> listener) {
+    @VisibleForTesting
+    protected ActionListener<List<Datasource>> newActionListener(final ActionListener<GetDatasourceResponse> listener) {
         return new ActionListener<>() {
             @Override
             public void onResponse(final List<Datasource> datasources) {
@@ -66,6 +70,10 @@ public class GetDatasourceTransportAction extends HandledTransportAction<GetData
 
             @Override
             public void onFailure(final Exception e) {
+                if (e instanceof IndexNotFoundException) {
+                    listener.onResponse(new GetDatasourceResponse(Collections.emptyList()));
+                    return;
+                }
                 listener.onFailure(e);
             }
         };

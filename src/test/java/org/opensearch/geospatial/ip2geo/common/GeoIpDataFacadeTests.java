@@ -52,6 +52,7 @@ import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.common.Randomness;
+import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.geospatial.GeospatialTestHelper;
@@ -103,12 +104,13 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         verifyingGeoIpDataFacade.createIndexIfNotExists(index);
     }
 
+    @SneakyThrows
     public void testCreateDocument() {
         String[] names = { "ip", "country", "city" };
         String[] values = { "1.0.0.0/25", "USA", "Seattle" };
         assertEquals(
             "{\"_cidr\":\"1.0.0.0/25\",\"_data\":{\"country\":\"USA\",\"city\":\"Seattle\"}}",
-            noOpsGeoIpDataFacade.createDocument(names, values)
+            Strings.toString(noOpsGeoIpDataFacade.createDocument(names, values))
         );
     }
 

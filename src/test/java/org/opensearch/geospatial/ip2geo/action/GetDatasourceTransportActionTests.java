@@ -5,18 +5,20 @@
 
 package org.opensearch.geospatial.ip2geo.action;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Before;
-import org.mockito.ArgumentCaptor;
 import org.opensearch.action.ActionListener;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.tasks.Task;
 
 public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
@@ -27,7 +29,7 @@ public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
         action = new GetDatasourceTransportAction(transportService, actionFilters, datasourceFacade);
     }
 
-    public void testDoExecute_whenAll_thenSucceed() throws Exception {
+    public void testDoExecute_whenAll_thenSucceed() {
         Task task = mock(Task.class);
         GetDatasourceRequest request = new GetDatasourceRequest(new String[] { "_all" });
         ActionListener<GetDatasourceResponse> listener = mock(ActionListener.class);
@@ -36,22 +38,7 @@ public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
         action.doExecute(task, request, listener);
 
         // Verify
-        ArgumentCaptor<ActionListener<List<Datasource>>> captor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(datasourceFacade).getAllDatasources(captor.capture());
-
-        // Run
-        List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
-        captor.getValue().onResponse(datasources);
-
-        // Verify
-        verify(listener).onResponse(new GetDatasourceResponse(datasources));
-
-        // Run
-        RuntimeException exception = new RuntimeException();
-        captor.getValue().onFailure(exception);
-
-        // Verify
-        verify(listener).onFailure(exception);
+        verify(datasourceFacade).getAllDatasources(any(ActionListener.class));
     }
 
     public void testDoExecute_whenNames_thenSucceed() {
@@ -66,20 +53,37 @@ public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
         action.doExecute(task, request, listener);
 
         // Verify
-        ArgumentCaptor<ActionListener<List<Datasource>>> captor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(datasourceFacade).getDatasources(eq(datasourceNames), captor.capture());
+        verify(datasourceFacade).getDatasources(eq(datasourceNames), any(ActionListener.class));
+    }
+
+    public void testNewActionListener_whenOnResponse_thenSucceed() {
+        List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
+        ActionListener<GetDatasourceResponse> actionListener = mock(ActionListener.class);
 
         // Run
-        captor.getValue().onResponse(datasources);
+        action.newActionListener(actionListener).onResponse(datasources);
 
         // Verify
-        verify(listener).onResponse(new GetDatasourceResponse(datasources));
+        verify(actionListener).onResponse(new GetDatasourceResponse(datasources));
+    }
+
+    public void testNewActionListener_whenOnFailureWithNoSuchIndexException_thenEmptyDatasource() {
+        ActionListener<GetDatasourceResponse> actionListener = mock(ActionListener.class);
 
         // Run
-        RuntimeException exception = new RuntimeException();
-        captor.getValue().onFailure(exception);
+        action.newActionListener(actionListener).onFailure(new IndexNotFoundException("no index"));
 
         // Verify
-        verify(listener).onFailure(exception);
+        verify(actionListener).onResponse(new GetDatasourceResponse(Collections.emptyList()));
+    }
+
+    public void testNewActionListener_whenOnFailure_thenFails() {
+        ActionListener<GetDatasourceResponse> actionListener = mock(ActionListener.class);
+
+        // Run
+        action.newActionListener(actionListener).onFailure(new RuntimeException());
+
+        // Verify
+        verify(actionListener).onFailure(any(RuntimeException.class));
     }
 }

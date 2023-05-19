@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -35,6 +37,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.action.ActionListener;
+import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
@@ -51,8 +54,10 @@ import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.unit.TimeValue;
+import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
@@ -187,7 +192,7 @@ public class GeoIpDataFacade {
     }
 
     /**
-     * Create a document in json string format to ingest in datasource database index
+     * Create a document to ingest in datasource database index
      *
      * It assumes the first field as ip_range. The rest is added under data field.
      *
@@ -204,31 +209,23 @@ public class GeoIpDataFacade {
      * @param fields a list of field name
      * @param values a list of values
      * @return Document in json string format
+     * @throws IOException the exception
      */
-    public String createDocument(final String[] fields, final String[] values) {
+    public XContentBuilder createDocument(final String[] fields, final String[] values) throws IOException {
         if (fields.length != values.length) {
             throw new OpenSearchException("header[{}] and record[{}] length does not match", fields, values);
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\"");
-        sb.append(IP_RANGE_FIELD_NAME);
-        sb.append("\":\"");
-        sb.append(values[0]);
-        sb.append("\",\"");
-        sb.append(DATA_FIELD_NAME);
-        sb.append("\":{");
+        XContentBuilder builder = XContentFactory.jsonBuilder();
+        builder.startObject();
+        builder.field(IP_RANGE_FIELD_NAME, values[0]);
+        builder.startObject(DATA_FIELD_NAME);
         for (int i = 1; i < fields.length; i++) {
-            if (i != 1) {
-                sb.append(",");
-            }
-            sb.append("\"");
-            sb.append(fields[i]);
-            sb.append("\":\"");
-            sb.append(values[i]);
-            sb.append("\"");
+            builder.field(fields[i], values[i]);
         }
-        sb.append("}}");
-        return sb.toString();
+        builder.endObject();
+        builder.endObject();
+        builder.close();
+        return builder;
     }
 
     /**
@@ -368,14 +365,20 @@ public class GeoIpDataFacade {
         @NonNull final Iterator<CSVRecord> iterator,
         final int bulkSize,
         @NonNull final Runnable renewLock
-    ) {
+    ) throws IOException {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
         final BulkRequest bulkRequest = new BulkRequest();
+        Queue<DocWriteRequest> requests = new LinkedList<>();
+        for (int i = 0; i < bulkSize; i++) {
+            requests.add(Requests.indexRequest(indexName));
+        }
         while (iterator.hasNext()) {
             CSVRecord record = iterator.next();
-            String document = createDocument(fields, record.values());
-            IndexRequest request = Requests.indexRequest(indexName).source(document, XContentType.JSON);
-            bulkRequest.add(request);
+            XContentBuilder document = createDocument(fields, record.values());
+            IndexRequest indexRequest = (IndexRequest) requests.poll();
+            indexRequest.source(document);
+            indexRequest.id(record.get(0));
+            bulkRequest.add(indexRequest);
             if (iterator.hasNext() == false || bulkRequest.requests().size() == bulkSize) {
                 BulkResponse response = StashedThreadContext.run(client, () -> client.bulk(bulkRequest).actionGet(timeout));
                 if (response.hasFailures()) {
@@ -385,6 +388,7 @@ public class GeoIpDataFacade {
                         response.buildFailureMessage()
                     );
                 }
+                requests.addAll(bulkRequest.requests());
                 bulkRequest.requests().clear();
             }
             renewLock.run();
