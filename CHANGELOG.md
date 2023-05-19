@@ -21,4 +21,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Exclude lombok generated code from jacoco coverage report ([#268](https://github.com/opensearch-project/geospatial/pull/268))
 ### Documentation
 ### Maintenance
+* Change package for Strings.hasText ([#314](https://github.com/opensearch-project/geospatial/pull/314))
 ### Refactoring
