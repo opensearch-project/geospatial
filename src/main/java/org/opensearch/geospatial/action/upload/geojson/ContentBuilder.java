@@ -14,7 +14,7 @@ import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
-import org.opensearch.common.Strings;
+import org.opensearch.core.common.Strings;
 import org.opensearch.geospatial.GeospatialParser;
 
 /**
