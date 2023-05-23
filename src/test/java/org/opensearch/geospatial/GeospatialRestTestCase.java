@@ -118,7 +118,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request(PUT, buildDatasourcePath(name));
-        request.setJsonEntity(Strings.toString(builder));
+        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
         return client().performRequest(request);
     }
 
@@ -178,7 +178,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request(PUT, String.join(URL_DELIMITER, buildDatasourcePath(name), SETTINGS));
-        request.setJsonEntity(Strings.toString(builder));
+        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
         return client().performRequest(request);
     }
 
@@ -188,7 +188,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request(GET, String.join(URL_DELIMITER, buildPipelinePath(name), SIMULATE));
-        request.setJsonEntity(Strings.toString(builder));
+        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
         Response response = client().performRequest(request);
         return createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())).map();
     }
