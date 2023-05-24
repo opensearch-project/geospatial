@@ -18,7 +18,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +51,6 @@ import org.opensearch.client.Client;
 import org.opensearch.client.Requests;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.SuppressForbidden;
-import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -60,6 +58,7 @@ import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
+import org.opensearch.geospatial.constants.IndexSetting;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.query.QueryBuilders;
@@ -71,12 +70,22 @@ import org.opensearch.index.query.QueryBuilders;
 public class GeoIpDataFacade {
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
-    private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_SHARDS = new Tuple<>("index.number_of_shards", 1);
-    private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_REPLICAS = new Tuple<>("index.number_of_replicas", 0);
-    private static final Tuple<String, Integer> INDEX_SETTING_REFRESH_INTERVAL = new Tuple<>("index.refresh_interval", -1);
-    private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
-    private static final Tuple<String, Boolean> INDEX_SETTING_HIDDEN = new Tuple<>("index.hidden", true);
-    private static final Tuple<String, Boolean> INDEX_SETTING_BLOCKS_WRITE = new Tuple<>("index.blocks.write", true);
+    private static final Map<String, Object> INDEX_SETTING_TO_CREATE = Map.of(
+        IndexSetting.NUMBER_OF_SHARDS,
+        1,
+        IndexSetting.NUMBER_OF_REPLICAS,
+        0,
+        IndexSetting.REFRESH_INTERVAL,
+        -1,
+        IndexSetting.HIDDEN,
+        true
+    );
+    private static final Map<String, Object> INDEX_SETTING_TO_FREEZE = Map.of(
+        IndexSetting.AUTO_EXPAND_REPLICAS,
+        "0-all",
+        IndexSetting.BLOCKS_WRITE,
+        true
+    );
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
     private final Client client;
@@ -101,12 +110,8 @@ public class GeoIpDataFacade {
         if (clusterService.state().metadata().hasIndex(indexName) == true) {
             return;
         }
-        final Map<String, Object> indexSettings = new HashMap<>();
-        indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
-        indexSettings.put(INDEX_SETTING_REFRESH_INTERVAL.v1(), INDEX_SETTING_REFRESH_INTERVAL.v2());
-        indexSettings.put(INDEX_SETTING_NUM_OF_REPLICAS.v1(), INDEX_SETTING_NUM_OF_REPLICAS.v2());
-        indexSettings.put(INDEX_SETTING_HIDDEN.v1(), INDEX_SETTING_HIDDEN.v2());
-        final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings).mapping(getIndexMapping());
+        final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(INDEX_SETTING_TO_CREATE)
+            .mapping(getIndexMapping());
         StashedThreadContext.run(
             client,
             () -> client.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
@@ -118,13 +123,10 @@ public class GeoIpDataFacade {
         StashedThreadContext.run(client, () -> {
             client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
             client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
-            Map<String, Object> settings = new HashMap<>();
-            settings.put(INDEX_SETTING_BLOCKS_WRITE.v1(), INDEX_SETTING_BLOCKS_WRITE.v2());
-            settings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
             client.admin()
                 .indices()
                 .prepareUpdateSettings(indexName)
-                .setSettings(settings)
+                .setSettings(INDEX_SETTING_TO_FREEZE)
                 .execute()
                 .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
         });

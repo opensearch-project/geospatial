@@ -5,6 +5,10 @@
 
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
+import static org.opensearch.geospatial.constants.IndexSetting.AUTO_EXPAND_REPLICAS;
+import static org.opensearch.geospatial.constants.IndexSetting.HIDDEN;
+import static org.opensearch.geospatial.constants.IndexSetting.NUMBER_OF_SHARDS;
+
 import java.util.Map;
 
 import org.opensearch.jobscheduler.spi.JobSchedulerExtension;
@@ -29,14 +33,7 @@ public class DatasourceExtension implements JobSchedulerExtension {
      * We want it to be single shard so that job can be run only in a single node by job scheduler.
      * We want it to expand to all replicas so that querying to this index can be done locally to reduce latency.
      */
-    public static final Map<String, Object> INDEX_SETTING = Map.of(
-        "index.number_of_shards",
-        1,
-        "index.auto_expand_replicas",
-        "0-all",
-        "index.hidden",
-        true
-    );
+    public static final Map<String, Object> INDEX_SETTING = Map.of(NUMBER_OF_SHARDS, 1, AUTO_EXPAND_REPLICAS, "0-all", HIDDEN, true);
 
     @Override
     public String getJobType() {
