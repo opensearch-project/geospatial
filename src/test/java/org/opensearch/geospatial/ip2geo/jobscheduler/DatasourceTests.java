@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.opensearch.common.Randomness;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
@@ -75,14 +74,6 @@ public class DatasourceTests extends Ip2GeoTestCase {
             String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, updatedAt),
             datasource.indexNameFor(manifest)
         );
-    }
-
-    public void testGetJitter() {
-        Datasource datasource = new Datasource();
-        datasource.setSchedule(new IntervalSchedule(Instant.now(), Randomness.get().ints(1, 31).findFirst().getAsInt(), ChronoUnit.DAYS));
-        long intervalInMinutes = datasource.getSchedule().getInterval() * 60l * 24l;
-        double sixMinutes = 6;
-        assertTrue(datasource.getJitter() * intervalInMinutes <= sixMinutes);
     }
 
     public void testIsExpired() {
