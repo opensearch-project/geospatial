@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import lombok.SneakyThrows;
+
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.OpenSearchException;
@@ -316,6 +318,45 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
             anyMap(),
             any(ActionListener.class)
         );
+    }
+
+    @SneakyThrows
+    public void testHandleSingleIp_whenEmptyGeoData_thenTargetFieldShouldNotSet() {
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
+        Map<String, Object> source = new HashMap<>();
+        String ip = randomIpAddress();
+        source.put("ip", ip);
+        Map<String, Object> ipToGeoData = Collections.emptyMap();
+        IngestDocument document = new IngestDocument(source, new HashMap<>());
+        BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
+
+        // Run
+        processor.handleSingleIp(ip, ipToGeoData, document, handler);
+
+        // Verify
+        assertFalse(document.hasField(DEFAULT_TARGET_FIELD));
+        verify(handler).accept(document, null);
+    }
+
+    @SneakyThrows
+    public void testHandleSingleIp_whenNoValueForGivenProperty_thenDoNotAdd() {
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        Ip2GeoProcessor processor = createProcessor(datasourceName, Map.of("properties", Arrays.asList("city", "country")));
+        Map<String, Object> source = new HashMap<>();
+        String ip = randomIpAddress();
+        source.put("ip", ip);
+        Map<String, Object> ipToGeoData = Map.of("country", "USA");
+        IngestDocument document = new IngestDocument(source, new HashMap<>());
+        BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
+
+        // Run
+        processor.handleSingleIp(ip, ipToGeoData, document, handler);
+
+        // Verify
+        assertEquals("USA", document.getFieldValue(DEFAULT_TARGET_FIELD, Map.class).get("country"));
+        assertNull(document.getFieldValue(DEFAULT_TARGET_FIELD, Map.class).get("city"));
+        verify(handler).accept(document, null);
     }
 
     private Ip2GeoProcessor createProcessor(final String datasourceName, final Map<String, Object> config) throws Exception {
