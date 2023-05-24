@@ -12,9 +12,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -40,7 +38,6 @@ import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.bytes.BytesReference;
-import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -62,9 +59,6 @@ import org.opensearch.search.SearchHit;
 @Log4j2
 public class DatasourceFacade {
     private static final Integer MAX_SIZE = 1000;
-    private static final Tuple<String, Integer> INDEX_SETTING_NUM_OF_SHARDS = new Tuple<>("index.number_of_shards", 1);
-    private static final Tuple<String, String> INDEX_SETTING_AUTO_EXPAND_REPLICAS = new Tuple<>("index.auto_expand_replicas", "0-all");
-    private static final Tuple<String, Boolean> INDEX_SETTING_HIDDEN = new Tuple<>("index.hidden", true);
     private final Client client;
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
@@ -76,22 +70,17 @@ public class DatasourceFacade {
     }
 
     /**
-     * Create a datasource index of single shard with auto expand replicas to all nodes
+     * Create datasource index
      *
-     * We want the index to expand to all replica so that datasource query request can be executed locally
-     * for faster ingestion time.
+     * @param stepListener setp listener
      */
     public void createIndexIfNotExists(final StepListener<Void> stepListener) {
         if (clusterService.state().metadata().hasIndex(DatasourceExtension.JOB_INDEX_NAME) == true) {
             stepListener.onResponse(null);
             return;
         }
-        final Map<String, Object> indexSettings = new HashMap<>();
-        indexSettings.put(INDEX_SETTING_NUM_OF_SHARDS.v1(), INDEX_SETTING_NUM_OF_SHARDS.v2());
-        indexSettings.put(INDEX_SETTING_AUTO_EXPAND_REPLICAS.v1(), INDEX_SETTING_AUTO_EXPAND_REPLICAS.v2());
-        indexSettings.put(INDEX_SETTING_HIDDEN.v1(), INDEX_SETTING_HIDDEN.v2());
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(DatasourceExtension.JOB_INDEX_NAME).mapping(getIndexMapping())
-            .settings(indexSettings);
+            .settings(DatasourceExtension.INDEX_SETTING);
         StashedThreadContext.run(client, () -> client.admin().indices().create(createIndexRequest, new ActionListener<>() {
             @Override
             public void onResponse(final CreateIndexResponse createIndexResponse) {
