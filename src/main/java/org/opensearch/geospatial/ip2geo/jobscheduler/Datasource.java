@@ -51,9 +51,6 @@ public class Datasource implements Writeable, ScheduledJobParameter {
      * Prefix of indices having Ip2Geo data
      */
     public static final String IP2GEO_DATA_INDEX_NAME_PREFIX = ".ip2geo-data";
-    private static final long MAX_JITTER_IN_MINUTES = 5;
-    private static final long ONE_DAY_IN_HOURS = 24;
-    private static final long ONE_HOUR_IN_MINUTES = 60;
 
     /**
      * Default fields for job scheduling
@@ -283,21 +280,6 @@ public class Datasource implements Writeable, ScheduledJobParameter {
     @Override
     public Long getLockDurationSeconds() {
         return Ip2GeoLockService.LOCK_DURATION_IN_SECONDS;
-    }
-
-    /**
-     * Jitter in scheduling a task
-     *
-     * We want a job to be delayed randomly with range of (0, 5) minutes for the
-     * next execution time.
-     *
-     * @see ScheduledJobParameter#getJitter()
-     *
-     * @return the jitter
-     */
-    @Override
-    public Double getJitter() {
-        return MAX_JITTER_IN_MINUTES / ((double) schedule.getInterval() * ONE_DAY_IN_HOURS * ONE_HOUR_IN_MINUTES);
     }
 
     /**
