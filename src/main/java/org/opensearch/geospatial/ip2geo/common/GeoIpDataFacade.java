@@ -34,6 +34,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.logging.log4j.util.Strings;
 import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.action.ActionListener;
@@ -220,6 +221,9 @@ public class GeoIpDataFacade {
         builder.field(IP_RANGE_FIELD_NAME, values[0]);
         builder.startObject(DATA_FIELD_NAME);
         for (int i = 1; i < fields.length; i++) {
+            if (Strings.isBlank(values[i])) {
+                continue;
+            }
             builder.field(fields[i], values[i]);
         }
         builder.endObject();

@@ -198,6 +198,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
         filteredGeoData = properties.stream()
             .filter(p -> p.equals(PROPERTY_IP) == false)
+            .filter(p -> geoData.containsKey(p))
             .collect(Collectors.toMap(p -> p, p -> geoData.get(p)));
         if (properties.contains(PROPERTY_IP)) {
             filteredGeoData.put(PROPERTY_IP, ip);

@@ -105,9 +105,9 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
     }
 
     @SneakyThrows
-    public void testCreateDocument() {
-        String[] names = { "ip", "country", "city" };
-        String[] values = { "1.0.0.0/25", "USA", "Seattle" };
+    public void testCreateDocument_whenBlankValue_thenDoNotAdd() {
+        String[] names = { "ip", "country", "location", "city" };
+        String[] values = { "1.0.0.0/25", "USA", " ", "Seattle" };
         assertEquals(
             "{\"_cidr\":\"1.0.0.0/25\",\"_data\":{\"country\":\"USA\",\"city\":\"Seattle\"}}",
             Strings.toString(noOpsGeoIpDataFacade.createDocument(names, values))
