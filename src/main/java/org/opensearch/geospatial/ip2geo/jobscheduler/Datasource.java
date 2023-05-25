@@ -59,7 +59,28 @@ public class Datasource implements Writeable, ScheduledJobParameter {
     private static final ParseField ENABLED_FIELD = new ParseField("update_enabled");
     private static final ParseField LAST_UPDATE_TIME_FIELD = new ParseField("last_update_time");
     private static final ParseField LAST_UPDATE_TIME_FIELD_READABLE = new ParseField("last_update_time_field");
-    private static final ParseField SCHEDULE_FIELD = new ParseField("schedule");
+    /**
+     * Schedule that user set
+     */
+    private static final ParseField USER_SCHEDULE_FIELD = new ParseField("user_schedule");
+    /**
+     * System schedule which will be used by job scheduler
+     *
+     * If datasource is going to get expired before next update, we want to run clean up task before the next update
+     * by changing system schedule.
+     *
+     * If datasource is restored from snapshot, we want to run clean up task immediately to handle expired datasource
+     * by changing system schedule.
+     *
+     * For every task run, we revert system schedule back to user schedule.
+     */
+    private static final ParseField SYSTEM_SCHEDULE_FIELD = new ParseField("system_schedule");
+    /**
+     * {@link DatasourceTask} that DatasourceRunner will execute in next run
+     *
+     * For every task run, we revert task back to {@link DatasourceTask#ALL}
+     */
+    private static final ParseField TASK_FIELD = new ParseField("task");
     private static final ParseField ENABLED_TIME_FIELD = new ParseField("enabled_time");
     private static final ParseField ENABLED_TIME_FIELD_READABLE = new ParseField("enabled_time_field");
 
@@ -97,10 +118,22 @@ public class Datasource implements Writeable, ScheduledJobParameter {
      */
     private boolean isEnabled;
     /**
-     * @param schedule Schedule for a GeoIP data update
-     * @return Schedule for the job scheduler
+     * @param userSchedule Schedule that user provided
+     * @return Schedule that user provided
      */
-    private IntervalSchedule schedule;
+    private IntervalSchedule userSchedule;
+
+    /**
+     * @param systemSchedule Schedule that job scheduler use
+     * @return Schedule that job scheduler use
+     */
+    private IntervalSchedule systemSchedule;
+
+    /**
+     * @param task Task that {@link DatasourceRunner} will execute
+     * @return Task that {@link DatasourceRunner} will execute
+     */
+    private DatasourceTask task;
 
     /**
      * Additional variables for datasource
@@ -143,18 +176,22 @@ public class Datasource implements Writeable, ScheduledJobParameter {
             Instant lastUpdateTime = Instant.ofEpochMilli((long) args[1]);
             Instant enabledTime = args[2] == null ? null : Instant.ofEpochMilli((long) args[2]);
             boolean isEnabled = (boolean) args[3];
-            IntervalSchedule schedule = (IntervalSchedule) args[4];
-            String endpoint = (String) args[5];
-            DatasourceState state = DatasourceState.valueOf((String) args[6]);
-            List<String> indices = (List<String>) args[7];
-            Database database = (Database) args[8];
-            UpdateStats updateStats = (UpdateStats) args[9];
+            IntervalSchedule userSchedule = (IntervalSchedule) args[4];
+            IntervalSchedule systemSchedule = (IntervalSchedule) args[5];
+            DatasourceTask task = DatasourceTask.valueOf((String) args[6]);
+            String endpoint = (String) args[7];
+            DatasourceState state = DatasourceState.valueOf((String) args[8]);
+            List<String> indices = (List<String>) args[9];
+            Database database = (Database) args[10];
+            UpdateStats updateStats = (UpdateStats) args[11];
             Datasource parameter = new Datasource(
                 name,
                 lastUpdateTime,
                 enabledTime,
                 isEnabled,
-                schedule,
+                userSchedule,
+                systemSchedule,
+                task,
                 endpoint,
                 state,
                 indices,
@@ -170,7 +207,9 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         PARSER.declareLong(ConstructingObjectParser.constructorArg(), LAST_UPDATE_TIME_FIELD);
         PARSER.declareLong(ConstructingObjectParser.optionalConstructorArg(), ENABLED_TIME_FIELD);
         PARSER.declareBoolean(ConstructingObjectParser.constructorArg(), ENABLED_FIELD);
-        PARSER.declareObject(ConstructingObjectParser.constructorArg(), (p, c) -> ScheduleParser.parse(p), SCHEDULE_FIELD);
+        PARSER.declareObject(ConstructingObjectParser.constructorArg(), (p, c) -> ScheduleParser.parse(p), USER_SCHEDULE_FIELD);
+        PARSER.declareObject(ConstructingObjectParser.constructorArg(), (p, c) -> ScheduleParser.parse(p), SYSTEM_SCHEDULE_FIELD);
+        PARSER.declareString(ConstructingObjectParser.constructorArg(), TASK_FIELD);
         PARSER.declareString(ConstructingObjectParser.constructorArg(), ENDPOINT_FIELD);
         PARSER.declareString(ConstructingObjectParser.constructorArg(), STATE_FIELD);
         PARSER.declareStringArray(ConstructingObjectParser.constructorArg(), INDICES_FIELD);
@@ -190,6 +229,8 @@ public class Datasource implements Writeable, ScheduledJobParameter {
             null,
             false,
             schedule,
+            schedule,
+            DatasourceTask.ALL,
             endpoint,
             DatasourceState.CREATING,
             new ArrayList<>(),
@@ -203,7 +244,9 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         lastUpdateTime = toInstant(in.readVLong());
         enabledTime = toInstant(in.readOptionalVLong());
         isEnabled = in.readBoolean();
-        schedule = new IntervalSchedule(in);
+        userSchedule = new IntervalSchedule(in);
+        systemSchedule = new IntervalSchedule(in);
+        task = DatasourceTask.valueOf(in.readString());
         endpoint = in.readString();
         state = DatasourceState.valueOf(in.readString());
         indices = in.readStringList();
@@ -217,7 +260,9 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         out.writeVLong(lastUpdateTime.toEpochMilli());
         out.writeOptionalVLong(enabledTime == null ? null : enabledTime.toEpochMilli());
         out.writeBoolean(isEnabled);
-        schedule.writeTo(out);
+        userSchedule.writeTo(out);
+        systemSchedule.writeTo(out);
+        out.writeString(task.name());
         out.writeString(endpoint);
         out.writeString(state.name());
         out.writeStringCollection(indices);
@@ -242,7 +287,9 @@ public class Datasource implements Writeable, ScheduledJobParameter {
             );
         }
         builder.field(ENABLED_FIELD.getPreferredName(), isEnabled);
-        builder.field(SCHEDULE_FIELD.getPreferredName(), schedule);
+        builder.field(USER_SCHEDULE_FIELD.getPreferredName(), userSchedule);
+        builder.field(SYSTEM_SCHEDULE_FIELD.getPreferredName(), systemSchedule);
+        builder.field(TASK_FIELD.getPreferredName(), task.name());
         builder.field(ENDPOINT_FIELD.getPreferredName(), endpoint);
         builder.field(STATE_FIELD.getPreferredName(), state.name());
         builder.field(INDICES_FIELD.getPreferredName(), indices);
@@ -269,7 +316,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
 
     @Override
     public IntervalSchedule getSchedule() {
-        return schedule;
+        return systemSchedule;
     }
 
     @Override
