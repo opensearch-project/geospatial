@@ -46,7 +46,7 @@ public class DatasourceTests extends Ip2GeoTestCase {
         assertTrue(datasource.equals(anotherDatasource));
     }
 
-    public void testCurrentIndexName() {
+    public void testCurrentIndexName_whenNotExpired_thenReturnName() {
         String id = GeospatialTestHelper.randomLowerCaseString();
         Instant now = Instant.now();
         Datasource datasource = new Datasource();
@@ -54,12 +54,28 @@ public class DatasourceTests extends Ip2GeoTestCase {
         datasource.getDatabase().setProvider("provider");
         datasource.getDatabase().setSha256Hash("sha256Hash");
         datasource.getDatabase().setUpdatedAt(now);
-        datasource.getDatabase().setValidForInDays(10l);
         datasource.getDatabase().setFields(new ArrayList<>());
+
         assertEquals(
             String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, now.toEpochMilli()),
             datasource.currentIndexName()
         );
+    }
+
+    public void testCurrentIndexName_whenExpired_thenReturnNull() {
+        String id = GeospatialTestHelper.randomLowerCaseString();
+        Instant now = Instant.now();
+        Datasource datasource = new Datasource();
+        datasource.setName(id);
+        datasource.getDatabase().setProvider("provider");
+        datasource.getDatabase().setSha256Hash("sha256Hash");
+        datasource.getDatabase().setUpdatedAt(now);
+        datasource.getDatabase().setValidForInDays(1l);
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now().minus(25, ChronoUnit.HOURS));
+        datasource.getDatabase().setFields(new ArrayList<>());
+
+        assertTrue(datasource.isExpired());
+        assertNull(datasource.currentIndexName());
     }
 
     public void testGetIndexNameFor() {

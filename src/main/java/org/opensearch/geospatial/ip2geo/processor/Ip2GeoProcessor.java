@@ -153,11 +153,19 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
             @Override
             public void onResponse(final Datasource datasource) {
-                if (handleInvalidDatasource(ingestDocument, datasource, handler)) {
+                if (datasource == null) {
+                    handler.accept(null, new IllegalStateException("datasource does not exist"));
                     return;
                 }
 
-                geoIpDataFacade.getGeoIpData(datasource.currentIndexName(), ip, new ActionListener<>() {
+                String indexName = datasource.currentIndexName();
+                if (indexName == null) {
+                    ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
+                    handler.accept(ingestDocument, null);
+                    return;
+                }
+
+                geoIpDataFacade.getGeoIpData(indexName, ip, new ActionListener<>() {
                     @Override
                     public void onResponse(final Map<String, Object> ipToGeoData) {
                         handleSingleIp(ip, ipToGeoData, ingestDocument, handler);
@@ -229,12 +237,20 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
             @Override
             public void onResponse(final Datasource datasource) {
-                if (handleInvalidDatasource(ingestDocument, datasource, handler)) {
+                if (datasource == null) {
+                    handler.accept(null, new IllegalStateException("datasource does not exist"));
+                    return;
+                }
+
+                String indexName = datasource.currentIndexName();
+                if (indexName == null) {
+                    ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
+                    handler.accept(ingestDocument, null);
                     return;
                 }
 
                 geoIpDataFacade.getGeoIpData(
-                    datasource.currentIndexName(),
+                    indexName,
                     ipList.iterator(),
                     clusterSettings.get(Ip2GeoSettings.MAX_BUNDLE_SIZE),
                     clusterSettings.get(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES),
@@ -296,25 +312,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 handler.accept(null, e);
             }
         };
-    }
-
-    @VisibleForTesting
-    protected boolean handleInvalidDatasource(
-        final IngestDocument ingestDocument,
-        final Datasource datasource,
-        final BiConsumer<IngestDocument, Exception> handler
-    ) {
-        if (datasource == null) {
-            handler.accept(null, new IllegalStateException("datasource does not exist"));
-            return true;
-        }
-
-        if (datasource.isExpired()) {
-            ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
-            handler.accept(ingestDocument, null);
-            return true;
-        }
-        return false;
     }
 
     @Override
