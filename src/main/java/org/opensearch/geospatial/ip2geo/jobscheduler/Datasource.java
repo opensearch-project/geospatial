@@ -307,7 +307,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
      * @return Current index name of a datasource
      */
     public String currentIndexName() {
-        return indexNameFor(database.updatedAt.toEpochMilli());
+        return isExpired() ? null : indexNameFor(database.updatedAt.toEpochMilli());
     }
 
     /**
