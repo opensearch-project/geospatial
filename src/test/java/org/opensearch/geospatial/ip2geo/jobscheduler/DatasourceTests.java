@@ -78,6 +78,21 @@ public class DatasourceTests extends Ip2GeoTestCase {
         assertNull(datasource.currentIndexName());
     }
 
+    public void testCurrentIndexName_whenDatabaseUpdateDateIsNull_thenReturnNull() {
+        String id = GeospatialTestHelper.randomLowerCaseString();
+        Datasource datasource = new Datasource();
+        datasource.setName(id);
+        datasource.getDatabase().setProvider("provider");
+        datasource.getDatabase().setSha256Hash("sha256Hash");
+        datasource.getDatabase().setUpdatedAt(null);
+        datasource.getDatabase().setValidForInDays(1l);
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now());
+        datasource.getDatabase().setFields(new ArrayList<>());
+
+        assertFalse(datasource.isExpired());
+        assertNull(datasource.currentIndexName());
+    }
+
     public void testGetIndexNameFor() {
         long updatedAt = randomPositiveLong();
         DatasourceManifest manifest = mock(DatasourceManifest.class);
@@ -90,6 +105,19 @@ public class DatasourceTests extends Ip2GeoTestCase {
             String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, id, updatedAt),
             datasource.indexNameFor(manifest)
         );
+    }
+
+    public void testResetDatabase_whenCalled_thenNullifySomeFields() {
+        Datasource datasource = randomDatasource();
+        assertNotNull(datasource.getDatabase().getSha256Hash());
+        assertNotNull(datasource.getDatabase().getUpdatedAt());
+
+        // Run
+        datasource.resetDatabase();
+
+        // Verify
+        assertNull(datasource.getDatabase().getSha256Hash());
+        assertNull(datasource.getDatabase().getUpdatedAt());
     }
 
     public void testIsExpired_whenCalled_thenExpectedValue() {

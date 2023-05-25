@@ -26,11 +26,14 @@ import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.create.CreateIndexResponse;
+import org.opensearch.action.bulk.BulkRequest;
+import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.delete.DeleteResponse;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.get.MultiGetItemResponse;
 import org.opensearch.action.get.MultiGetResponse;
+import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.IndicesOptions;
@@ -131,6 +134,33 @@ public class DatasourceFacade {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * Update datasources in an index {@code DatasourceExtension.JOB_INDEX_NAME}
+     * @param datasources the datasources
+     * @param listener action listener
+     */
+    public void updateDatasource(final List<Datasource> datasources, final ActionListener<BulkResponse> listener) {
+        BulkRequest bulkRequest = new BulkRequest();
+        datasources.stream().map(datasource -> {
+            datasource.setLastUpdateTime(Instant.now());
+            return datasource;
+        }).map(this::toIndexRequest).forEach(indexRequest -> bulkRequest.add(indexRequest));
+        StashedThreadContext.run(client, () -> client.bulk(bulkRequest, listener));
+    }
+
+    private IndexRequest toIndexRequest(Datasource datasource) {
+        try {
+            IndexRequest indexRequest = new IndexRequest();
+            indexRequest.index(DatasourceExtension.JOB_INDEX_NAME);
+            indexRequest.id(datasource.getName());
+            indexRequest.opType(DocWriteRequest.OpType.INDEX);
+            indexRequest.source(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS));
+            return indexRequest;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

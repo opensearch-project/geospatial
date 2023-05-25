@@ -25,6 +25,7 @@ import org.opensearch.action.ActionResponse;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.component.LifecycleComponent;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
@@ -42,6 +43,7 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
+import org.opensearch.geospatial.ip2geo.listener.Ip2GeoListener;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
@@ -157,6 +159,12 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
             registeredComponents.add(component.getClass());
         }
         assertEquals(SUPPORTED_COMPONENTS, registeredComponents);
+    }
+
+    public void testGetGuiceServiceClasses() {
+        GeospatialPlugin plugin = new GeospatialPlugin();
+        Collection<Class<? extends LifecycleComponent>> classes = List.of(Ip2GeoListener.class);
+        assertEquals(classes, plugin.getGuiceServiceClasses());
     }
 
     public void testIsAnIngestPlugin() {

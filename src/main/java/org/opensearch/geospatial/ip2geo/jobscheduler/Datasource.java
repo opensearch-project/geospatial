@@ -354,7 +354,15 @@ public class Datasource implements Writeable, ScheduledJobParameter {
      * @return Current index name of a datasource
      */
     public String currentIndexName() {
-        return isExpired() ? null : indexNameFor(database.updatedAt.toEpochMilli());
+        if (isExpired()) {
+            return null;
+        }
+
+        if (database.updatedAt == null) {
+            return null;
+        }
+
+        return indexNameFor(database.updatedAt.toEpochMilli());
     }
 
     /**
@@ -369,6 +377,14 @@ public class Datasource implements Writeable, ScheduledJobParameter {
 
     private String indexNameFor(final long suffix) {
         return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, name, suffix);
+    }
+
+    /**
+     * Reset database so that it can be updated in next run regardless there is new update or not
+     */
+    public void resetDatabase() {
+        database.setUpdatedAt(null);
+        database.setSha256Hash(null);
     }
 
     /**
@@ -537,7 +553,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         public void writeTo(final StreamOutput out) throws IOException {
             out.writeOptionalString(provider);
             out.writeOptionalString(sha256Hash);
-            out.writeOptionalVLong(updatedAt.toEpochMilli());
+            out.writeOptionalVLong(updatedAt == null ? null : updatedAt.toEpochMilli());
             out.writeOptionalVLong(validForInDays);
             out.writeOptionalStringCollection(fields);
         }
@@ -640,10 +656,10 @@ public class Datasource implements Writeable, ScheduledJobParameter {
 
         @Override
         public void writeTo(final StreamOutput out) throws IOException {
-            out.writeOptionalVLong(lastSucceededAt.toEpochMilli());
+            out.writeOptionalVLong(lastSucceededAt == null ? null : lastSucceededAt.toEpochMilli());
             out.writeOptionalVLong(lastProcessingTimeInMillis);
-            out.writeOptionalVLong(lastFailedAt.toEpochMilli());
-            out.writeOptionalVLong(lastSkippedAt.toEpochMilli());
+            out.writeOptionalVLong(lastFailedAt == null ? null : lastFailedAt.toEpochMilli());
+            out.writeOptionalVLong(lastSkippedAt == null ? null : lastSkippedAt.toEpochMilli());
         }
 
         @Override
