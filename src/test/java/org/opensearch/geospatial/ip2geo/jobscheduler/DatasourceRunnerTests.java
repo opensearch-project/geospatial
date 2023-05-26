@@ -17,7 +17,9 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import lombok.SneakyThrows;
 
@@ -32,6 +34,7 @@ import org.opensearch.jobscheduler.spi.JobDocVersion;
 import org.opensearch.jobscheduler.spi.JobExecutionContext;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
+import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 public class DatasourceRunnerTests extends Ip2GeoTestCase {
     @Before
@@ -138,9 +141,8 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
 
     @SneakyThrows
     public void testUpdateDatasource_whenValidInput_thenSucceed() {
-        Datasource datasource = new Datasource();
+        Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
-        datasource.setName(randomLowerCaseString());
         when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
         Runnable renewLock = mock(Runnable.class);
 
@@ -150,6 +152,65 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         // Verify
         verify(datasourceUpdateService, times(2)).deleteUnusedIndices(datasource);
         verify(datasourceUpdateService).updateOrCreateGeoIpData(datasource, renewLock);
+        verify(datasourceUpdateService).updateDatasource(datasource, datasource.getUserSchedule(), DatasourceTask.ALL);
+    }
+
+    @SneakyThrows
+    public void testUpdateDatasource_whenDeleteTask_thenDeleteOnly() {
+        Datasource datasource = randomDatasource();
+        datasource.setState(DatasourceState.AVAILABLE);
+        datasource.setTask(DatasourceTask.DELETE_UNUSED_INDICES);
+        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        Runnable renewLock = mock(Runnable.class);
+
+        // Run
+        DatasourceRunner.getJobRunnerInstance().updateDatasource(datasource, renewLock);
+
+        // Verify
+        verify(datasourceUpdateService, times(2)).deleteUnusedIndices(datasource);
+        verify(datasourceUpdateService, never()).updateOrCreateGeoIpData(datasource, renewLock);
+        verify(datasourceUpdateService).updateDatasource(datasource, datasource.getUserSchedule(), DatasourceTask.ALL);
+    }
+
+    @SneakyThrows
+    public void testUpdateDatasource_whenExpired_thenDeleteIndicesAgain() {
+        Datasource datasource = randomDatasource();
+        datasource.getUpdateStats().setLastSkippedAt(null);
+        datasource.getUpdateStats()
+            .setLastSucceededAt(Instant.now().minus(datasource.getDatabase().getValidForInDays() + 1, ChronoUnit.DAYS));
+        datasource.setState(DatasourceState.AVAILABLE);
+        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        Runnable renewLock = mock(Runnable.class);
+
+        // Run
+        DatasourceRunner.getJobRunnerInstance().updateDatasource(datasource, renewLock);
+
+        // Verify
+        verify(datasourceUpdateService, times(3)).deleteUnusedIndices(datasource);
+        verify(datasourceUpdateService).updateOrCreateGeoIpData(datasource, renewLock);
+        verify(datasourceUpdateService).updateDatasource(datasource, datasource.getUserSchedule(), DatasourceTask.ALL);
+    }
+
+    @SneakyThrows
+    public void testUpdateDatasource_whenWillExpire_thenScheduleDeleteTask() {
+        Datasource datasource = randomDatasource();
+        datasource.getUpdateStats().setLastSkippedAt(null);
+        datasource.getUpdateStats()
+            .setLastSucceededAt(Instant.now().minus(datasource.getDatabase().getValidForInDays(), ChronoUnit.DAYS).plusSeconds(60));
+        datasource.setState(DatasourceState.AVAILABLE);
+        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        Runnable renewLock = mock(Runnable.class);
+
+        // Run
+        DatasourceRunner.getJobRunnerInstance().updateDatasource(datasource, renewLock);
+
+        // Verify
+        verify(datasourceUpdateService, times(2)).deleteUnusedIndices(datasource);
+        verify(datasourceUpdateService).updateOrCreateGeoIpData(datasource, renewLock);
+
+        ArgumentCaptor<IntervalSchedule> captor = ArgumentCaptor.forClass(IntervalSchedule.class);
+        verify(datasourceUpdateService).updateDatasource(eq(datasource), captor.capture(), eq(DatasourceTask.DELETE_UNUSED_INDICES));
+        assertTrue(Duration.between(datasource.expirationDay(), captor.getValue().getNextExecutionTime(Instant.now())).getSeconds() < 30);
     }
 
     @SneakyThrows

@@ -92,7 +92,7 @@ public class DatasourceTests extends Ip2GeoTestCase {
         );
     }
 
-    public void testIsExpired() {
+    public void testIsExpired_whenCalled_thenExpectedValue() {
         Datasource datasource = new Datasource();
         // never expire if validForInDays is null
         assertFalse(datasource.isExpired());
@@ -109,6 +109,57 @@ public class DatasourceTests extends Ip2GeoTestCase {
         datasource.getUpdateStats().setLastSkippedAt(Instant.now().minus(25, ChronoUnit.HOURS));
         datasource.getUpdateStats().setLastSucceededAt(Instant.now());
         assertFalse(datasource.isExpired());
+    }
+
+    public void testWillExpired_whenCalled_thenExpectedValue() {
+        Datasource datasource = new Datasource();
+        // never expire if validForInDays is null
+        assertFalse(datasource.willExpire(Instant.MAX));
+
+        long validForInDays = 1;
+        datasource.getDatabase().setValidForInDays(validForInDays);
+
+        // if last skipped date is null, use only last succeeded date to determine
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now().minus(1, ChronoUnit.DAYS));
+        assertTrue(
+            datasource.willExpire(datasource.getUpdateStats().getLastSucceededAt().plus(validForInDays, ChronoUnit.DAYS).plusSeconds(1))
+        );
+        assertFalse(datasource.willExpire(datasource.getUpdateStats().getLastSucceededAt().plus(validForInDays, ChronoUnit.DAYS)));
+
+        // use the latest date between last skipped date and last succeeded date to determine
+        datasource.getUpdateStats().setLastSkippedAt(Instant.now());
+        assertTrue(
+            datasource.willExpire(datasource.getUpdateStats().getLastSkippedAt().plus(validForInDays, ChronoUnit.DAYS).plusSeconds(1))
+        );
+        assertFalse(datasource.willExpire(datasource.getUpdateStats().getLastSkippedAt().plus(validForInDays, ChronoUnit.DAYS)));
+
+        datasource.getUpdateStats().setLastSkippedAt(Instant.now().minus(1, ChronoUnit.HOURS));
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now());
+        assertTrue(
+            datasource.willExpire(datasource.getUpdateStats().getLastSucceededAt().plus(validForInDays, ChronoUnit.DAYS).plusSeconds(1))
+        );
+        assertFalse(datasource.willExpire(datasource.getUpdateStats().getLastSucceededAt().plus(validForInDays, ChronoUnit.DAYS)));
+    }
+
+    public void testExpirationDay_whenCalled_thenExpectedValue() {
+        Datasource datasource = new Datasource();
+        datasource.getDatabase().setValidForInDays(null);
+        assertEquals(Instant.MAX, datasource.expirationDay());
+
+        long validForInDays = 1;
+        datasource.getDatabase().setValidForInDays(validForInDays);
+
+        // if last skipped date is null, use only last succeeded date to determine
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now().minus(1, ChronoUnit.DAYS));
+        assertEquals(datasource.getUpdateStats().getLastSucceededAt().plus(validForInDays, ChronoUnit.DAYS), datasource.expirationDay());
+
+        // use the latest date between last skipped date and last succeeded date to determine
+        datasource.getUpdateStats().setLastSkippedAt(Instant.now());
+        assertEquals(datasource.getUpdateStats().getLastSkippedAt().plus(validForInDays, ChronoUnit.DAYS), datasource.expirationDay());
+
+        datasource.getUpdateStats().setLastSkippedAt(Instant.now().minus(1, ChronoUnit.HOURS));
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now());
+        assertEquals(datasource.getUpdateStats().getLastSucceededAt().plus(validForInDays, ChronoUnit.DAYS), datasource.expirationDay());
     }
 
     public void testLockDurationSeconds() {

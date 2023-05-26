@@ -7,6 +7,7 @@ package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.extern.log4j.Log4j2;
@@ -21,6 +22,7 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.jobscheduler.spi.JobExecutionContext;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.ScheduledJobRunner;
+import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 /**
  * Datasource update task
@@ -29,6 +31,8 @@ import org.opensearch.jobscheduler.spi.ScheduledJobRunner;
  */
 @Log4j2
 public class DatasourceRunner implements ScheduledJobRunner {
+    private static final int DELETE_INDEX_RETRY_IN_MIN = 15;
+    private static final int DELETE_INDEX_DELAY_IN_MILLIS = 10000;
 
     private static DatasourceRunner INSTANCE;
 
@@ -141,12 +145,37 @@ public class DatasourceRunner implements ScheduledJobRunner {
 
         try {
             datasourceUpdateService.deleteUnusedIndices(datasource);
-            datasourceUpdateService.updateOrCreateGeoIpData(datasource, renewLock);
+            if (DatasourceTask.DELETE_UNUSED_INDICES.equals(datasource.getTask()) == false) {
+                datasourceUpdateService.updateOrCreateGeoIpData(datasource, renewLock);
+            }
             datasourceUpdateService.deleteUnusedIndices(datasource);
         } catch (Exception e) {
             log.error("Failed to update datasource for {}", datasource.getName(), e);
             datasource.getUpdateStats().setLastFailedAt(Instant.now());
             datasourceFacade.updateDatasource(datasource);
+        } finally {
+            postProcessing(datasource);
+        }
+    }
+
+    private void postProcessing(final Datasource datasource) {
+        if (datasource.isExpired()) {
+            // Try to delete again as it could have just been expired
+            datasourceUpdateService.deleteUnusedIndices(datasource);
+            datasourceUpdateService.updateDatasource(datasource, datasource.getUserSchedule(), DatasourceTask.ALL);
+            return;
+        }
+
+        if (datasource.willExpire(datasource.getUserSchedule().getNextExecutionTime(Instant.now()))) {
+            IntervalSchedule intervalSchedule = new IntervalSchedule(
+                datasource.expirationDay(),
+                DELETE_INDEX_RETRY_IN_MIN,
+                ChronoUnit.MINUTES,
+                DELETE_INDEX_DELAY_IN_MILLIS
+            );
+            datasourceUpdateService.updateDatasource(datasource, intervalSchedule, DatasourceTask.DELETE_UNUSED_INDICES);
+        } else {
+            datasourceUpdateService.updateDatasource(datasource, datasource.getUserSchedule(), DatasourceTask.ALL);
         }
     }
 }

@@ -26,6 +26,7 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 @Log4j2
 public class DatasourceUpdateService {
@@ -117,23 +118,46 @@ public class DatasourceUpdateService {
     /**
      * Delete all indices except the one which are being used
      *
-     * @param parameter
+     * @param datasource
      */
-    public void deleteUnusedIndices(final Datasource parameter) {
+    public void deleteUnusedIndices(final Datasource datasource) {
         try {
-            List<String> indicesToDelete = parameter.getIndices()
+            List<String> indicesToDelete = datasource.getIndices()
                 .stream()
-                .filter(index -> index.equals(parameter.currentIndexName()) == false)
+                .filter(index -> index.equals(datasource.currentIndexName()) == false)
                 .collect(Collectors.toList());
 
             List<String> deletedIndices = deleteIndices(indicesToDelete);
 
             if (deletedIndices.isEmpty() == false) {
-                parameter.getIndices().removeAll(deletedIndices);
-                datasourceFacade.updateDatasource(parameter);
+                datasource.getIndices().removeAll(deletedIndices);
+                datasourceFacade.updateDatasource(datasource);
             }
         } catch (Exception e) {
-            log.error("Failed to delete old indices for {}", parameter.getName(), e);
+            log.error("Failed to delete old indices for {}", datasource.getName(), e);
+        }
+    }
+
+    /**
+     * Update datasource with given systemSchedule and task
+     *
+     * @param datasource datasource to update
+     * @param systemSchedule new system schedule value
+     * @param task new task value
+     */
+    public void updateDatasource(final Datasource datasource, final IntervalSchedule systemSchedule, final DatasourceTask task) {
+        boolean updated = false;
+        if (datasource.getSystemSchedule().equals(systemSchedule) == false) {
+            datasource.setSystemSchedule(systemSchedule);
+            updated = true;
+        }
+        if (datasource.getTask().equals(task) == false) {
+            datasource.setTask(task);
+            updated = true;
+        }
+
+        if (updated) {
+            datasourceFacade.updateDatasource(datasource);
         }
     }
 
