@@ -50,6 +50,7 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoProcessorFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
 import org.opensearch.ingest.IngestMetadata;
@@ -143,6 +144,13 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             .get(Randomness.createSecure().nextInt(DatasourceState.values().length - 1));
     }
 
+    protected DatasourceTask randomTask() {
+        return Arrays.stream(DatasourceTask.values())
+            .sequential()
+            .collect(Collectors.toList())
+            .get(Randomness.createSecure().nextInt(DatasourceTask.values().length - 1));
+    }
+
     protected String randomIpAddress() {
         return String.format(
             Locale.ROOT,
@@ -183,7 +191,9 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Datasource datasource = new Datasource();
         datasource.setName(GeospatialTestHelper.randomLowerCaseString());
-        datasource.setSchedule(new IntervalSchedule(now, Randomness.get().nextInt(28) + 1, ChronoUnit.DAYS));
+        datasource.setUserSchedule(new IntervalSchedule(now, Randomness.get().nextInt(28) + 1, ChronoUnit.DAYS));
+        datasource.setSystemSchedule(datasource.getUserSchedule());
+        datasource.setTask(randomTask());
         datasource.setState(randomState());
         datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.setEndpoint(String.format(Locale.ROOT, "https://%s.com/manifest.json", GeospatialTestHelper.randomLowerCaseString()));

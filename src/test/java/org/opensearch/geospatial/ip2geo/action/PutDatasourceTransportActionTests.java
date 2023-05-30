@@ -128,7 +128,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         verify(datasourceFacade).putDatasource(datasourceCaptor.capture(), actionListenerCaptor.capture());
         assertEquals(request.getName(), datasourceCaptor.getValue().getName());
         assertEquals(request.getEndpoint(), datasourceCaptor.getValue().getEndpoint());
-        assertEquals(request.getUpdateInterval().days(), datasourceCaptor.getValue().getSchedule().getInterval());
+        assertEquals(request.getUpdateInterval().days(), datasourceCaptor.getValue().getUserSchedule().getInterval());
 
         // Run next listener.onResponse
         actionListenerCaptor.getValue().onResponse(null);

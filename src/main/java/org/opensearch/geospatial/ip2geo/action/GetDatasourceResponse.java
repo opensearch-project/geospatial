@@ -71,11 +71,11 @@ public class GetDatasourceResponse extends ActionResponse implements ToXContentO
             builder.field(FIELD_NAME_NAME.getPreferredName(), datasource.getName());
             builder.field(FIELD_NAME_STATE.getPreferredName(), datasource.getState());
             builder.field(FIELD_NAME_ENDPOINT.getPreferredName(), datasource.getEndpoint());
-            builder.field(FIELD_NAME_UPDATE_INTERVAL.getPreferredName(), datasource.getSchedule().getInterval());
+            builder.field(FIELD_NAME_UPDATE_INTERVAL.getPreferredName(), datasource.getUserSchedule().getInterval());
             builder.timeField(
                 FIELD_NAME_NEXT_UPDATE_AT.getPreferredName(),
                 FIELD_NAME_NEXT_UPDATE_AT_READABLE.getPreferredName(),
-                datasource.getSchedule().getNextExecutionTime(Instant.now()).toEpochMilli()
+                datasource.getUserSchedule().getNextExecutionTime(Instant.now()).toEpochMilli()
             );
             builder.field(FIELD_NAME_DATABASE.getPreferredName(), datasource.getDatabase());
             builder.field(FIELD_NAME_UPDATE_STATS.getPreferredName(), datasource.getUpdateStats());
