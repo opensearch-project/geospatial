@@ -105,8 +105,12 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         }
 
         if (isUpdateIntervalChanged(request, datasource)) {
-            datasource.setSchedule(
-                new IntervalSchedule(datasource.getSchedule().getStartTime(), (int) request.getUpdateInterval().getDays(), ChronoUnit.DAYS)
+            datasource.setUserSchedule(
+                new IntervalSchedule(
+                    datasource.getUserSchedule().getStartTime(),
+                    (int) request.getUpdateInterval().getDays(),
+                    ChronoUnit.DAYS
+                )
             );
             isChanged = true;
         }
@@ -163,7 +167,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
 
         long updateInterval = isUpdateIntervalChanged(request, datasource)
             ? request.getUpdateInterval().days()
-            : datasource.getSchedule().getInterval();
+            : datasource.getUserSchedule().getInterval();
 
         if (updateInterval >= validForInDays) {
             throw new InvalidParameterException(
@@ -177,6 +181,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
     }
 
     private boolean isUpdateIntervalChanged(final UpdateDatasourceRequest request, final Datasource datasource) {
-        return request.getUpdateInterval() != null && (int) request.getUpdateInterval().days() != datasource.getSchedule().getInterval();
+        return request.getUpdateInterval() != null
+            && (int) request.getUpdateInterval().days() != datasource.getUserSchedule().getInterval();
     }
 }

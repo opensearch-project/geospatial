@@ -110,7 +110,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         verify(datasourceFacade).updateDatasource(datasource);
         verify(datasourceUpdateService).getHeaderFields(request.getEndpoint());
         assertEquals(request.getEndpoint(), datasource.getEndpoint());
-        assertEquals(request.getUpdateInterval().days(), datasource.getSchedule().getInterval());
+        assertEquals(request.getUpdateInterval().days(), datasource.getUserSchedule().getInterval());
         verify(listener).onResponse(new AcknowledgedResponse(true));
         verify(ip2GeoLockService).releaseLock(eq(lockModel));
     }
@@ -119,7 +119,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
     public void testDoExecute_whenNoChangesInValues_thenNoUpdate() {
         Datasource datasource = randomDatasource();
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
-        request.setUpdateInterval(TimeValue.timeValueDays(datasource.getSchedule().getInterval()));
+        request.setUpdateInterval(TimeValue.timeValueDays(datasource.getUserSchedule().getInterval()));
         request.setEndpoint(datasource.getEndpoint());
 
         Task task = mock(Task.class);

@@ -40,7 +40,9 @@ public class GetDatasourceResponseTests extends Ip2GeoTestCase {
             assertTrue(json.contains(String.format(Locale.ROOT, "\"name\":\"%s\"", datasource.getName())));
             assertTrue(json.contains(String.format(Locale.ROOT, "\"state\":\"%s\"", datasource.getState())));
             assertTrue(json.contains(String.format(Locale.ROOT, "\"endpoint\":\"%s\"", datasource.getEndpoint())));
-            assertTrue(json.contains(String.format(Locale.ROOT, "\"update_interval_in_days\":%d", datasource.getSchedule().getInterval())));
+            assertTrue(
+                json.contains(String.format(Locale.ROOT, "\"update_interval_in_days\":%d", datasource.getUserSchedule().getInterval()))
+            );
             assertTrue(json.contains(String.format(Locale.ROOT, "\"next_update_at_in_epoch_millis\"")));
             assertTrue(json.contains(String.format(Locale.ROOT, "\"provider\":\"%s\"", datasource.getDatabase().getProvider())));
             assertTrue(json.contains(String.format(Locale.ROOT, "\"sha256_hash\":\"%s\"", datasource.getDatabase().getSha256Hash())));
