@@ -186,12 +186,25 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         return value < 0 ? -value : value;
     }
 
-    protected Datasource randomDatasource() {
-        int validForInDays = Randomness.get().nextInt(30);
+    /**
+     * Update interval should be > 0 and < validForInDays.
+     * For an update test to work, there should be at least one eligible value other than current update interval.
+     * Therefore, the smallest value for validForInDays is 2.
+     * Update interval is random value from 1 to validForInDays - 2.
+     * The new update value will be validForInDays - 1.
+     */
+    protected Datasource randomDatasource(final Instant updateStartTime) {
+        int validForInDays = 3 + Randomness.get().nextInt(30);
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Datasource datasource = new Datasource();
         datasource.setName(GeospatialTestHelper.randomLowerCaseString());
-        datasource.setUserSchedule(new IntervalSchedule(now, Randomness.get().nextInt(28) + 1, ChronoUnit.DAYS));
+        datasource.setUserSchedule(
+            new IntervalSchedule(
+                updateStartTime.truncatedTo(ChronoUnit.MILLIS),
+                1 + Randomness.get().nextInt(validForInDays - 2),
+                ChronoUnit.DAYS
+            )
+        );
         datasource.setSystemSchedule(datasource.getUserSchedule());
         datasource.setTask(randomTask());
         datasource.setState(randomState());
@@ -214,6 +227,10 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             datasource.disable();
         }
         return datasource;
+    }
+
+    protected Datasource randomDatasource() {
+        return randomDatasource(Instant.now());
     }
 
     protected LockModel randomLockModel() {
