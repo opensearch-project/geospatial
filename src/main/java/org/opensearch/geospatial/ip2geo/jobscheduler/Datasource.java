@@ -374,13 +374,38 @@ public class Datasource implements Writeable, ScheduledJobParameter {
     /**
      * Checks if datasource is expired or not
      *
-     * @return true if datasource is expired false otherwise
+     * @return true if datasource is expired, and false otherwise
      */
     public boolean isExpired() {
+        return willExpire(Instant.now());
+    }
+
+    /**
+     * Checks if datasource will expire at given time
+     *
+     * @return true if datasource will expired at given time, and false otherwise
+     */
+    public boolean willExpire(Instant instant) {
         if (database.validForInDays == null) {
             return false;
         }
 
+        return instant.isAfter(expirationDay());
+    }
+
+    /**
+     * Day when datasource will expire
+     *
+     * @return Day when datasource will expire
+     */
+    public Instant expirationDay() {
+        if (database.validForInDays == null) {
+            return Instant.MAX;
+        }
+        return lastCheckedAt().plus(database.validForInDays, ChronoUnit.DAYS);
+    }
+
+    private Instant lastCheckedAt() {
         Instant lastCheckedAt;
         if (updateStats.lastSkippedAt == null) {
             lastCheckedAt = updateStats.lastSucceededAt;
@@ -389,7 +414,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
                 ? updateStats.lastSkippedAt
                 : updateStats.lastSucceededAt;
         }
-        return Instant.now().isAfter(lastCheckedAt.plus(database.validForInDays, ChronoUnit.DAYS));
+        return lastCheckedAt;
     }
 
     /**

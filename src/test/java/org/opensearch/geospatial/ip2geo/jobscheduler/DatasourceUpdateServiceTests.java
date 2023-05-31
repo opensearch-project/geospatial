@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -33,6 +35,7 @@ import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 @SuppressForbidden(reason = "unit test")
 public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
@@ -176,6 +179,32 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         assertEquals(1, datasource.getIndices().size());
         assertEquals(currentIndex, datasource.getIndices().get(0));
         verify(datasourceFacade).updateDatasource(datasource);
+    }
+
+    public void testUpdateDatasource_whenNoChange_thenNoUpdate() {
+        Datasource datasource = randomDatasource();
+
+        // Run
+        datasourceUpdateService.updateDatasource(datasource, datasource.getSystemSchedule(), datasource.getTask());
+
+        // Verify
+        verify(datasourceFacade, never()).updateDatasource(any());
+    }
+
+    public void testUpdateDatasource_whenChange_thenUpdate() {
+        Datasource datasource = randomDatasource();
+        datasource.setTask(DatasourceTask.ALL);
+
+        // Run
+        datasourceUpdateService.updateDatasource(
+            datasource,
+            new IntervalSchedule(Instant.now(), datasource.getSystemSchedule().getInterval() + 1, ChronoUnit.DAYS),
+            datasource.getTask()
+        );
+        datasourceUpdateService.updateDatasource(datasource, datasource.getSystemSchedule(), DatasourceTask.DELETE_UNUSED_INDICES);
+
+        // Verify
+        verify(datasourceFacade, times(2)).updateDatasource(any());
     }
 
     @SneakyThrows

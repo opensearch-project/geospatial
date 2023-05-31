@@ -8,6 +8,7 @@ package org.opensearch.geospatial.ip2geo.action;
 import java.io.IOException;
 import java.net.URL;
 import java.security.InvalidParameterException;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,7 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.tasks.Task;
@@ -97,21 +99,16 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         }, exception -> listener.onFailure(exception)));
     }
 
-    private void updateIfChanged(final UpdateDatasourceRequest request, final Datasource datasource) throws IOException {
+    private void updateIfChanged(final UpdateDatasourceRequest request, final Datasource datasource) {
         boolean isChanged = false;
         if (isEndpointChanged(request, datasource)) {
             datasource.setEndpoint(request.getEndpoint());
             isChanged = true;
         }
-
-        if (isUpdateIntervalChanged(request, datasource)) {
-            datasource.setUserSchedule(
-                new IntervalSchedule(
-                    datasource.getUserSchedule().getStartTime(),
-                    (int) request.getUpdateInterval().getDays(),
-                    ChronoUnit.DAYS
-                )
-            );
+        if (isUpdateIntervalChanged(request)) {
+            datasource.setUserSchedule(new IntervalSchedule(Instant.now(), (int) request.getUpdateInterval().getDays(), ChronoUnit.DAYS));
+            datasource.setSystemSchedule(datasource.getUserSchedule());
+            datasource.setTask(DatasourceTask.ALL);
             isChanged = true;
         }
 
@@ -138,6 +135,21 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
     private void validate(final UpdateDatasourceRequest request, final Datasource datasource) throws IOException {
         validateFieldsCompatibility(request, datasource);
         validateUpdateIntervalIsLessThanValidForInDays(request, datasource);
+        validateNextUpdateScheduleIsBeforeExpirationDay(request, datasource);
+    }
+
+    private void validateNextUpdateScheduleIsBeforeExpirationDay(final UpdateDatasourceRequest request, final Datasource datasource) {
+        if (request.getUpdateInterval() == null) {
+            return;
+        }
+
+        IntervalSchedule newSchedule = new IntervalSchedule(Instant.now(), (int) request.getUpdateInterval().getDays(), ChronoUnit.DAYS);
+
+        if (newSchedule.getNextExecutionTime(Instant.now()).isAfter(datasource.expirationDay())) {
+            throw new IllegalArgumentException(
+                String.format(Locale.ROOT, "datasource will expire at %s with the update interval", datasource.expirationDay().toString())
+            );
+        }
     }
 
     private void validateFieldsCompatibility(final UpdateDatasourceRequest request, final Datasource datasource) throws IOException {
@@ -157,7 +169,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
 
     private void validateUpdateIntervalIsLessThanValidForInDays(final UpdateDatasourceRequest request, final Datasource datasource)
         throws IOException {
-        if (isEndpointChanged(request, datasource) == false && isUpdateIntervalChanged(request, datasource) == false) {
+        if (isEndpointChanged(request, datasource) == false && isUpdateIntervalChanged(request) == false) {
             return;
         }
 
@@ -165,7 +177,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
             ? DatasourceManifest.Builder.build(new URL(request.getEndpoint())).getValidForInDays()
             : datasource.getDatabase().getValidForInDays();
 
-        long updateInterval = isUpdateIntervalChanged(request, datasource)
+        long updateInterval = isUpdateIntervalChanged(request)
             ? request.getUpdateInterval().days()
             : datasource.getUserSchedule().getInterval();
 
@@ -180,8 +192,14 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         return request.getEndpoint() != null && request.getEndpoint().equals(datasource.getEndpoint()) == false;
     }
 
-    private boolean isUpdateIntervalChanged(final UpdateDatasourceRequest request, final Datasource datasource) {
-        return request.getUpdateInterval() != null
-            && (int) request.getUpdateInterval().days() != datasource.getUserSchedule().getInterval();
+    /**
+     * Update interval is changed as long as user provide one because
+     * start time will get updated even if the update interval is same as current one.
+     *
+     * @param request the update datasource request
+     * @return true if update interval is changed, and false otherwise
+     */
+    private boolean isUpdateIntervalChanged(final UpdateDatasourceRequest request) {
+        return request.getUpdateInterval() != null;
     }
 }
