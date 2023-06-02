@@ -67,6 +67,35 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
     }
 
     @SneakyThrows
+    public void testUpdateOrCreateGeoIpData_whenExpired_thenUpdate() {
+        File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
+        DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
+
+        File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
+        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+
+        Datasource datasource = new Datasource();
+        datasource.setState(DatasourceState.AVAILABLE);
+        datasource.getDatabase().setUpdatedAt(Instant.ofEpochMilli(manifest.getUpdatedAt()));
+        datasource.getDatabase().setSha256Hash(manifest.getSha256Hash());
+        datasource.getDatabase().setValidForInDays(1l);
+        datasource.setEndpoint(manifestFile.toURI().toURL().toExternalForm());
+        datasource.resetDatabase();
+
+        // Run
+        datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class));
+
+        // Verify
+        verify(geoIpDataFacade).putGeoIpData(
+            eq(datasource.currentIndexName()),
+            isA(String[].class),
+            any(Iterator.class),
+            anyInt(),
+            any(Runnable.class)
+        );
+    }
+
+    @SneakyThrows
     public void testUpdateOrCreateGeoIpData_whenInvalidData_thenThrowException() {
         File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
