@@ -20,6 +20,7 @@ import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.node.DiscoveryNodes;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.collect.MapBuilder;
+import org.opensearch.common.component.LifecycleComponent;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
 import org.opensearch.common.settings.Setting;
@@ -55,6 +56,7 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceRunner;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
+import org.opensearch.geospatial.ip2geo.listener.Ip2GeoListener;
 import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
@@ -105,6 +107,11 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
                 )
             )
             .immutableMap();
+    }
+
+    @Override
+    public Collection<Class<? extends LifecycleComponent>> getGuiceServiceClasses() {
+        return List.of(Ip2GeoListener.class);
     }
 
     @Override

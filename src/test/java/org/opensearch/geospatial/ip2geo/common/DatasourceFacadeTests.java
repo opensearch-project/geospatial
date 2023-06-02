@@ -27,6 +27,7 @@ import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.delete.DeleteRequest;
 import org.opensearch.action.delete.DeleteResponse;
 import org.opensearch.action.get.GetRequest;
@@ -309,6 +310,27 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         ArgumentCaptor<List<Datasource>> captor = ArgumentCaptor.forClass(List.class);
         verify(listener).onResponse(captor.capture());
         assertEquals(datasources, captor.getValue());
+    }
+
+    public void testUpdateDatasource_whenValidInput_thenUpdate() {
+        List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
+
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            // Verify
+            assertTrue(actionRequest instanceof BulkRequest);
+            BulkRequest bulkRequest = (BulkRequest) actionRequest;
+            assertEquals(2, bulkRequest.requests().size());
+            for (int i = 0; i < bulkRequest.requests().size(); i++) {
+                IndexRequest request = (IndexRequest) bulkRequest.requests().get(i);
+                assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
+                assertEquals(datasources.get(i).getName(), request.id());
+                assertEquals(DocWriteRequest.OpType.INDEX, request.opType());
+                assertTrue(request.source().utf8ToString().contains(datasources.get(i).getEndpoint()));
+            }
+            return null;
+        });
+
+        datasourceFacade.updateDatasource(datasources, mock(ActionListener.class));
     }
 
     private SearchHits getMockedSearchHits(List<Datasource> datasources) {
