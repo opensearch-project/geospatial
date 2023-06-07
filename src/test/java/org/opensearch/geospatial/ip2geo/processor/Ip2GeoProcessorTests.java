@@ -6,8 +6,6 @@
 package org.opensearch.geospatial.ip2geo.processor;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -188,80 +186,9 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         assertTrue(e.getMessage().contains("Not implemented"));
     }
 
-    public void testGenerateDataToAppendWithFirstOnlyOption() throws Exception {
-        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
-        Ip2GeoProcessor processor = createProcessor(
-            datasourceName,
-            Map.of("first_only", true, "properties", Arrays.asList(SUPPORTED_FIELDS.get(0)))
-        );
-        List<String> ips = new ArrayList<>();
-        Map<String, Map<String, Object>> data = new HashMap<>();
-        for (int i = 0; i < 3; i++) {
-            String ip = randomIpAddress();
-            ips.add(ip);
-            Map<String, Object> geoData = new HashMap<>();
-            for (String field : SUPPORTED_FIELDS) {
-                geoData.put(field, GeospatialTestHelper.randomLowerCaseString());
-            }
-            data.put(ip, i == 0 ? Collections.emptyMap() : geoData);
-        }
-        IngestDocument document = new IngestDocument(new HashMap<>(), new HashMap<>());
-        BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
-
-        // Run
-        processor.listenerToAppendDataToDocument(data, ips, document, handler).onResponse(data);
-
-        // Verify
-        verify(handler).accept(document, null);
-        assertEquals(1, document.getFieldValue(DEFAULT_TARGET_FIELD, Map.class).size());
-        assertEquals(
-            data.get(ips.get(1)).get(SUPPORTED_FIELDS.get(0)),
-            document.getFieldValue(DEFAULT_TARGET_FIELD, Map.class).get(SUPPORTED_FIELDS.get(0))
-        );
-        assertNull(document.getFieldValue(DEFAULT_TARGET_FIELD, Map.class).get(SUPPORTED_FIELDS.get(1)));
-    }
-
-    public void testGenerateDataToAppendWithOutFirstOnlyOption() throws Exception {
-        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
-        Ip2GeoProcessor processor = createProcessor(
-            datasourceName,
-            Map.of("first_only", false, "properties", Arrays.asList(SUPPORTED_FIELDS.get(0)))
-        );
-        List<String> ips = new ArrayList<>();
-        Map<String, Map<String, Object>> data = new HashMap<>();
-        for (int i = 0; i < 3; i++) {
-            String ip = randomIpAddress();
-            ips.add(ip);
-            Map<String, Object> geoData = new HashMap<>();
-            for (String field : SUPPORTED_FIELDS) {
-                geoData.put(field, GeospatialTestHelper.randomLowerCaseString());
-            }
-            data.put(ip, i == 0 ? Collections.emptyMap() : geoData);
-        }
-        IngestDocument document = new IngestDocument(new HashMap<>(), new HashMap<>());
-        BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
-
-        // Run
-        processor.listenerToAppendDataToDocument(data, ips, document, handler).onResponse(data);
-
-        // Verify
-        verify(handler).accept(document, null);
-        assertEquals(ips.size(), document.getFieldValue(DEFAULT_TARGET_FIELD, List.class).size());
-        for (int i = 0; i < ips.size(); i++) {
-            if (data.get(ips.get(i)).isEmpty()) {
-                assertNull(document.getFieldValue(DEFAULT_TARGET_FIELD, List.class).get(i));
-            } else {
-                Map<String, Object> documentData = (Map<String, Object>) document.getFieldValue(DEFAULT_TARGET_FIELD, List.class).get(i);
-                assertEquals(1, documentData.size());
-                assertEquals(data.get(ips.get(i)).get(SUPPORTED_FIELDS.get(0)), documentData.get(SUPPORTED_FIELDS.get(0)));
-                assertNull(documentData.get(SUPPORTED_FIELDS.get(1)));
-            }
-        }
-    }
-
     public void testGenerateDataToAppendWithNoData() throws Exception {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
-        Ip2GeoProcessor processor = createProcessor(datasourceName, Map.of("first_only", Randomness.get().nextInt() % 2 == 0));
+        Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
         List<String> ips = new ArrayList<>();
         Map<String, Map<String, Object>> data = new HashMap<>();
         for (int i = 0; i < 3; i++) {
@@ -291,7 +218,8 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         assertTrue(e.getMessage().contains("should only contain strings"));
     }
 
-    public void testExecuteInternal() throws Exception {
+    @SneakyThrows
+    public void testExecuteInternal_whenCalled_thenGetDatasourceIsCalled() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
         List<?> ips = Arrays.asList(randomIpAddress(), randomIpAddress());
@@ -309,15 +237,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         when(datasource.isExpired()).thenReturn(false);
         when(datasource.currentIndexName()).thenReturn(GeospatialTestHelper.randomLowerCaseString());
         captor.getValue().onResponse(datasource);
-        verify(geoIpDataFacade).getGeoIpData(
-            anyString(),
-            any(Iterator.class),
-            anyInt(),
-            anyInt(),
-            anyBoolean(),
-            anyMap(),
-            any(ActionListener.class)
-        );
+        verify(geoIpDataFacade).getGeoIpData(anyString(), any(Iterator.class), anyMap(), any(ActionListener.class));
     }
 
     @SneakyThrows

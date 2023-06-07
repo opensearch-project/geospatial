@@ -29,7 +29,6 @@ import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
-import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
@@ -49,7 +48,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     public static final String CONFIG_DATASOURCE = "datasource";
     public static final String CONFIG_PROPERTIES = "properties";
     public static final String CONFIG_IGNORE_MISSING = "ignore_missing";
-    public static final String CONFIG_FIRST_ONLY = "first_only";
 
     private final String field;
     private final String targetField;
@@ -60,7 +58,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     private final String datasourceName;
     private final Set<String> properties;
     private final boolean ignoreMissing;
-    private final boolean firstOnly;
     private final ClusterSettings clusterSettings;
     private final DatasourceFacade datasourceFacade;
     private final GeoIpDataFacade geoIpDataFacade;
@@ -79,7 +76,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param datasourceName the datasourceName
      * @param properties     the properties
      * @param ignoreMissing  true if documents with a missing value for the field should be ignored
-     * @param firstOnly      true if only first result should be returned in case of array
      * @param clusterSettings the cluster settings
      * @param datasourceFacade the datasource facade
      * @param geoIpDataFacade the geoip data facade
@@ -92,7 +88,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final String datasourceName,
         final Set<String> properties,
         final boolean ignoreMissing,
-        final boolean firstOnly,
         final ClusterSettings clusterSettings,
         final DatasourceFacade datasourceFacade,
         final GeoIpDataFacade geoIpDataFacade
@@ -103,7 +98,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         this.datasourceName = datasourceName;
         this.properties = properties;
         this.ignoreMissing = ignoreMissing;
-        this.firstOnly = firstOnly;
         this.clusterSettings = clusterSettings;
         this.datasourceFacade = datasourceFacade;
         this.geoIpDataFacade = geoIpDataFacade;
@@ -252,9 +246,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 geoIpDataFacade.getGeoIpData(
                     indexName,
                     ipList.iterator(),
-                    clusterSettings.get(Ip2GeoSettings.MAX_BUNDLE_SIZE),
-                    clusterSettings.get(Ip2GeoSettings.MAX_CONCURRENT_SEARCHES),
-                    firstOnly,
                     data,
                     listenerToAppendDataToDocument(data, ipList, ingestDocument, handler)
                 );
@@ -277,32 +268,20 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         return new ActionListener<>() {
             @Override
             public void onResponse(final Map<String, Map<String, Object>> response) {
-                if (firstOnly) {
-                    for (String ipAddr : ipList) {
-                        Map<String, Object> geoData = data.get(ipAddr);
-                        // GeoData for ipAddr won't be null
-                        if (geoData.isEmpty() == false) {
-                            ingestDocument.setFieldValue(targetField, filteredGeoData(geoData, ipAddr));
-                            handler.accept(ingestDocument, null);
-                            return;
-                        }
+                boolean match = false;
+                List<Map<String, Object>> geoDataList = new ArrayList<>(ipList.size());
+                for (String ipAddr : ipList) {
+                    Map<String, Object> geoData = data.get(ipAddr);
+                    // GeoData for ipAddr won't be null
+                    geoDataList.add(geoData.isEmpty() ? null : filteredGeoData(geoData, ipAddr));
+                    if (geoData.isEmpty() == false) {
+                        match = true;
                     }
-                } else {
-                    boolean match = false;
-                    List<Map<String, Object>> geoDataList = new ArrayList<>(ipList.size());
-                    for (String ipAddr : ipList) {
-                        Map<String, Object> geoData = data.get(ipAddr);
-                        // GeoData for ipAddr won't be null
-                        geoDataList.add(geoData.isEmpty() ? null : filteredGeoData(geoData, ipAddr));
-                        if (geoData.isEmpty() == false) {
-                            match = true;
-                        }
-                    }
-                    if (match) {
-                        ingestDocument.setFieldValue(targetField, geoDataList);
-                        handler.accept(ingestDocument, null);
-                        return;
-                    }
+                }
+                if (match) {
+                    ingestDocument.setFieldValue(targetField, geoDataList);
+                    handler.accept(ingestDocument, null);
+                    return;
                 }
                 handler.accept(ingestDocument, null);
             }
@@ -363,7 +342,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             String datasourceName = readStringProperty(TYPE, processorTag, config, CONFIG_DATASOURCE);
             List<String> propertyNames = readOptionalList(TYPE, processorTag, config, CONFIG_PROPERTIES);
             boolean ignoreMissing = readBooleanProperty(TYPE, processorTag, config, CONFIG_IGNORE_MISSING, false);
-            boolean firstOnly = readBooleanProperty(TYPE, processorTag, config, CONFIG_FIRST_ONLY, true);
 
             // Skip validation for the call by cluster applier service
             if (Thread.currentThread().getName().contains(CLUSTER_UPDATE_THREAD_NAME) == false) {
@@ -378,7 +356,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 datasourceName,
                 propertyNames == null ? null : new HashSet<>(propertyNames),
                 ignoreMissing,
-                firstOnly,
                 ingestService.getClusterService().getClusterSettings(),
                 datasourceFacade,
                 geoIpDataFacade
