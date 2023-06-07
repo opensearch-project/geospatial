@@ -258,7 +258,6 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             datasourceName,
             properties,
             true,
-            true,
             clusterSettings,
             datasourceFacade,
             geoIpDataFacade

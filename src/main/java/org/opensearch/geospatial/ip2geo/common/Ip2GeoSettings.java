@@ -52,30 +52,6 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Bulk size for indexing GeoIP data
-     */
-    public static final Setting<Integer> INDEXING_BULK_SIZE = Setting.intSetting(
-        "plugins.geospatial.ip2geo.datasource.indexing_bulk_size",
-        10000,
-        1,
-        Setting.Property.NodeScope,
-        Setting.Property.Dynamic
-    );
-
-    /**
-     * Multi search bundle size for GeoIP data
-     *
-     * Multi search is used only when a field contains a list of ip addresses.
-     */
-    public static final Setting<Integer> MAX_BUNDLE_SIZE = Setting.intSetting(
-        "plugins.geospatial.ip2geo.processor.max_bundle_size",
-        100,
-        1,
-        Setting.Property.NodeScope,
-        Setting.Property.Dynamic
-    );
-
-    /**
      * Multi search max concurrent searches
      *
      * Multi search is used only when a field contains a list of ip addresses.
@@ -96,14 +72,7 @@ public class Ip2GeoSettings {
      * @return a list of all settings for Ip2Geo feature
      */
     public static final List<Setting<?>> settings() {
-        return List.of(
-            DATASOURCE_ENDPOINT,
-            DATASOURCE_UPDATE_INTERVAL,
-            TIMEOUT,
-            INDEXING_BULK_SIZE,
-            MAX_BUNDLE_SIZE,
-            MAX_CONCURRENT_SEARCHES
-        );
+        return List.of(DATASOURCE_ENDPOINT, DATASOURCE_UPDATE_INTERVAL, TIMEOUT, MAX_CONCURRENT_SEARCHES);
     }
 
     /**

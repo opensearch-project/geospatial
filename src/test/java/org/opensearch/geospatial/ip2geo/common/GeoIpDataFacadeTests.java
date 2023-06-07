@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade.BUNDLE_SIZE;
 import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
 
 import java.io.File;
@@ -193,7 +194,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             if (actionRequest instanceof BulkRequest) {
                 BulkRequest request = (BulkRequest) actionRequest;
-                assertEquals(1, request.numberOfActions());
+                assertEquals(2, request.numberOfActions());
                 BulkResponse response = mock(BulkResponse.class);
                 when(response.hasFailures()).thenReturn(false);
                 return response;
@@ -224,7 +225,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         try (CSVParser csvParser = CSVParser.parse(sampleIp2GeoFile(), StandardCharsets.UTF_8, CSVFormat.RFC4180)) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
             String[] fields = iterator.next().values();
-            verifyingGeoIpDataFacade.putGeoIpData(index, fields, iterator, 1, renewLock);
+            verifyingGeoIpDataFacade.putGeoIpData(index, fields, iterator, renewLock);
             verify(renewLock, times(2)).run();
         }
     }
@@ -261,44 +262,30 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         assertEquals("seattle", captor.getValue().get("city"));
     }
 
-    public void testGetMultipleGeoIpDataNoSearchRequired() {
+    public void testGetGeoIpData_whenAllDataIsGathered_thenNoMoreSearch() {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String ip1 = randomIpAddress();
         String ip2 = randomIpAddress();
         Iterator<String> ipIterator = Arrays.asList(ip1, ip2).iterator();
-        int maxBundleSize = 1;
-        int maxConcurrentSearches = 1;
-        boolean firstOnly = true;
         Map<String, Map<String, Object>> geoData = new HashMap<>();
         geoData.put(ip1, Map.of("city", "Seattle"));
         geoData.put(ip2, Map.of("city", "Hawaii"));
         ActionListener<Map<String, Map<String, Object>>> actionListener = mock(ActionListener.class);
 
         // Run
-        verifyingGeoIpDataFacade.getGeoIpData(
-            indexName,
-            ipIterator,
-            maxBundleSize,
-            maxConcurrentSearches,
-            firstOnly,
-            geoData,
-            actionListener
-        );
+        verifyingGeoIpDataFacade.getGeoIpData(indexName, ipIterator, geoData, actionListener);
 
         // Verify
         verify(actionListener).onResponse(geoData);
     }
 
-    public void testGetMultipleGeoIpData() {
+    public void testGetGeoIpData_whenCalled_thenGetGeoIpData() {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         int dataSize = Randomness.get().nextInt(10) + 1;
         List<String> ips = new ArrayList<>();
         for (int i = 0; i < dataSize; i++) {
             ips.add(randomIpAddress());
         }
-        int maxBundleSize = Randomness.get().nextInt(11) + 1;
-        int maxConcurrentSearches = 1;
-        boolean firstOnly = false;
         Map<String, Map<String, Object>> geoData = new HashMap<>();
         ActionListener<Map<String, Map<String, Object>>> actionListener = mock(ActionListener.class);
 
@@ -306,8 +293,6 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assert actionRequest instanceof MultiSearchRequest;
             MultiSearchRequest request = (MultiSearchRequest) actionRequest;
-            assertEquals(maxConcurrentSearches, request.maxConcurrentSearchRequests());
-            assertTrue(request.requests().size() == maxBundleSize || request.requests().size() == dataSize % maxBundleSize);
             for (SearchRequest searchRequest : request.requests()) {
                 assertEquals("_local", searchRequest.preference());
                 assertEquals(1, searchRequest.source().size());
@@ -341,18 +326,10 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         });
 
         // Run
-        verifyingGeoIpDataFacade.getGeoIpData(
-            indexName,
-            ips.iterator(),
-            maxBundleSize,
-            maxConcurrentSearches,
-            firstOnly,
-            geoData,
-            actionListener
-        );
+        verifyingGeoIpDataFacade.getGeoIpData(indexName, ips.iterator(), geoData, actionListener);
 
         // Verify
-        verify(verifyingClient, times((dataSize + maxBundleSize - 1) / maxBundleSize)).execute(
+        verify(verifyingClient, times((dataSize + BUNDLE_SIZE - 1) / BUNDLE_SIZE)).execute(
             any(ActionType.class),
             any(ActionRequest.class),
             any(ActionListener.class)
