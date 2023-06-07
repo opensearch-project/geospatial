@@ -208,6 +208,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         datasource.setSystemSchedule(datasource.getUserSchedule());
         datasource.setTask(randomTask());
         datasource.setState(randomState());
+        datasource.setCurrentIndex(GeospatialTestHelper.randomLowerCaseString());
         datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.setEndpoint(String.format(Locale.ROOT, "https://%s.com/manifest.json", GeospatialTestHelper.randomLowerCaseString()));
         datasource.getDatabase()

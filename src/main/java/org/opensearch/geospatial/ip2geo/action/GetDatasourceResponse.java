@@ -26,7 +26,7 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
  */
 @Getter
 @Setter
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 public class GetDatasourceResponse extends ActionResponse implements ToXContentObject {
     private static final ParseField FIELD_NAME_DATASOURCES = new ParseField("datasources");
     private static final ParseField FIELD_NAME_NAME = new ParseField("name");

@@ -89,6 +89,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
      */
     private static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
     private static final ParseField STATE_FIELD = new ParseField("state");
+    private static final ParseField CURRENT_INDEX_FIELD = new ParseField("current_index");
     private static final ParseField INDICES_FIELD = new ParseField("indices");
     private static final ParseField DATABASE_FIELD = new ParseField("database");
     private static final ParseField UPDATE_STATS_FIELD = new ParseField("update_stats");
@@ -150,8 +151,14 @@ public class Datasource implements Writeable, ScheduledJobParameter {
      */
     private DatasourceState state;
     /**
-     * @param indices A list of indices having GeoIP data
-     * @return A list of indices having GeoIP data
+     * @param currentIndex the current index name having GeoIP data
+     * @return the current index name having GeoIP data
+     */
+    @Getter(AccessLevel.NONE)
+    private String currentIndex;
+    /**
+     * @param indices A list of indices having GeoIP data including currentIndex
+     * @return A list of indices having GeoIP data including currentIndex
      */
     private List<String> indices;
     /**
@@ -181,9 +188,10 @@ public class Datasource implements Writeable, ScheduledJobParameter {
             DatasourceTask task = DatasourceTask.valueOf((String) args[6]);
             String endpoint = (String) args[7];
             DatasourceState state = DatasourceState.valueOf((String) args[8]);
-            List<String> indices = (List<String>) args[9];
-            Database database = (Database) args[10];
-            UpdateStats updateStats = (UpdateStats) args[11];
+            String currentIndex = (String) args[9];
+            List<String> indices = (List<String>) args[10];
+            Database database = (Database) args[11];
+            UpdateStats updateStats = (UpdateStats) args[12];
             Datasource parameter = new Datasource(
                 name,
                 lastUpdateTime,
@@ -194,6 +202,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
                 task,
                 endpoint,
                 state,
+                currentIndex,
                 indices,
                 database,
                 updateStats
@@ -212,6 +221,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         PARSER.declareString(ConstructingObjectParser.constructorArg(), TASK_FIELD);
         PARSER.declareString(ConstructingObjectParser.constructorArg(), ENDPOINT_FIELD);
         PARSER.declareString(ConstructingObjectParser.constructorArg(), STATE_FIELD);
+        PARSER.declareString(ConstructingObjectParser.optionalConstructorArg(), CURRENT_INDEX_FIELD);
         PARSER.declareStringArray(ConstructingObjectParser.constructorArg(), INDICES_FIELD);
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), Database.PARSER, DATABASE_FIELD);
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), UpdateStats.PARSER, UPDATE_STATS_FIELD);
@@ -233,6 +243,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
             DatasourceTask.ALL,
             endpoint,
             DatasourceState.CREATING,
+            null,
             new ArrayList<>(),
             new Database(),
             new UpdateStats()
@@ -249,6 +260,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         task = DatasourceTask.valueOf(in.readString());
         endpoint = in.readString();
         state = DatasourceState.valueOf(in.readString());
+        currentIndex = in.readOptionalString();
         indices = in.readStringList();
         database = new Database(in);
         updateStats = new UpdateStats(in);
@@ -265,6 +277,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         out.writeString(task.name());
         out.writeString(endpoint);
         out.writeString(state.name());
+        out.writeOptionalString(currentIndex);
         out.writeStringCollection(indices);
         database.writeTo(out);
         updateStats.writeTo(out);
@@ -292,6 +305,9 @@ public class Datasource implements Writeable, ScheduledJobParameter {
         builder.field(TASK_FIELD.getPreferredName(), task.name());
         builder.field(ENDPOINT_FIELD.getPreferredName(), endpoint);
         builder.field(STATE_FIELD.getPreferredName(), state.name());
+        if (currentIndex != null) {
+            builder.field(CURRENT_INDEX_FIELD.getPreferredName(), currentIndex);
+        }
         builder.field(INDICES_FIELD.getPreferredName(), indices);
         builder.field(DATABASE_FIELD.getPreferredName(), database);
         builder.field(UPDATE_STATS_FIELD.getPreferredName(), updateStats);
@@ -358,25 +374,17 @@ public class Datasource implements Writeable, ScheduledJobParameter {
             return null;
         }
 
-        if (database.updatedAt == null) {
-            return null;
-        }
-
-        return indexNameFor(database.updatedAt.toEpochMilli());
+        return currentIndex;
     }
 
     /**
-     * Index name for a given manifest
+     * Index name for a datasource with given suffix
      *
-     * @param manifest manifest
-     * @return Index name for a given manifest
+     * @param suffix the suffix of a index name
+     * @return index name for a datasource with given suffix
      */
-    public String indexNameFor(final DatasourceManifest manifest) {
-        return indexNameFor(manifest.getUpdatedAt());
-    }
-
-    private String indexNameFor(final long suffix) {
-        return String.format(Locale.ROOT, "%s.%s.%d", IP2GEO_DATA_INDEX_NAME_PREFIX, name, suffix);
+    public String newIndexName(final String suffix) {
+        return String.format(Locale.ROOT, "%s.%s.%s", IP2GEO_DATA_INDEX_NAME_PREFIX, name, suffix);
     }
 
     /**
