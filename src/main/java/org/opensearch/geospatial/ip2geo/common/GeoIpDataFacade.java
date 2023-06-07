@@ -68,6 +68,7 @@ import org.opensearch.index.query.QueryBuilders;
  */
 @Log4j2
 public class GeoIpDataFacade {
+    public static final int BUNDLE_SIZE = 128;
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
     private static final Map<String, Object> INDEX_SETTING_TO_CREATE = Map.of(
@@ -279,28 +280,19 @@ public class GeoIpDataFacade {
      *
      * @param indexName the index name
      * @param ipIterator the iterator of ip addresses
-     * @param maxBundleSize number of ip address to pass in multi search
-     * @param maxConcurrentSearches the max concurrent search requests
-     * @param firstOnly return only the first matching result if true
      * @param geoIpData collected geo data
      * @param actionListener the action listener
      */
     public void getGeoIpData(
         final String indexName,
         final Iterator<String> ipIterator,
-        final Integer maxBundleSize,
-        final Integer maxConcurrentSearches,
-        final boolean firstOnly,
         final Map<String, Map<String, Object>> geoIpData,
         final ActionListener<Map<String, Map<String, Object>>> actionListener
     ) {
         MultiSearchRequestBuilder mRequestBuilder = client.prepareMultiSearch();
-        if (maxConcurrentSearches != 0) {
-            mRequestBuilder.setMaxConcurrentSearchRequests(maxConcurrentSearches);
-        }
 
-        List<String> ipsToSearch = new ArrayList<>(maxBundleSize);
-        while (ipIterator.hasNext() && ipsToSearch.size() < maxBundleSize) {
+        List<String> ipsToSearch = new ArrayList<>(BUNDLE_SIZE);
+        while (ipIterator.hasNext() && ipsToSearch.size() < BUNDLE_SIZE) {
             String ip = ipIterator.next();
             if (geoIpData.get(ip) == null) {
                 mRequestBuilder.add(
@@ -340,13 +332,8 @@ public class GeoIpDataFacade {
                     ).v2().get(DATA_FIELD_NAME);
 
                     geoIpData.put(ipsToSearch.get(i), data);
-
-                    if (firstOnly) {
-                        actionListener.onResponse(geoIpData);
-                        return;
-                    }
                 }
-                getGeoIpData(indexName, ipIterator, maxBundleSize, maxConcurrentSearches, firstOnly, geoIpData, actionListener);
+                getGeoIpData(indexName, ipIterator, geoIpData, actionListener);
             }
 
             @Override
@@ -362,20 +349,18 @@ public class GeoIpDataFacade {
      * @param indexName Index name to puts the GeoIP data
      * @param fields Field name matching with data in CSVRecord in order
      * @param iterator GeoIP data to insert
-     * @param bulkSize Bulk size of data to process
      * @param renewLock Runnable to renew lock
      */
     public void putGeoIpData(
         @NonNull final String indexName,
         @NonNull final String[] fields,
         @NonNull final Iterator<CSVRecord> iterator,
-        final int bulkSize,
         @NonNull final Runnable renewLock
     ) throws IOException {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
         final BulkRequest bulkRequest = new BulkRequest();
         Queue<DocWriteRequest> requests = new LinkedList<>();
-        for (int i = 0; i < bulkSize; i++) {
+        for (int i = 0; i < BUNDLE_SIZE; i++) {
             requests.add(Requests.indexRequest(indexName));
         }
         while (iterator.hasNext()) {
@@ -385,7 +370,7 @@ public class GeoIpDataFacade {
             indexRequest.source(document);
             indexRequest.id(record.get(0));
             bulkRequest.add(indexRequest);
-            if (iterator.hasNext() == false || bulkRequest.requests().size() == bulkSize) {
+            if (iterator.hasNext() == false || bulkRequest.requests().size() == BUNDLE_SIZE) {
                 BulkResponse response = StashedThreadContext.run(client, () -> client.bulk(bulkRequest).actionGet(timeout));
                 if (response.hasFailures()) {
                     throw new OpenSearchException(

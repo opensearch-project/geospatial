@@ -6,7 +6,6 @@
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
@@ -90,7 +89,6 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
             eq(datasource.currentIndexName()),
             isA(String[].class),
             any(Iterator.class),
-            anyInt(),
             any(Runnable.class)
         );
     }
@@ -167,7 +165,6 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
             eq(datasource.currentIndexName()),
             isA(String[].class),
             any(Iterator.class),
-            anyInt(),
             any(Runnable.class)
         );
     }

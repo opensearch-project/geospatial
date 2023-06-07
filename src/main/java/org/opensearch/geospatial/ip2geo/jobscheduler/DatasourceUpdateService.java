@@ -25,7 +25,6 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
-import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 @Log4j2
@@ -83,13 +82,7 @@ public class DatasourceUpdateService {
                     datasource.getDatabase().getFields().toString()
                 );
             }
-            geoIpDataFacade.putGeoIpData(
-                indexName,
-                header,
-                reader.iterator(),
-                clusterSettings.get(Ip2GeoSettings.INDEXING_BULK_SIZE),
-                renewLock
-            );
+            geoIpDataFacade.putGeoIpData(indexName, header, reader.iterator(), renewLock);
         }
 
         Instant endTime = Instant.now();
