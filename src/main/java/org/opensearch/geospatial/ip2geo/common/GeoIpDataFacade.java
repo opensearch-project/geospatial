@@ -121,8 +121,8 @@ public class GeoIpDataFacade {
     private void freezeIndex(final String indexName) {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
         StashedThreadContext.run(client, () -> {
-            client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
             client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
+            client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
             client.admin()
                 .indices()
                 .prepareUpdateSettings(indexName)
