@@ -164,11 +164,8 @@ public class DatasourceUpdateService {
             }
 
             try {
-                if (geoIpDataFacade.deleteIp2GeoDataIndex(index).isAcknowledged()) {
-                    deletedIndices.add(index);
-                } else {
-                    log.error("Failed to delete an index [{}]", index);
-                }
+                geoIpDataFacade.deleteIp2GeoDataIndex(index);
+                deletedIndices.add(index);
             } catch (Exception e) {
                 log.error("Failed to delete an index [{}]", index, e);
             }

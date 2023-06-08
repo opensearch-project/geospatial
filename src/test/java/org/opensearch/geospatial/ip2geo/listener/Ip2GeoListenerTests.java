@@ -36,7 +36,7 @@ public class Ip2GeoListenerTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        ip2GeoListener = new Ip2GeoListener(clusterService, threadPool, datasourceFacade);
+        ip2GeoListener = new Ip2GeoListener(clusterService, threadPool, datasourceFacade, geoIpDataFacade);
     }
 
     public void testDoStart_whenClusterManagerNode_thenAddListener() {
@@ -168,6 +168,32 @@ public class Ip2GeoListenerTests extends Ip2GeoTestCase {
             assertTrue(datasource.getSystemSchedule().getNextExecutionTime(Instant.now()).isBefore(Instant.now().plusSeconds(60)));
         });
         verify(datasourceFacade).updateDatasource(eq(datasources), any());
+    }
+
+    public void testClusterChanged_whenGeoIpDataIsRestored_thenDelete() {
+        Datasource datasource = randomDatasource();
+        SnapshotId snapshotId = new SnapshotId(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString());
+        Snapshot snapshot = new Snapshot(GeospatialTestHelper.randomLowerCaseString(), snapshotId);
+        RestoreInProgress.Entry entry = new RestoreInProgress.Entry(
+            GeospatialTestHelper.randomLowerCaseString(),
+            snapshot,
+            RestoreInProgress.State.SUCCESS,
+            Arrays.asList(datasource.currentIndexName()),
+            null
+        );
+        RestoreInProgress restoreInProgress = new RestoreInProgress.Builder().add(entry).build();
+        ClusterState clusterState = mock(ClusterState.class);
+        when(clusterState.custom(RestoreInProgress.TYPE, RestoreInProgress.EMPTY)).thenReturn(restoreInProgress);
+        ClusterChangedEvent event = mock(ClusterChangedEvent.class);
+        when(event.localNodeClusterManager()).thenReturn(true);
+        when(event.state()).thenReturn(clusterState);
+
+        // Run
+        ip2GeoListener.clusterChanged(event);
+
+        // Verify
+        verify(threadPool).generic();
+        verify(geoIpDataFacade).deleteIp2GeoDataIndex(Arrays.asList(datasource.currentIndexName()));
     }
 
 }

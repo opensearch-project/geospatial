@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -208,7 +209,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         datasource.setSystemSchedule(datasource.getUserSchedule());
         datasource.setTask(randomTask());
         datasource.setState(randomState());
-        datasource.setCurrentIndex(GeospatialTestHelper.randomLowerCaseString());
+        datasource.setCurrentIndex(datasource.newIndexName(UUID.randomUUID().toString()));
         datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.setEndpoint(String.format(Locale.ROOT, "https://%s.com/manifest.json", GeospatialTestHelper.randomLowerCaseString()));
         datasource.getDatabase()

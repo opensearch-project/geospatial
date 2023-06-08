@@ -51,7 +51,7 @@ import org.opensearch.action.search.MultiSearchRequest;
 import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.action.support.IndicesOptions;
+import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
@@ -168,15 +168,14 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         verify(connection).addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
     }
 
-    public void testDeleteIp2GeoDataIndex() {
+    public void testDeleteIp2GeoDataIndex_whenCalled_thenDeleteIndex() {
         String index = String.format(Locale.ROOT, "%s.%s", IP2GEO_DATA_INDEX_NAME_PREFIX, GeospatialTestHelper.randomLowerCaseString());
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assertTrue(actionRequest instanceof DeleteIndexRequest);
             DeleteIndexRequest request = (DeleteIndexRequest) actionRequest;
             assertEquals(1, request.indices().length);
             assertEquals(index, request.indices()[0]);
-            assertEquals(IndicesOptions.LENIENT_EXPAND_OPEN, request.indicesOptions());
-            return null;
+            return new AcknowledgedResponse(true);
         });
         verifyingGeoIpDataFacade.deleteIp2GeoDataIndex(index);
     }

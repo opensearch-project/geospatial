@@ -20,6 +20,7 @@ import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.exceptions.ResourceInUseException;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoProcessorFacade;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
@@ -36,6 +37,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
     private final Ip2GeoLockService lockService;
     private final IngestService ingestService;
     private final DatasourceFacade datasourceFacade;
+    private final GeoIpDataFacade geoIpDataFacade;
     private final Ip2GeoProcessorFacade ip2GeoProcessorFacade;
 
     /**
@@ -53,12 +55,14 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         final Ip2GeoLockService lockService,
         final IngestService ingestService,
         final DatasourceFacade datasourceFacade,
+        final GeoIpDataFacade geoIpDataFacade,
         final Ip2GeoProcessorFacade ip2GeoProcessorFacade
     ) {
         super(DeleteDatasourceAction.NAME, transportService, actionFilters, DeleteDatasourceRequest::new);
         this.lockService = lockService;
         this.ingestService = ingestService;
         this.datasourceFacade = datasourceFacade;
+        this.geoIpDataFacade = geoIpDataFacade;
         this.ip2GeoProcessorFacade = ip2GeoProcessorFacade;
     }
 
@@ -97,6 +101,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         }
 
         setDatasourceStateAsDeleting(datasource);
+        geoIpDataFacade.deleteIp2GeoDataIndex(datasource.getIndices());
         datasourceFacade.deleteDatasource(datasource);
     }
 

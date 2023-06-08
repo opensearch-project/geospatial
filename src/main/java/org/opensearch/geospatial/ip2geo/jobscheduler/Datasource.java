@@ -50,7 +50,7 @@ public class Datasource implements Writeable, ScheduledJobParameter {
     /**
      * Prefix of indices having Ip2Geo data
      */
-    public static final String IP2GEO_DATA_INDEX_NAME_PREFIX = ".ip2geo-data";
+    public static final String IP2GEO_DATA_INDEX_NAME_PREFIX = ".geospatial.ip2geo.data";
 
     /**
      * Default fields for job scheduling
