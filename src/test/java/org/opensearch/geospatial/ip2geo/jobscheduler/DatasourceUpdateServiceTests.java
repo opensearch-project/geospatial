@@ -190,6 +190,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         String lingeringIndex = indexPrefix + now.minusMillis(2).toEpochMilli();
         Datasource datasource = new Datasource();
         datasource.setName(datasourceName);
+        datasource.setCurrentIndex(currentIndex);
         datasource.getIndices().add(currentIndex);
         datasource.getIndices().add(oldIndex);
         datasource.getIndices().add(lingeringIndex);
