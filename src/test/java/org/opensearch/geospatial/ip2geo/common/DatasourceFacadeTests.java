@@ -22,11 +22,11 @@ import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.ResourceAlreadyExistsException;
+import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
-import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.delete.DeleteRequest;
 import org.opensearch.action.delete.DeleteResponse;
@@ -38,9 +38,7 @@ import org.opensearch.action.get.MultiGetResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.action.support.WriteRequest;
-import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.json.JsonXContent;
@@ -218,34 +216,34 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
     public void testDeleteDatasource_whenValidInput_thenSucceed() {
         Datasource datasource = randomDatasource();
-        verifyingClient.setExecuteVerifier(
-            (actionResponse, actionRequest) -> {
-                // Verify
-                if (actionRequest instanceof DeleteIndexRequest) {
-                    DeleteIndexRequest request = (DeleteIndexRequest) actionRequest;
-                    assertEquals(datasource.getIndices().size(), request.indices().length);
-                    assertEquals(IndicesOptions.LENIENT_EXPAND_OPEN, request.indicesOptions());
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            // Verify
+            assertTrue(actionRequest instanceof DeleteRequest);
+            DeleteRequest request = (DeleteRequest) actionRequest;
+            assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
+            assertEquals(DocWriteRequest.OpType.DELETE, request.opType());
+            assertEquals(datasource.getName(), request.id());
+            assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, request.getRefreshPolicy());
 
-                    AcknowledgedResponse response = new AcknowledgedResponse(true);
-                    return response;
-                } else if (actionRequest instanceof DeleteRequest) {
-                    DeleteRequest request = (DeleteRequest) actionRequest;
-                    assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
-                    assertEquals(DocWriteRequest.OpType.DELETE, request.opType());
-                    assertEquals(datasource.getName(), request.id());
-                    assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, request.getRefreshPolicy());
-
-                    DeleteResponse response = mock(DeleteResponse.class);
-                    when(response.status()).thenReturn(RestStatus.OK);
-                    return response;
-                } else {
-                    throw new RuntimeException("Not expected request type is passed" + actionRequest.getClass());
-                }
-            }
-        );
+            DeleteResponse response = mock(DeleteResponse.class);
+            when(response.status()).thenReturn(RestStatus.OK);
+            return response;
+        });
 
         // Run
         datasourceFacade.deleteDatasource(datasource);
+    }
+
+    public void testDeleteDatasource_whenIndexNotFound_thenThrowException() {
+        Datasource datasource = randomDatasource();
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            DeleteResponse response = mock(DeleteResponse.class);
+            when(response.status()).thenReturn(RestStatus.NOT_FOUND);
+            return response;
+        });
+
+        // Run
+        expectThrows(ResourceNotFoundException.class, () -> datasourceFacade.deleteDatasource(datasource));
     }
 
     public void testGetDatasources_whenValidInput_thenSucceed() {

@@ -36,7 +36,6 @@ import org.opensearch.action.get.MultiGetResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
@@ -192,15 +191,6 @@ public class DatasourceFacade {
      *
      */
     public void deleteDatasource(final Datasource datasource) {
-        if (client.admin()
-            .indices()
-            .prepareDelete(datasource.getIndices().toArray(new String[0]))
-            .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
-            .execute()
-            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
-            .isAcknowledged() == false) {
-            throw new OpenSearchException("failed to delete data[{}] in datasource", String.join(",", datasource.getIndices()));
-        }
         DeleteResponse response = client.prepareDelete()
             .setIndex(DatasourceExtension.JOB_INDEX_NAME)
             .setId(datasource.getName())

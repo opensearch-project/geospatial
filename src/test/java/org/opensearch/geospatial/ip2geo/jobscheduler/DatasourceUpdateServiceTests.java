@@ -28,7 +28,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.junit.Before;
 import org.opensearch.OpenSearchException;
-import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
@@ -199,13 +198,13 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         when(metadata.hasIndex(currentIndex)).thenReturn(true);
         when(metadata.hasIndex(oldIndex)).thenReturn(true);
         when(metadata.hasIndex(lingeringIndex)).thenReturn(false);
-        when(geoIpDataFacade.deleteIp2GeoDataIndex(any())).thenReturn(new AcknowledgedResponse(true));
 
         datasourceUpdateService.deleteUnusedIndices(datasource);
 
         assertEquals(1, datasource.getIndices().size());
         assertEquals(currentIndex, datasource.getIndices().get(0));
         verify(datasourceFacade).updateDatasource(datasource);
+        verify(geoIpDataFacade).deleteIp2GeoDataIndex(oldIndex);
     }
 
     public void testUpdateDatasource_whenNoChange_thenNoUpdate() {
