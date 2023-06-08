@@ -5,10 +5,13 @@
 
 package org.opensearch.geospatial.ip2geo.listener;
 
+import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -23,6 +26,7 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.component.AbstractLifecycleComponent;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
+import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
@@ -37,6 +41,7 @@ public class Ip2GeoListener extends AbstractLifecycleComponent implements Cluste
     private final ClusterService clusterService;
     private final ThreadPool threadPool;
     private final DatasourceFacade datasourceFacade;
+    private final GeoIpDataFacade geoIpDataFacade;
 
     @Override
     public void clusterChanged(final ClusterChangedEvent event) {
@@ -49,11 +54,17 @@ public class Ip2GeoListener extends AbstractLifecycleComponent implements Cluste
                 continue;
             }
 
-            if (entry.indices().stream().anyMatch(index -> DatasourceExtension.JOB_INDEX_NAME.equals(index)) == false) {
-                continue;
+            if (entry.indices().stream().anyMatch(index -> DatasourceExtension.JOB_INDEX_NAME.equals(index))) {
+                threadPool.generic().submit(() -> forceUpdateGeoIpData());
             }
 
-            threadPool.generic().submit(() -> forceUpdateGeoIpData());
+            List<String> ip2GeoDataIndices = entry.indices()
+                .stream()
+                .filter(index -> index.startsWith(IP2GEO_DATA_INDEX_NAME_PREFIX))
+                .collect(Collectors.toList());
+            if (ip2GeoDataIndices.isEmpty() == false) {
+                threadPool.generic().submit(() -> geoIpDataFacade.deleteIp2GeoDataIndex(ip2GeoDataIndices));
+            }
         }
     }
 

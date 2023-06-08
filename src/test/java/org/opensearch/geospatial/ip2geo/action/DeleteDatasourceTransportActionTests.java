@@ -23,6 +23,8 @@ import lombok.SneakyThrows;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.ActionListener;
@@ -45,6 +47,7 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
             ip2GeoLockService,
             ingestService,
             datasourceFacade,
+            geoIpDataFacade,
             ip2GeoProcessorFacade
         );
     }
@@ -118,7 +121,9 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         assertEquals(DatasourceState.DELETING, datasource.getState());
         verify(datasourceFacade).updateDatasource(datasource);
-        verify(datasourceFacade).deleteDatasource(datasource);
+        InOrder inOrder = Mockito.inOrder(geoIpDataFacade, datasourceFacade);
+        inOrder.verify(geoIpDataFacade).deleteIp2GeoDataIndex(datasource.getIndices());
+        inOrder.verify(datasourceFacade).deleteDatasource(datasource);
     }
 
     @SneakyThrows
@@ -136,6 +141,7 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         assertEquals(DatasourceState.AVAILABLE, datasource.getState());
         verify(datasourceFacade, never()).updateDatasource(datasource);
+        verify(geoIpDataFacade, never()).deleteIp2GeoDataIndex(datasource.getIndices());
         verify(datasourceFacade, never()).deleteDatasource(datasource);
     }
 
@@ -154,6 +160,7 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
 
         // Verify
         verify(datasourceFacade, times(2)).updateDatasource(datasource);
+        verify(geoIpDataFacade, never()).deleteIp2GeoDataIndex(datasource.getIndices());
         verify(datasourceFacade, never()).deleteDatasource(datasource);
     }
 }

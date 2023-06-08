@@ -17,11 +17,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -387,22 +389,38 @@ public class GeoIpDataFacade {
         freezeIndex(indexName);
     }
 
-    public AcknowledgedResponse deleteIp2GeoDataIndex(final String index) {
-        if (index == null || index.startsWith(IP2GEO_DATA_INDEX_NAME_PREFIX) == false) {
+    public void deleteIp2GeoDataIndex(final String index) {
+        deleteIp2GeoDataIndex(Arrays.asList(index));
+    }
+
+    public void deleteIp2GeoDataIndex(final List<String> indices) {
+        if (indices == null || indices.isEmpty()) {
+            return;
+        }
+
+        Optional<String> invalidIndex = indices.stream()
+            .filter(index -> index.startsWith(IP2GEO_DATA_INDEX_NAME_PREFIX) == false)
+            .findAny();
+        if (invalidIndex.isPresent()) {
             throw new OpenSearchException(
                 "the index[{}] is not ip2geo data index which should start with {}",
-                index,
+                invalidIndex.get(),
                 IP2GEO_DATA_INDEX_NAME_PREFIX
             );
         }
-        return StashedThreadContext.run(
+
+        AcknowledgedResponse response = StashedThreadContext.run(
             client,
             () -> client.admin()
                 .indices()
-                .prepareDelete(index)
-                .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN)
+                .prepareDelete(indices.toArray(new String[0]))
+                .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN)
                 .execute()
                 .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
         );
+
+        if (response.isAcknowledged() == false) {
+            throw new OpenSearchException("failed to delete data[{}] in datasource", String.join(",", indices));
+        }
     }
 }
