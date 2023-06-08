@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import lombok.extern.log4j.Log4j2;
@@ -68,7 +69,7 @@ public class DatasourceUpdateService {
         }
 
         Instant startTime = Instant.now();
-        String indexName = setupIndex(manifest, datasource);
+        String indexName = setupIndex(datasource);
         String[] header;
         List<String> fieldsToStore;
         try (CSVParser reader = geoIpDataFacade.getDatabaseReader(manifest)) {
@@ -86,7 +87,7 @@ public class DatasourceUpdateService {
         }
 
         Instant endTime = Instant.now();
-        updateDatasourceAsSucceeded(datasource, manifest, fieldsToStore, startTime, endTime);
+        updateDatasourceAsSucceeded(indexName, datasource, manifest, fieldsToStore, startTime, endTime);
     }
 
     /**
@@ -199,16 +200,16 @@ public class DatasourceUpdateService {
      *
      * @param manifest the manifest
      * @param datasource the datasource
-     * @return
-     * @throws IOException
      */
     private void updateDatasourceAsSucceeded(
+        final String newIndexName,
         final Datasource datasource,
         final DatasourceManifest manifest,
         final List<String> fields,
         final Instant startTime,
         final Instant endTime
-    ) throws IOException {
+    ) {
+        datasource.setCurrentIndex(newIndexName);
         datasource.setDatabase(manifest, fields);
         datasource.getUpdateStats().setLastSucceededAt(endTime);
         datasource.getUpdateStats().setLastProcessingTimeInMillis(endTime.toEpochMilli() - startTime.toEpochMilli());
@@ -225,13 +226,11 @@ public class DatasourceUpdateService {
     /***
      * Setup index to add a new geoip data
      *
-     * @param manifest the manifest
      * @param datasource the datasource
-     * @return
-     * @throws IOException
+     * @return new index name
      */
-    private String setupIndex(final DatasourceManifest manifest, final Datasource datasource) throws IOException {
-        String indexName = datasource.indexNameFor(manifest);
+    private String setupIndex(final Datasource datasource) {
+        String indexName = datasource.newIndexName(UUID.randomUUID().toString());
         datasource.getIndices().add(indexName);
         datasourceFacade.updateDatasource(datasource);
         geoIpDataFacade.createIndexIfNotExists(indexName);
