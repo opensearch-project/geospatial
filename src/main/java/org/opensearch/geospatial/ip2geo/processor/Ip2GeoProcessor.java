@@ -11,10 +11,9 @@ import static org.opensearch.ingest.ConfigurationUtils.readOptionalList;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -41,8 +40,6 @@ import org.opensearch.ingest.Processor;
 @Log4j2
 public final class Ip2GeoProcessor extends AbstractProcessor {
     private static final Map<String, Object> DATA_EXPIRED = Map.of("error", "ip2geo_data_expired");
-    private static final String PROPERTY_IP = "ip";
-
     public static final String CONFIG_FIELD = "field";
     public static final String CONFIG_TARGET_FIELD = "target_field";
     public static final String CONFIG_DATASOURCE = "datasource";
@@ -111,19 +108,28 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      */
     @Override
     public void execute(IngestDocument ingestDocument, BiConsumer<IngestDocument, Exception> handler) {
-        Object ip = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
+        try {
+            Object ip = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
 
-        if (ip == null) {
-            handler.accept(ingestDocument, null);
-            return;
-        }
+            if (ip == null) {
+                handler.accept(ingestDocument, null);
+                return;
+            }
 
-        if (ip instanceof String) {
-            executeInternal(ingestDocument, handler, (String) ip);
-        } else if (ip instanceof List) {
-            executeInternal(ingestDocument, handler, ((List<?>) ip));
-        } else {
-            throw new IllegalArgumentException("field [" + field + "] should contain only string or array of strings");
+            if (ip instanceof String) {
+                executeInternal(ingestDocument, handler, (String) ip);
+            } else if (ip instanceof List) {
+                executeInternal(ingestDocument, handler, ((List<?>) ip));
+            } else {
+                handler.accept(
+                    null,
+                    new IllegalArgumentException(
+                        String.format(Locale.ROOT, "field [%s] should contain only string or array of strings", field)
+                    )
+                );
+            }
+        } catch (Exception e) {
+            handler.accept(null, e);
         }
     }
 
@@ -159,17 +165,11 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                     return;
                 }
 
-                geoIpDataFacade.getGeoIpData(indexName, ip, new ActionListener<>() {
-                    @Override
-                    public void onResponse(final Map<String, Object> ipToGeoData) {
-                        handleSingleIp(ip, ipToGeoData, ingestDocument, handler);
-                    }
-
-                    @Override
-                    public void onFailure(final Exception e) {
-                        handler.accept(null, e);
-                    }
-                });
+                try {
+                    geoIpDataFacade.getGeoIpData(indexName, ip, getSingleGeoIpDataListener(ingestDocument, handler));
+                } catch (Exception e) {
+                    handler.accept(null, e);
+                }
             }
 
             @Override
@@ -180,32 +180,44 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     }
 
     @VisibleForTesting
-    protected void handleSingleIp(
-        final String ip,
-        final Map<String, Object> ipToGeoData,
+    protected ActionListener<Map<String, Object>> getSingleGeoIpDataListener(
         final IngestDocument ingestDocument,
         final BiConsumer<IngestDocument, Exception> handler
     ) {
-        if (ipToGeoData.isEmpty() == false) {
-            ingestDocument.setFieldValue(targetField, filteredGeoData(ipToGeoData, ip));
-        }
-        handler.accept(ingestDocument, null);
+        return new ActionListener<>() {
+            @Override
+            public void onResponse(final Map<String, Object> ipToGeoData) {
+                try {
+                    if (ipToGeoData.isEmpty() == false) {
+                        ingestDocument.setFieldValue(targetField, filteredGeoData(ipToGeoData));
+                    }
+                    handler.accept(ingestDocument, null);
+                } catch (Exception e) {
+                    handler.accept(null, e);
+                }
+            }
+
+            @Override
+            public void onFailure(final Exception e) {
+                handler.accept(null, e);
+            }
+        };
     }
 
-    private Map<String, Object> filteredGeoData(final Map<String, Object> geoData, final String ip) {
-        Map<String, Object> filteredGeoData;
+    private Map<String, Object> filteredGeoData(final Map<String, Object> geoData) {
         if (properties == null) {
             return geoData;
         }
 
-        filteredGeoData = properties.stream()
-            .filter(p -> p.equals(PROPERTY_IP) == false)
-            .filter(p -> geoData.containsKey(p))
-            .collect(Collectors.toMap(p -> p, p -> geoData.get(p)));
-        if (properties.contains(PROPERTY_IP)) {
-            filteredGeoData.put(PROPERTY_IP, ip);
+        return properties.stream().filter(p -> geoData.containsKey(p)).collect(Collectors.toMap(p -> p, p -> geoData.get(p)));
+    }
+
+    private List<Map<String, Object>> filteredGeoData(final List<Map<String, Object>> geoData) {
+        if (properties == null) {
+            return geoData;
         }
-        return filteredGeoData;
+
+        return geoData.stream().map(this::filteredGeoData).collect(Collectors.toList());
     }
 
     /**
@@ -221,13 +233,11 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final BiConsumer<IngestDocument, Exception> handler,
         final List<?> ips
     ) {
-        Map<String, Map<String, Object>> data = new HashMap<>();
         for (Object ip : ips) {
             if (ip instanceof String == false) {
                 throw new IllegalArgumentException("array in field [" + field + "] should only contain strings");
             }
         }
-        List<String> ipList = (List<String>) ips;
         datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
             @Override
             public void onResponse(final Datasource datasource) {
@@ -243,12 +253,11 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                     return;
                 }
 
-                geoIpDataFacade.getGeoIpData(
-                    indexName,
-                    ipList.iterator(),
-                    data,
-                    listenerToAppendDataToDocument(data, ipList, ingestDocument, handler)
-                );
+                try {
+                    geoIpDataFacade.getGeoIpData(indexName, (List<String>) ips, getMultiGeoIpDataListener(ingestDocument, handler));
+                } catch (Exception e) {
+                    handler.accept(null, e);
+                }
             }
 
             @Override
@@ -259,31 +268,21 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     }
 
     @VisibleForTesting
-    protected ActionListener<Map<String, Map<String, Object>>> listenerToAppendDataToDocument(
-        final Map<String, Map<String, Object>> data,
-        final List<String> ipList,
+    protected ActionListener<List<Map<String, Object>>> getMultiGeoIpDataListener(
         final IngestDocument ingestDocument,
         final BiConsumer<IngestDocument, Exception> handler
     ) {
         return new ActionListener<>() {
             @Override
-            public void onResponse(final Map<String, Map<String, Object>> response) {
-                boolean match = false;
-                List<Map<String, Object>> geoDataList = new ArrayList<>(ipList.size());
-                for (String ipAddr : ipList) {
-                    Map<String, Object> geoData = data.get(ipAddr);
-                    // GeoData for ipAddr won't be null
-                    geoDataList.add(geoData.isEmpty() ? null : filteredGeoData(geoData, ipAddr));
-                    if (geoData.isEmpty() == false) {
-                        match = true;
+            public void onResponse(final List<Map<String, Object>> ipToGeoData) {
+                try {
+                    if (ipToGeoData.isEmpty() == false) {
+                        ingestDocument.setFieldValue(targetField, filteredGeoData(ipToGeoData));
                     }
-                }
-                if (match) {
-                    ingestDocument.setFieldValue(targetField, geoDataList);
                     handler.accept(ingestDocument, null);
-                    return;
+                } catch (Exception e) {
+                    handler.accept(null, e);
                 }
-                handler.accept(ingestDocument, null);
             }
 
             @Override
@@ -384,7 +383,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
             // Validate properties are valid. If not add all available properties.
             final Set<String> availableProperties = new HashSet<>(datasource.getDatabase().getFields());
-            availableProperties.add(PROPERTY_IP);
             for (String fieldName : propertyNames) {
                 if (availableProperties.contains(fieldName) == false) {
                     throw newConfigurationException(
