@@ -11,7 +11,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade.BUNDLE_SIZE;
 import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
 
 import java.io.File;
@@ -20,9 +19,7 @@ import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -38,8 +35,6 @@ import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
-import org.opensearch.action.ActionRequest;
-import org.opensearch.action.ActionType;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.opensearch.action.admin.indices.forcemerge.ForceMergeRequest;
@@ -47,12 +42,9 @@ import org.opensearch.action.admin.indices.refresh.RefreshRequest;
 import org.opensearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
-import org.opensearch.action.search.MultiSearchRequest;
-import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.master.AcknowledgedResponse;
-import org.opensearch.common.Randomness;
 import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.bytes.BytesReference;
@@ -229,7 +221,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         }
     }
 
-    public void testGetSingleGeoIpData() {
+    public void testGetGeoIpData_whenSingleIp_thenSucceed() {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String ip = randomIpAddress();
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
@@ -261,80 +253,35 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         assertEquals("seattle", captor.getValue().get("city"));
     }
 
-    public void testGetGeoIpData_whenAllDataIsGathered_thenNoMoreSearch() {
+    public void testGetGeoIpData_whenMultiIps_thenSucceed() {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
-        String ip1 = randomIpAddress();
-        String ip2 = randomIpAddress();
-        Iterator<String> ipIterator = Arrays.asList(ip1, ip2).iterator();
-        Map<String, Map<String, Object>> geoData = new HashMap<>();
-        geoData.put(ip1, Map.of("city", "Seattle"));
-        geoData.put(ip2, Map.of("city", "Hawaii"));
-        ActionListener<Map<String, Map<String, Object>>> actionListener = mock(ActionListener.class);
-
-        // Run
-        verifyingGeoIpDataFacade.getGeoIpData(indexName, ipIterator, geoData, actionListener);
-
-        // Verify
-        verify(actionListener).onResponse(geoData);
-    }
-
-    public void testGetGeoIpData_whenCalled_thenGetGeoIpData() {
-        String indexName = GeospatialTestHelper.randomLowerCaseString();
-        int dataSize = Randomness.get().nextInt(10) + 1;
-        List<String> ips = new ArrayList<>();
-        for (int i = 0; i < dataSize; i++) {
-            ips.add(randomIpAddress());
-        }
-        Map<String, Map<String, Object>> geoData = new HashMap<>();
-        ActionListener<Map<String, Map<String, Object>>> actionListener = mock(ActionListener.class);
-
-        List<String> cities = new ArrayList<>();
+        String ip = randomIpAddress();
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
-            assert actionRequest instanceof MultiSearchRequest;
-            MultiSearchRequest request = (MultiSearchRequest) actionRequest;
-            for (SearchRequest searchRequest : request.requests()) {
-                assertEquals("_local", searchRequest.preference());
-                assertEquals(1, searchRequest.source().size());
-            }
+            assert actionRequest instanceof SearchRequest;
+            SearchRequest request = (SearchRequest) actionRequest;
+            assertEquals("_local", request.preference());
+            assertEquals(1, request.source().size());
+            assertEquals(QueryBuilders.boolQuery().should(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip)), request.source().query());
 
-            MultiSearchResponse.Item[] items = new MultiSearchResponse.Item[request.requests().size()];
-            for (int i = 0; i < request.requests().size(); i++) {
-                String city = GeospatialTestHelper.randomLowerCaseString();
-                cities.add(city);
-                String data = String.format(
-                    Locale.ROOT,
-                    "{\"%s\":\"1.0.0.1/16\",\"%s\":{\"city\":\"%s\"}}",
-                    IP_RANGE_FIELD_NAME,
-                    DATA_FIELD_NAME,
-                    city
-                );
-                SearchHit searchHit = new SearchHit(1);
-                searchHit.sourceRef(BytesReference.fromByteBuffer(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8))));
-                SearchHit[] searchHitArray = { searchHit };
-                SearchHits searchHits = new SearchHits(searchHitArray, new TotalHits(1l, TotalHits.Relation.EQUAL_TO), 1);
-                SearchResponse searchResponse = mock(SearchResponse.class);
-                when(searchResponse.getHits()).thenReturn(searchHits);
-                MultiSearchResponse.Item item = mock(MultiSearchResponse.Item.class);
-                when(item.isFailure()).thenReturn(false);
-                when(item.getResponse()).thenReturn(searchResponse);
-                items[i] = item;
-            }
-            MultiSearchResponse response = mock(MultiSearchResponse.class);
-            when(response.getResponses()).thenReturn(items);
+            String data = String.format(
+                Locale.ROOT,
+                "{\"%s\":\"1.0.0.1/16\",\"%s\":{\"city\":\"seattle\"}}",
+                IP_RANGE_FIELD_NAME,
+                DATA_FIELD_NAME
+            );
+            SearchHit searchHit = new SearchHit(1);
+            searchHit.sourceRef(BytesReference.fromByteBuffer(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8))));
+            SearchHit[] searchHitArray = { searchHit };
+            SearchHits searchHits = new SearchHits(searchHitArray, new TotalHits(1l, TotalHits.Relation.EQUAL_TO), 1);
+
+            SearchResponse response = mock(SearchResponse.class);
+            when(response.getHits()).thenReturn(searchHits);
             return response;
         });
-
-        // Run
-        verifyingGeoIpDataFacade.getGeoIpData(indexName, ips.iterator(), geoData, actionListener);
-
-        // Verify
-        verify(verifyingClient, times((dataSize + BUNDLE_SIZE - 1) / BUNDLE_SIZE)).execute(
-            any(ActionType.class),
-            any(ActionRequest.class),
-            any(ActionListener.class)
-        );
-        for (int i = 0; i < dataSize; i++) {
-            assertEquals(cities.get(i), geoData.get(ips.get(i)).get("city"));
-        }
+        ActionListener<List<Map<String, Object>>> listener = mock(ActionListener.class);
+        verifyingGeoIpDataFacade.getGeoIpData(indexName, Arrays.asList(ip), listener);
+        ArgumentCaptor<List<Map<String, Object>>> captor = ArgumentCaptor.forClass(List.class);
+        verify(listener).onResponse(captor.capture());
+        assertEquals("seattle", captor.getValue().get(0).get("city"));
     }
 }

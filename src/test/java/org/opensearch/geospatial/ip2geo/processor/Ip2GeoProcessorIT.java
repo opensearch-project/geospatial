@@ -86,7 +86,7 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
                 Ip2GeoProcessor.CONFIG_TARGET_FIELD,
                 targetField,
                 Ip2GeoProcessor.CONFIG_PROPERTIES,
-                Arrays.asList(IP, CITY)
+                Arrays.asList(CITY)
             );
 
             // Create ip2geo processor
@@ -104,10 +104,10 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
 
             // Verify data added to document
             List<Map<String, String>> sources = convertToListOfSources(response, targetField);
-            sources.stream().forEach(source -> {
-                assertFalse(source.containsKey(COUNTRY));
-                assertEquals(sampleData.get(source.get(IP)).get(CITY), source.get(CITY));
-            });
+            sources.stream().allMatch(source -> source.size() == 1);
+            List<String> cities = sources.stream().map(value -> value.get(CITY)).collect(Collectors.toList());
+            List<String> expectedCities = sampleData.values().stream().map(value -> value.get(CITY)).collect(Collectors.toList());
+            assertEquals(expectedCities, cities);
 
             // Delete datasource fails when there is a process using it
             ResponseException deleteException = expectThrows(ResponseException.class, () -> deleteDatasource(datasourceName));
