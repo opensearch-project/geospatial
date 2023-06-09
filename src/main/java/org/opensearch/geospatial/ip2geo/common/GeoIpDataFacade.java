@@ -16,7 +16,6 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -44,8 +43,6 @@ import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
-import org.opensearch.action.search.MultiSearchRequestBuilder;
-import org.opensearch.action.search.MultiSearchResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.action.support.master.AcknowledgedResponse;
@@ -63,6 +60,7 @@ import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.constants.IndexSetting;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
+import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
 
 /**
@@ -255,15 +253,19 @@ public class GeoIpDataFacade {
                 .execute(new ActionListener<>() {
                     @Override
                     public void onResponse(final SearchResponse searchResponse) {
-                        if (searchResponse.getHits().getHits().length == 0) {
-                            actionListener.onResponse(Collections.emptyMap());
-                        } else {
-                            Map<String, Object> geoIpData = (Map<String, Object>) XContentHelper.convertToMap(
-                                searchResponse.getHits().getAt(0).getSourceRef(),
-                                false,
-                                XContentType.JSON
-                            ).v2().get(DATA_FIELD_NAME);
-                            actionListener.onResponse(geoIpData);
+                        try {
+                            if (searchResponse.getHits().getHits().length == 0) {
+                                actionListener.onResponse(Collections.emptyMap());
+                            } else {
+                                Map<String, Object> geoIpData = (Map<String, Object>) XContentHelper.convertToMap(
+                                    searchResponse.getHits().getAt(0).getSourceRef(),
+                                    false,
+                                    XContentType.JSON
+                                ).v2().get(DATA_FIELD_NAME);
+                                actionListener.onResponse(geoIpData);
+                            }
+                        } catch (Exception e) {
+                            actionListener.onFailure(e);
                         }
                     }
 
@@ -276,73 +278,56 @@ public class GeoIpDataFacade {
     }
 
     /**
-     * Query a given index using a given ip address iterator to get geoip data
+     * Query a given index using a given list of ip addresses to get geoip data
      *
-     * This method calls itself recursively until it processes all ip addresses in bulk of {@code bulkSize}.
-     *
-     * @param indexName the index name
-     * @param ipIterator the iterator of ip addresses
-     * @param geoIpData collected geo data
-     * @param actionListener the action listener
+     * @param indexName index
+     * @param ips list of ip addresses
+     * @param actionListener action listener
      */
     public void getGeoIpData(
         final String indexName,
-        final Iterator<String> ipIterator,
-        final Map<String, Map<String, Object>> geoIpData,
-        final ActionListener<Map<String, Map<String, Object>>> actionListener
+        final List<String> ips,
+        final ActionListener<List<Map<String, Object>>> actionListener
     ) {
-        MultiSearchRequestBuilder mRequestBuilder = client.prepareMultiSearch();
-
-        List<String> ipsToSearch = new ArrayList<>(BUNDLE_SIZE);
-        while (ipIterator.hasNext() && ipsToSearch.size() < BUNDLE_SIZE) {
-            String ip = ipIterator.next();
-            if (geoIpData.get(ip) == null) {
-                mRequestBuilder.add(
-                    client.prepareSearch(indexName)
-                        .setSize(1)
-                        .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
-                        .setPreference("_local")
-                        .setRequestCache(true)
-                );
-                ipsToSearch.add(ip);
-            }
-        }
-
-        if (ipsToSearch.isEmpty()) {
-            actionListener.onResponse(geoIpData);
-            return;
-        }
-
-        StashedThreadContext.run(client, () -> mRequestBuilder.execute(new ActionListener<>() {
-            @Override
-            public void onResponse(final MultiSearchResponse items) {
-                for (int i = 0; i < ipsToSearch.size(); i++) {
-                    if (items.getResponses()[i].isFailure()) {
-                        actionListener.onFailure(items.getResponses()[i].getFailure());
-                        return;
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        ips.stream().forEach(ip -> boolQueryBuilder.should(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip)));
+        StashedThreadContext.run(
+            client,
+            () -> client.prepareSearch(indexName)
+                .setSize(ips.size())
+                .setQuery(boolQueryBuilder)
+                .setPreference("_local")
+                .setRequestCache(true)
+                .execute(new ActionListener<>() {
+                    @Override
+                    public void onResponse(final SearchResponse searchResponse) {
+                        try {
+                            actionListener.onResponse(toGeoIpDataList(searchResponse));
+                        } catch (Exception e) {
+                            actionListener.onFailure(e);
+                        }
                     }
 
-                    if (items.getResponses()[i].getResponse().getHits().getHits().length == 0) {
-                        geoIpData.put(ipsToSearch.get(i), Collections.emptyMap());
-                        continue;
+                    @Override
+                    public void onFailure(final Exception e) {
+                        actionListener.onFailure(e);
                     }
+                })
+        );
+    }
 
-                    Map<String, Object> data = (Map<String, Object>) XContentHelper.convertToMap(
-                        items.getResponses()[i].getResponse().getHits().getAt(0).getSourceRef(),
-                        false,
-                        XContentType.JSON
-                    ).v2().get(DATA_FIELD_NAME);
+    private List<Map<String, Object>> toGeoIpDataList(final SearchResponse searchResponse) {
+        if (searchResponse.getHits().getHits().length == 0) {
+            return Collections.emptyList();
+        }
 
-                    geoIpData.put(ipsToSearch.get(i), data);
-                }
-                getGeoIpData(indexName, ipIterator, geoIpData, actionListener);
-            }
-
-            @Override
-            public void onFailure(final Exception e) {
-                actionListener.onFailure(e);
-            }
-        }));
+        return Arrays.stream(searchResponse.getHits().getHits())
+            .map(
+                data -> (Map<String, Object>) XContentHelper.convertToMap(data.getSourceRef(), false, XContentType.JSON)
+                    .v2()
+                    .get(DATA_FIELD_NAME)
+            )
+            .collect(Collectors.toList());
     }
 
     /**
