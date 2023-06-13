@@ -31,6 +31,7 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.tasks.Task;
+import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
 
 /**
@@ -42,6 +43,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
     private final Ip2GeoLockService lockService;
     private final DatasourceFacade datasourceFacade;
     private final DatasourceUpdateService datasourceUpdateService;
+    private final ThreadPool threadPool;
 
     /**
      * Constructor
@@ -58,12 +60,14 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         final ActionFilters actionFilters,
         final Ip2GeoLockService lockService,
         final DatasourceFacade datasourceFacade,
-        final DatasourceUpdateService datasourceUpdateService
+        final DatasourceUpdateService datasourceUpdateService,
+        final ThreadPool threadPool
     ) {
         super(UpdateDatasourceAction.NAME, transportService, actionFilters, UpdateDatasourceRequest::new);
         this.lockService = lockService;
         this.datasourceUpdateService = datasourceUpdateService;
         this.datasourceFacade = datasourceFacade;
+        this.threadPool = threadPool;
     }
 
     /**
@@ -82,16 +86,23 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
                 );
                 return;
             }
-
             try {
-                Datasource datasource = datasourceFacade.getDatasource(request.getName());
-                if (datasource == null) {
-                    throw new ResourceNotFoundException("no such datasource exist");
-                }
-                validate(request, datasource);
-                updateIfChanged(request, datasource);
-                lockService.releaseLock(lock);
-                listener.onResponse(new AcknowledgedResponse(true));
+                // TODO: makes every sub-methods as async call to avoid using a thread in generic pool
+                threadPool.generic().submit(() -> {
+                    try {
+                        Datasource datasource = datasourceFacade.getDatasource(request.getName());
+                        if (datasource == null) {
+                            throw new ResourceNotFoundException("no such datasource exist");
+                        }
+                        validate(request, datasource);
+                        updateIfChanged(request, datasource);
+                        lockService.releaseLock(lock);
+                        listener.onResponse(new AcknowledgedResponse(true));
+                    } catch (Exception e) {
+                        lockService.releaseLock(lock);
+                        listener.onFailure(e);
+                    }
+                });
             } catch (Exception e) {
                 lockService.releaseLock(lock);
                 listener.onFailure(e);
