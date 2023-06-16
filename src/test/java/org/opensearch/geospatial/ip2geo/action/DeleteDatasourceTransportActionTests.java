@@ -48,7 +48,8 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
             ingestService,
             datasourceFacade,
             geoIpDataFacade,
-            ip2GeoProcessorFacade
+            ip2GeoProcessorFacade,
+            threadPool
         );
     }
 

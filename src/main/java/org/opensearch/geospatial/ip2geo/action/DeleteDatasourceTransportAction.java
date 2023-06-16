@@ -26,6 +26,7 @@ import org.opensearch.geospatial.ip2geo.common.Ip2GeoProcessorFacade;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.tasks.Task;
+import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
 
 /**
@@ -39,6 +40,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
     private final DatasourceFacade datasourceFacade;
     private final GeoIpDataFacade geoIpDataFacade;
     private final Ip2GeoProcessorFacade ip2GeoProcessorFacade;
+    private final ThreadPool threadPool;
 
     /**
      * Constructor
@@ -56,7 +58,8 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         final IngestService ingestService,
         final DatasourceFacade datasourceFacade,
         final GeoIpDataFacade geoIpDataFacade,
-        final Ip2GeoProcessorFacade ip2GeoProcessorFacade
+        final Ip2GeoProcessorFacade ip2GeoProcessorFacade,
+        final ThreadPool threadPool
     ) {
         super(DeleteDatasourceAction.NAME, transportService, actionFilters, DeleteDatasourceRequest::new);
         this.lockService = lockService;
@@ -64,6 +67,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         this.datasourceFacade = datasourceFacade;
         this.geoIpDataFacade = geoIpDataFacade;
         this.ip2GeoProcessorFacade = ip2GeoProcessorFacade;
+        this.threadPool = threadPool;
     }
 
     /**
@@ -83,9 +87,17 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
                 return;
             }
             try {
-                deleteDatasource(request.getName());
-                lockService.releaseLock(lock);
-                listener.onResponse(new AcknowledgedResponse(true));
+                // TODO: makes every sub-methods as async call to avoid using a thread in generic pool
+                threadPool.generic().submit(() -> {
+                    try {
+                        deleteDatasource(request.getName());
+                        lockService.releaseLock(lock);
+                        listener.onResponse(new AcknowledgedResponse(true));
+                    } catch (Exception e) {
+                        lockService.releaseLock(lock);
+                        listener.onFailure(e);
+                    }
+                });
             } catch (Exception e) {
                 lockService.releaseLock(lock);
                 listener.onFailure(e);
