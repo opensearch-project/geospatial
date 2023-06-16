@@ -4,8 +4,6 @@
  */
 package org.opensearch.geospatial.ip2geo.processor;
 
-import static org.opensearch.cluster.service.ClusterApplierService.CLUSTER_UPDATE_THREAD_NAME;
-import static org.opensearch.ingest.ConfigurationUtils.newConfigurationException;
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalList;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
@@ -29,6 +27,7 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.IngestService;
@@ -154,7 +153,12 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             @Override
             public void onResponse(final Datasource datasource) {
                 if (datasource == null) {
-                    handler.accept(null, new IllegalStateException("datasource does not exist"));
+                    handler.accept(null, new IllegalStateException("datasource is not available"));
+                    return;
+                }
+
+                if (DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
+                    handler.accept(null, new IllegalStateException("datasource is not in an available state"));
                     return;
                 }
 
@@ -174,6 +178,10 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
             @Override
             public void onFailure(final Exception e) {
+                if (e instanceof IndexNotFoundException) {
+                    handler.accept(null, new IllegalStateException("datasource is not available"));
+                    return;
+                }
                 handler.accept(null, e);
             }
         });
@@ -241,8 +249,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
             @Override
             public void onResponse(final Datasource datasource) {
-                if (datasource == null) {
-                    handler.accept(null, new IllegalStateException("datasource does not exist"));
+                if (datasource == null || DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
+                    handler.accept(null, new IllegalStateException("datasource is not available"));
                     return;
                 }
 
@@ -262,6 +270,10 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
 
             @Override
             public void onFailure(final Exception e) {
+                if (e instanceof IndexNotFoundException) {
+                    handler.accept(null, new IllegalStateException("datasource is not available"));
+                    return;
+                }
                 handler.accept(null, e);
             }
         });
@@ -319,15 +331,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         }
 
         /**
-         * When a user create a processor, this method is called twice. Once to validate the new processor and another
-         * to apply cluster state change after the processor is added.
-         *
-         * The second call is made by ClusterApplierService. Therefore, we cannot access cluster state in the call.
-         * That means, we cannot even query an index inside the call.
-         *
-         * Because the processor is validated in the first call, we skip the validation in the second call.
-         *
-         * @see org.opensearch.cluster.service.ClusterApplierService#state()
+         * Within this method, blocking request cannot be called because this method is executed in a transport thread.
+         * This means, validation using data in an index won't work.
          */
         @Override
         public Ip2GeoProcessor create(
@@ -342,11 +347,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             List<String> propertyNames = readOptionalList(TYPE, processorTag, config, CONFIG_PROPERTIES);
             boolean ignoreMissing = readBooleanProperty(TYPE, processorTag, config, CONFIG_IGNORE_MISSING, false);
 
-            // Skip validation for the call by cluster applier service
-            if (Thread.currentThread().getName().contains(CLUSTER_UPDATE_THREAD_NAME) == false) {
-                validate(processorTag, datasourceName, propertyNames);
-            }
-
             return new Ip2GeoProcessor(
                 processorTag,
                 description,
@@ -359,40 +359,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 datasourceFacade,
                 geoIpDataFacade
             );
-        }
-
-        private void validate(final String processorTag, final String datasourceName, final List<String> propertyNames) throws IOException {
-            Datasource datasource = datasourceFacade.getDatasource(datasourceName);
-
-            if (datasource == null) {
-                throw newConfigurationException(TYPE, processorTag, "datasource", "datasource [" + datasourceName + "] doesn't exist");
-            }
-
-            if (DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
-                throw newConfigurationException(
-                    TYPE,
-                    processorTag,
-                    "datasource",
-                    "datasource [" + datasourceName + "] is not in an available state"
-                );
-            }
-
-            if (propertyNames == null) {
-                return;
-            }
-
-            // Validate properties are valid. If not add all available properties.
-            final Set<String> availableProperties = new HashSet<>(datasource.getDatabase().getFields());
-            for (String fieldName : propertyNames) {
-                if (availableProperties.contains(fieldName) == false) {
-                    throw newConfigurationException(
-                        TYPE,
-                        processorTag,
-                        "properties",
-                        "property [" + fieldName + "] is not available in the datasource [" + datasourceName + "]"
-                    );
-                }
-            }
         }
     }
 }

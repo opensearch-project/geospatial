@@ -25,7 +25,6 @@ import lombok.SneakyThrows;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
-import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.common.Randomness;
 import org.opensearch.geospatial.GeospatialTestHelper;
@@ -44,40 +43,6 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
     @Before
     public void init() {
         factory = new Ip2GeoProcessor.Factory(ingestService, datasourceFacade, geoIpDataFacade);
-    }
-
-    public void testCreateWithNoDatasource() {
-        Map<String, Object> config = new HashMap<>();
-        config.put("field", "ip");
-        config.put(CONFIG_DATASOURCE_KEY, "no_datasource");
-        OpenSearchException exception = expectThrows(
-            OpenSearchException.class,
-            () -> factory.create(
-                Collections.emptyMap(),
-                GeospatialTestHelper.randomLowerCaseString(),
-                GeospatialTestHelper.randomLowerCaseString(),
-                config
-            )
-        );
-        assertTrue(exception.getDetailedMessage().contains("doesn't exist"));
-    }
-
-    public void testCreateWithInvalidDatasourceState() {
-        Datasource datasource = new Datasource();
-        datasource.setName(GeospatialTestHelper.randomLowerCaseString());
-        datasource.setState(randomStateExcept(DatasourceState.AVAILABLE));
-        OpenSearchException exception = expectThrows(OpenSearchException.class, () -> createProcessor(datasource, Collections.emptyMap()));
-        assertTrue(exception.getDetailedMessage().contains("available state"));
-    }
-
-    public void testCreateIp2GeoProcessor_whenInvalidProperties_thenException() {
-        Map<String, Object> config = new HashMap<>();
-        config.put("properties", Arrays.asList(SUPPORTED_FIELDS.get(0), "invalid_property"));
-        OpenSearchException exception = expectThrows(
-            OpenSearchException.class,
-            () -> createProcessor(GeospatialTestHelper.randomLowerCaseString(), config)
-        );
-        assertTrue(exception.getDetailedMessage().contains("property"));
     }
 
     public void testExecuteWithNoIpAndIgnoreMissing() throws Exception {
@@ -125,13 +90,14 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
     public void testExecuteWithNullDatasource() throws Exception {
         BiConsumer<IngestDocument, Exception> handler = (doc, e) -> {
             assertNull(doc);
-            assertTrue(e.getMessage().contains("datasource does not exist"));
+            assertTrue(e.getMessage().contains("datasource is not available"));
         };
         getActionListener(Collections.emptyMap(), handler).onResponse(null);
     }
 
     public void testExecuteWithExpiredDatasource() throws Exception {
         Datasource datasource = mock(Datasource.class);
+        when(datasource.getState()).thenReturn(DatasourceState.AVAILABLE);
         when(datasource.isExpired()).thenReturn(true);
         BiConsumer<IngestDocument, Exception> handler = (doc, e) -> {
             assertEquals("ip2geo_data_expired", doc.getFieldValue(DEFAULT_TARGET_FIELD + ".error", String.class));
@@ -174,6 +140,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         verify(datasourceFacade).getDatasource(eq(datasourceName), captor.capture());
         Datasource datasource = mock(Datasource.class);
         when(datasource.isExpired()).thenReturn(false);
+        when(datasource.getState()).thenReturn(DatasourceState.AVAILABLE);
         when(datasource.currentIndexName()).thenReturn(GeospatialTestHelper.randomLowerCaseString());
 
         captor.getValue().onResponse(datasource);
@@ -301,6 +268,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         verify(datasourceFacade).getDatasource(eq(datasourceName), captor.capture());
         Datasource datasource = mock(Datasource.class);
         when(datasource.isExpired()).thenReturn(false);
+        when(datasource.getState()).thenReturn(DatasourceState.AVAILABLE);
         when(datasource.currentIndexName()).thenReturn(GeospatialTestHelper.randomLowerCaseString());
 
         captor.getValue().onResponse(datasource);

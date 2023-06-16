@@ -8,7 +8,6 @@ package org.opensearch.geospatial.ip2geo.processor;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,21 +33,6 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
     private static final String COUNTRY = "country";
     private static final String IP = "ip";
     private static final String SOURCE = "_source";
-
-    @SneakyThrows
-    public void testCreateIp2GeoProcessor_whenNoSuchDatasourceExist_thenFails() {
-        String pipelineName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
-
-        // Run
-        ResponseException exception = expectThrows(
-            ResponseException.class,
-            () -> createIp2GeoProcessorPipeline(pipelineName, Collections.emptyMap())
-        );
-
-        // Verify
-        assertTrue(exception.getMessage().contains("doesn't exist"));
-        assertEquals(RestStatus.BAD_REQUEST.getStatus(), exception.getResponse().getStatusLine().getStatusCode());
-    }
 
     @SneakyThrows
     public void testCreateIp2GeoProcessor_whenValidInput_thenAddData() {
