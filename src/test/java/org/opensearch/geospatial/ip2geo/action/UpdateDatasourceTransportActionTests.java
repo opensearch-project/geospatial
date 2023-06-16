@@ -45,7 +45,8 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
             actionFilters,
             ip2GeoLockService,
             datasourceFacade,
-            datasourceUpdateService
+            datasourceUpdateService,
+            threadPool
         );
     }
 
