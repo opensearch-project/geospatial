@@ -282,7 +282,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
     }
 
-    public void testGetAllDatasources_whenValidInput_thenSucceed() {
+    public void testGetAllDatasources_whenAsynchronous_thenSucceed() {
         List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
         ActionListener<List<Datasource>> listener = mock(ActionListener.class);
         SearchHits searchHits = getMockedSearchHits(datasources);
@@ -308,6 +308,31 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         ArgumentCaptor<List<Datasource>> captor = ArgumentCaptor.forClass(List.class);
         verify(listener).onResponse(captor.capture());
         assertEquals(datasources, captor.getValue());
+    }
+
+    public void testGetAllDatasources_whenSynchronous_thenSucceed() {
+        List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
+        SearchHits searchHits = getMockedSearchHits(datasources);
+
+        verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
+            // Verify
+            assertTrue(actionRequest instanceof SearchRequest);
+            SearchRequest request = (SearchRequest) actionRequest;
+            assertEquals(1, request.indices().length);
+            assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.indices()[0]);
+            assertEquals(QueryBuilders.matchAllQuery(), request.source().query());
+            assertEquals(1000, request.source().size());
+
+            SearchResponse response = mock(SearchResponse.class);
+            when(response.getHits()).thenReturn(searchHits);
+            return response;
+        });
+
+        // Run
+        datasourceFacade.getAllDatasources();
+
+        // Verify
+        assertEquals(datasources, datasourceFacade.getAllDatasources());
     }
 
     public void testUpdateDatasource_whenValidInput_thenUpdate() {

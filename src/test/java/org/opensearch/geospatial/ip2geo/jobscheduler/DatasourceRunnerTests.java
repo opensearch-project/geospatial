@@ -44,8 +44,13 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
     }
 
     public void testRunJob_whenInvalidClass_thenThrowException() {
-        JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
+        JobDocVersion jobDocVersion = new JobDocVersion(randomInt(), randomInt(), randomInt());
+        String jobIndexName = randomLowerCaseString();
+        String jobId = randomLowerCaseString();
+        JobExecutionContext jobExecutionContext = new JobExecutionContext(Instant.now(), jobDocVersion, lockService, jobIndexName, jobId);
         ScheduledJobParameter jobParameter = mock(ScheduledJobParameter.class);
+
+        // Run
         expectThrows(IllegalStateException.class, () -> DatasourceRunner.getJobRunnerInstance().runJob(jobParameter, jobExecutionContext));
     }
 
