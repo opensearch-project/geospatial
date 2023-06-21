@@ -8,6 +8,7 @@ package org.opensearch.geospatial.ip2geo.common;
 import static org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension.JOB_INDEX_NAME;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,6 +55,38 @@ public class Ip2GeoLockService {
      */
     public void acquireLock(final String datasourceName, final Long lockDurationSeconds, final ActionListener<LockModel> listener) {
         lockService.acquireLockWithId(JOB_INDEX_NAME, lockDurationSeconds, datasourceName, listener);
+    }
+
+    /**
+     * Synchronous method of #acquireLock
+     *
+     * @param datasourceName datasourceName to acquire lock on
+     * @param lockDurationSeconds the lock duration in seconds
+     * @return lock model
+     */
+    public Optional<LockModel> acquireLock(final String datasourceName, final Long lockDurationSeconds) {
+        AtomicReference<LockModel> lockReference = new AtomicReference();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        lockService.acquireLockWithId(JOB_INDEX_NAME, lockDurationSeconds, datasourceName, new ActionListener<>() {
+            @Override
+            public void onResponse(final LockModel lockModel) {
+                lockReference.set(lockModel);
+                countDownLatch.countDown();
+            }
+
+            @Override
+            public void onFailure(final Exception e) {
+                lockReference.set(null);
+                countDownLatch.countDown();
+            }
+        });
+
+        try {
+            countDownLatch.await(clusterService.getClusterSettings().get(Ip2GeoSettings.TIMEOUT).getSeconds(), TimeUnit.SECONDS);
+            return Optional.ofNullable(lockReference.get());
+        } catch (InterruptedException e) {
+            return Optional.empty();
+        }
     }
 
     /**
