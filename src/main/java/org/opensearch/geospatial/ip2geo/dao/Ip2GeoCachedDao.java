@@ -18,6 +18,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
+import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.cache.Cache;
 import org.opensearch.common.cache.CacheBuilder;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
@@ -26,63 +27,89 @@ import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.engine.Engine;
 import org.opensearch.index.shard.IndexingOperationListener;
 import org.opensearch.index.shard.ShardId;
 
 /**
  * Data access object for Datasource and GeoIP data with added caching layer
+ *
+ * Ip2GeoCachedDao has a memory cache to store Datasource and GeoIP data. To fully utilize the cache,
+ * do not create multiple Ip2GeoCachedDao. Ip2GeoCachedDao instance is bound to guice so that you can use
+ * it through injection.
+ *
+ * All IP2Geo processors share single Ip2GeoCachedDao instance.
  */
 @Log4j2
 public class Ip2GeoCachedDao implements IndexingOperationListener {
     private final DatasourceDao datasourceDao;
-    private Map<String, DatasourceMetadata> data;
+    private final GeoIpDataDao geoIpDataDao;
+    private final GeoDataCache geoDataCache;
+    private Map<String, DatasourceMetadata> metadata;
 
-    public Ip2GeoCachedDao(final DatasourceDao datasourceDao) {
+    public Ip2GeoCachedDao(final ClusterService clusterService, final DatasourceDao datasourceDao, final GeoIpDataDao geoIpDataDao) {
         this.datasourceDao = datasourceDao;
+        this.geoIpDataDao = geoIpDataDao;
+        this.geoDataCache = new GeoDataCache(clusterService.getClusterSettings().get(Ip2GeoSettings.CACHE_SIZE));
+        clusterService.getClusterSettings()
+            .addSettingsUpdateConsumer(Ip2GeoSettings.CACHE_SIZE, setting -> this.geoDataCache.updateMaxSize(setting.longValue()));
     }
 
     public String getIndexName(final String datasourceName) {
-        return getData().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getIndexName();
+        return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getIndexName();
     }
 
     public boolean isExpired(final String datasourceName) {
-        return getData().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getExpirationDate().isBefore(Instant.now());
+        return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getExpirationDate().isBefore(Instant.now());
     }
 
     public boolean has(final String datasourceName) {
-        return getData().containsKey(datasourceName);
+        return getMetadata().containsKey(datasourceName);
     }
 
     public DatasourceState getState(final String datasourceName) {
-        return getData().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getState();
+        return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getState();
     }
 
-    private Map<String, DatasourceMetadata> getData() {
-        if (data != null) {
-            return data;
+    public Map<String, Object> getGeoData(final String indexName, final String ip) {
+        try {
+            return geoDataCache.putIfAbsent(indexName, ip, addr -> geoIpDataDao.getGeoIpData(indexName, ip));
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Map<String, DatasourceMetadata> getMetadata() {
+        if (metadata != null) {
+            return metadata;
         }
         synchronized (this) {
-            if (data != null) {
-                return data;
+            if (metadata != null) {
+                return metadata;
             }
             Map<String, DatasourceMetadata> tempData = new ConcurrentHashMap<>();
-            datasourceDao.getAllDatasources()
-                .stream()
-                .forEach(datasource -> tempData.put(datasource.getName(), new DatasourceMetadata(datasource)));
-            data = tempData;
-            return data;
+            try {
+                datasourceDao.getAllDatasources()
+                    .stream()
+                    .forEach(datasource -> tempData.put(datasource.getName(), new DatasourceMetadata(datasource)));
+            } catch (IndexNotFoundException e) {
+                log.debug("Datasource has never been created");
+            }
+            metadata = tempData;
+            return metadata;
         }
     }
 
     private void put(final Datasource datasource) {
         DatasourceMetadata metadata = new DatasourceMetadata(datasource);
-        getData().put(datasource.getName(), metadata);
+        getMetadata().put(datasource.getName(), metadata);
     }
 
     private void remove(final String datasourceName) {
-        getData().remove(datasourceName);
+        getMetadata().remove(datasourceName);
     }
 
     @Override

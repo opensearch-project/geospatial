@@ -21,9 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
-import org.opensearch.action.ActionListener;
 import org.opensearch.common.settings.ClusterSettings;
-import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
@@ -147,8 +145,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         throw new IllegalStateException("Not implemented");
     }
 
-    @VisibleForTesting
-    protected void executeInternal(
+    private void executeInternal(
         final IngestDocument ingestDocument,
         final BiConsumer<IngestDocument, Exception> handler,
         final String ip
@@ -160,36 +157,11 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             return;
         }
 
-        try {
-            geoIpDataDao.getGeoIpData(indexName, ip, getSingleGeoIpDataListener(ingestDocument, handler));
-        } catch (Exception e) {
-            handler.accept(null, e);
+        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(indexName, ip);
+        if (geoData.isEmpty() == false) {
+            ingestDocument.setFieldValue(targetField, filteredGeoData(geoData));
         }
-    }
-
-    @VisibleForTesting
-    protected ActionListener<Map<String, Object>> getSingleGeoIpDataListener(
-        final IngestDocument ingestDocument,
-        final BiConsumer<IngestDocument, Exception> handler
-    ) {
-        return new ActionListener<>() {
-            @Override
-            public void onResponse(final Map<String, Object> ipToGeoData) {
-                try {
-                    if (ipToGeoData.isEmpty() == false) {
-                        ingestDocument.setFieldValue(targetField, filteredGeoData(ipToGeoData));
-                    }
-                    handler.accept(ingestDocument, null);
-                } catch (Exception e) {
-                    handler.accept(null, e);
-                }
-            }
-
-            @Override
-            public void onFailure(final Exception e) {
-                handler.accept(null, e);
-            }
-        };
+        handler.accept(ingestDocument, null);
     }
 
     private Map<String, Object> filteredGeoData(final Map<String, Object> geoData) {
@@ -198,14 +170,6 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         }
 
         return properties.stream().filter(p -> geoData.containsKey(p)).collect(Collectors.toMap(p -> p, p -> geoData.get(p)));
-    }
-
-    private List<Map<String, Object>> filteredGeoData(final List<Map<String, Object>> geoData) {
-        if (properties == null) {
-            return geoData;
-        }
-
-        return geoData.stream().map(this::filteredGeoData).collect(Collectors.toList());
     }
 
     private void validateDatasourceIsInAvailableState(final String datasourceName) {
@@ -230,8 +194,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param handler the handler
      * @param ips the ip list
      */
-    @VisibleForTesting
-    protected void executeInternal(
+    private void executeInternal(
         final IngestDocument ingestDocument,
         final BiConsumer<IngestDocument, Exception> handler,
         final List<?> ips
@@ -249,32 +212,16 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             return;
         }
 
-        geoIpDataDao.getGeoIpData(indexName, (List<String>) ips, getMultiGeoIpDataListener(ingestDocument, handler));
-    }
+        List<Map<String, Object>> geoDataList = ips.stream()
+            .map(ip -> ip2GeoCachedDao.getGeoData(indexName, (String) ip))
+            .filter(geoData -> geoData.isEmpty() == false)
+            .map(this::filteredGeoData)
+            .collect(Collectors.toList());
 
-    @VisibleForTesting
-    protected ActionListener<List<Map<String, Object>>> getMultiGeoIpDataListener(
-        final IngestDocument ingestDocument,
-        final BiConsumer<IngestDocument, Exception> handler
-    ) {
-        return new ActionListener<>() {
-            @Override
-            public void onResponse(final List<Map<String, Object>> ipToGeoData) {
-                try {
-                    if (ipToGeoData.isEmpty() == false) {
-                        ingestDocument.setFieldValue(targetField, filteredGeoData(ipToGeoData));
-                    }
-                    handler.accept(ingestDocument, null);
-                } catch (Exception e) {
-                    handler.accept(null, e);
-                }
-            }
-
-            @Override
-            public void onFailure(final Exception e) {
-                handler.accept(null, e);
-            }
-        };
+        if (geoDataList.isEmpty() == false) {
+            ingestDocument.setFieldValue(targetField, geoDataList);
+        }
+        handler.accept(ingestDocument, null);
     }
 
     @Override

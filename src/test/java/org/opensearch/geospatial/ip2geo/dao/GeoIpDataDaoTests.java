@@ -19,9 +19,7 @@ import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -32,9 +30,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
-import org.mockito.ArgumentCaptor;
 import org.opensearch.OpenSearchException;
-import org.opensearch.action.ActionListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.opensearch.action.admin.indices.forcemerge.ForceMergeRequest;
@@ -106,6 +102,18 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
             "{\"_cidr\":\"1.0.0.0/25\",\"_data\":{\"country\":\"USA\",\"city\":\"Seattle\"}}",
             Strings.toString(noOpsGeoIpDataDao.createDocument(names, values))
         );
+    }
+
+    @SneakyThrows
+    public void testCreateDocument_whenFieldsAndValuesLengthDoesNotMatch_thenThrowException() {
+        String[] names = { "ip", "country", "location", "city" };
+        String[] values = { "1.0.0.0/25", "USA", " " };
+
+        // Run
+        Exception e = expectThrows(OpenSearchException.class, () -> noOpsGeoIpDataDao.createDocument(names, values));
+
+        // Verify
+        assertTrue(e.getMessage().contains("does not match"));
     }
 
     public void testGetDatabaseReader() throws Exception {
@@ -222,7 +230,7 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
         }
     }
 
-    public void testGetGeoIpData_whenSingleIp_thenSucceed() {
+    public void testGetGeoIpData_whenDataExist_thenReturnTheData() {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String ip = randomIpAddress();
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
@@ -247,14 +255,15 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
             when(response.getHits()).thenReturn(searchHits);
             return response;
         });
-        ActionListener<Map<String, Object>> listener = mock(ActionListener.class);
-        verifyingGeoIpDataDao.getGeoIpData(indexName, ip, listener);
-        ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
-        verify(listener).onResponse(captor.capture());
-        assertEquals("seattle", captor.getValue().get("city"));
+
+        // Run
+        Map<String, Object> geoData = verifyingGeoIpDataDao.getGeoIpData(indexName, ip);
+
+        // Verify
+        assertEquals("seattle", geoData.get("city"));
     }
 
-    public void testGetGeoIpData_whenMultiIps_thenSucceed() {
+    public void testGetGeoIpData_whenNoData_thenReturnEmpty() {
         String indexName = GeospatialTestHelper.randomLowerCaseString();
         String ip = randomIpAddress();
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
@@ -262,27 +271,20 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
             SearchRequest request = (SearchRequest) actionRequest;
             assertEquals("_local", request.preference());
             assertEquals(1, request.source().size());
-            assertEquals(QueryBuilders.boolQuery().should(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip)), request.source().query());
+            assertEquals(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip), request.source().query());
 
-            String data = String.format(
-                Locale.ROOT,
-                "{\"%s\":\"1.0.0.1/16\",\"%s\":{\"city\":\"seattle\"}}",
-                IP_RANGE_FIELD_NAME,
-                DATA_FIELD_NAME
-            );
-            SearchHit searchHit = new SearchHit(1);
-            searchHit.sourceRef(BytesReference.fromByteBuffer(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8))));
-            SearchHit[] searchHitArray = { searchHit };
-            SearchHits searchHits = new SearchHits(searchHitArray, new TotalHits(1l, TotalHits.Relation.EQUAL_TO), 1);
+            SearchHit[] searchHitArray = {};
+            SearchHits searchHits = new SearchHits(searchHitArray, new TotalHits(0l, TotalHits.Relation.EQUAL_TO), 0);
 
             SearchResponse response = mock(SearchResponse.class);
             when(response.getHits()).thenReturn(searchHits);
             return response;
         });
-        ActionListener<List<Map<String, Object>>> listener = mock(ActionListener.class);
-        verifyingGeoIpDataDao.getGeoIpData(indexName, Arrays.asList(ip), listener);
-        ArgumentCaptor<List<Map<String, Object>>> captor = ArgumentCaptor.forClass(List.class);
-        verify(listener).onResponse(captor.capture());
-        assertEquals("seattle", captor.getValue().get(0).get("city"));
+
+        // Run
+        Map<String, Object> geoData = verifyingGeoIpDataDao.getGeoIpData(indexName, ip);
+
+        // Verify
+        assertTrue(geoData.isEmpty());
     }
 }

@@ -10,7 +10,6 @@ import java.io.IOException;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.common.io.stream.StreamInput;
@@ -52,10 +51,12 @@ public class GetDatasourceRequest extends ActionRequest {
 
     @Override
     public ActionRequestValidationException validate() {
+        ActionRequestValidationException errors = null;
         if (names == null) {
-            throw new OpenSearchException("names should not be null");
+            errors = new ActionRequestValidationException();
+            errors.addValidationError("names should not be null");
         }
-        return null;
+        return errors;
     }
 
     @Override
