@@ -7,16 +7,24 @@ package org.opensearch.geospatial.ip2geo.dao;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
+import org.opensearch.common.cache.Cache;
+import org.opensearch.common.cache.CacheBuilder;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.engine.Engine;
@@ -117,6 +125,67 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
             this.indexName = datasource.currentIndexName();
             this.expirationDate = datasource.expirationDay();
             this.state = datasource.getState();
+        }
+    }
+
+    /**
+     * Cache to hold geo data
+     *
+     * GeoData in an index in immutable. Therefore, invalidation is not needed.
+     */
+    @VisibleForTesting
+    protected static class GeoDataCache {
+        private Cache<CacheKey, Map<String, Object>> cache;
+
+        public GeoDataCache(final long maxSize) {
+            if (maxSize < 0) {
+                throw new IllegalArgumentException("ip2geo max cache size must be 0 or greater");
+            }
+            this.cache = CacheBuilder.<CacheKey, Map<String, Object>>builder().setMaximumWeight(maxSize).build();
+        }
+
+        public Map<String, Object> putIfAbsent(
+            final String indexName,
+            final String ip,
+            final Function<String, Map<String, Object>> retrieveFunction
+        ) throws ExecutionException {
+            CacheKey cacheKey = new CacheKey(indexName, ip);
+            return cache.computeIfAbsent(cacheKey, key -> retrieveFunction.apply(key.ip));
+        }
+
+        public Map<String, Object> get(final String indexName, final String ip) {
+            return cache.get(new CacheKey(indexName, ip));
+        }
+
+        /**
+         * Create a new cache with give size and replace existing cache
+         *
+         * Try to populate the existing value from previous cache to the new cache in best effort
+         *
+         * @param maxSize
+         */
+        public void updateMaxSize(final long maxSize) {
+            if (maxSize < 0) {
+                throw new IllegalArgumentException("ip2geo max cache size must be 0 or greater");
+            }
+            Cache<CacheKey, Map<String, Object>> temp = CacheBuilder.<CacheKey, Map<String, Object>>builder()
+                .setMaximumWeight(maxSize)
+                .build();
+            int count = 0;
+            Iterator<CacheKey> it = cache.keys().iterator();
+            while (it.hasNext() && count < maxSize) {
+                CacheKey key = it.next();
+                temp.put(key, cache.get(key));
+                count++;
+            }
+            cache = temp;
+        }
+
+        @AllArgsConstructor
+        @EqualsAndHashCode
+        private static class CacheKey {
+            private final String indexName;
+            private final String ip;
         }
     }
 }
