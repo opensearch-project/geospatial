@@ -41,7 +41,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceDao, geoIpDataDao, ip2GeoCache);
+        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceDao, geoIpDataDao, ip2GeoCachedDao);
     }
 
     public void testExecuteWithNoIpAndIgnoreMissing() throws Exception {
@@ -96,7 +96,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         source.put("ip", ip);
         IngestDocument document = new IngestDocument(source, new HashMap<>());
 
-        when(ip2GeoCache.has(datasourceName)).thenReturn(false);
+        when(ip2GeoCachedDao.has(datasourceName)).thenReturn(false);
         BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
 
         // Run
@@ -119,10 +119,10 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         IngestDocument document = new IngestDocument(source, new HashMap<>());
 
         String index = GeospatialTestHelper.randomLowerCaseString();
-        when(ip2GeoCache.getIndexName(datasourceName)).thenReturn(index);
-        when(ip2GeoCache.has(datasourceName)).thenReturn(true);
-        when(ip2GeoCache.isExpired(datasourceName)).thenReturn(true);
-        when(ip2GeoCache.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
+        when(ip2GeoCachedDao.getIndexName(datasourceName)).thenReturn(index);
+        when(ip2GeoCachedDao.has(datasourceName)).thenReturn(true);
+        when(ip2GeoCachedDao.isExpired(datasourceName)).thenReturn(true);
+        when(ip2GeoCachedDao.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
 
         BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
 
@@ -145,10 +145,10 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
 
         String indexName = GeospatialTestHelper.randomLowerCaseString();
-        when(ip2GeoCache.getIndexName(datasourceName)).thenReturn(indexName);
-        when(ip2GeoCache.has(datasourceName)).thenReturn(true);
-        when(ip2GeoCache.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
-        when(ip2GeoCache.isExpired(datasourceName)).thenReturn(false);
+        when(ip2GeoCachedDao.getIndexName(datasourceName)).thenReturn(indexName);
+        when(ip2GeoCachedDao.has(datasourceName)).thenReturn(true);
+        when(ip2GeoCachedDao.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
+        when(ip2GeoCachedDao.isExpired(datasourceName)).thenReturn(false);
 
         // Run
         processor.executeInternal(document, handler, ip);
@@ -273,10 +273,10 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         List<?> ips = Arrays.asList(randomIpAddress(), randomIpAddress());
 
         String indexName = GeospatialTestHelper.randomLowerCaseString();
-        when(ip2GeoCache.getIndexName(datasourceName)).thenReturn(indexName);
-        when(ip2GeoCache.has(datasourceName)).thenReturn(true);
-        when(ip2GeoCache.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
-        when(ip2GeoCache.isExpired(datasourceName)).thenReturn(false);
+        when(ip2GeoCachedDao.getIndexName(datasourceName)).thenReturn(indexName);
+        when(ip2GeoCachedDao.has(datasourceName)).thenReturn(true);
+        when(ip2GeoCachedDao.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
+        when(ip2GeoCachedDao.isExpired(datasourceName)).thenReturn(false);
 
         // Run
         processor.executeInternal(document, handler, ips);

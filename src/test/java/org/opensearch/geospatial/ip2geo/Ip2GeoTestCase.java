@@ -43,13 +43,13 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
 import org.opensearch.geospatial.GeospatialTestHelper;
-import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
+import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoProcessorDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
@@ -79,7 +79,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     @Mock
     protected GeoIpDataDao geoIpDataDao;
     @Mock
-    protected Ip2GeoCache ip2GeoCache;
+    protected Ip2GeoCachedDao ip2GeoCachedDao;
     @Mock
     protected ClusterState clusterState;
     @Mock
@@ -266,7 +266,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             clusterSettings,
             datasourceDao,
             geoIpDataDao,
-            ip2GeoCache
+            ip2GeoCachedDao
         );
         return ip2GeoProcessor;
     }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.cache;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -23,12 +23,12 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.engine.Engine;
 import org.opensearch.index.shard.ShardId;
 
-public class Ip2GeoCacheTests extends Ip2GeoTestCase {
-    private Ip2GeoCache ip2GeoCache;
+public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
+    private Ip2GeoCachedDao ip2GeoCachedDao;
 
     @Before
     public void init() {
-        ip2GeoCache = new Ip2GeoCache(datasourceDao);
+        ip2GeoCachedDao = new Ip2GeoCachedDao(datasourceDao);
     }
 
     public void testGetIndexName_whenCalled_thenReturnIndexName() {
@@ -36,7 +36,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
-        String indexName = ip2GeoCache.getIndexName(datasource.getName());
+        String indexName = ip2GeoCachedDao.getIndexName(datasource.getName());
 
         // Verify
         assertEquals(datasource.currentIndexName(), indexName);
@@ -49,7 +49,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
-        boolean isExpired = ip2GeoCache.isExpired(datasource.getName());
+        boolean isExpired = ip2GeoCachedDao.isExpired(datasource.getName());
 
         // Verify
         assertTrue(isExpired);
@@ -62,7 +62,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
-        boolean isExpired = ip2GeoCache.isExpired(datasource.getName());
+        boolean isExpired = ip2GeoCachedDao.isExpired(datasource.getName());
 
         // Verify
         assertFalse(isExpired);
@@ -73,7 +73,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
-        boolean hasDatasource = ip2GeoCache.has(datasource.getName());
+        boolean hasDatasource = ip2GeoCachedDao.has(datasource.getName());
 
         // Verify
         assertTrue(hasDatasource);
@@ -85,7 +85,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         // Run
-        boolean hasDatasource = ip2GeoCache.has(datasourceName);
+        boolean hasDatasource = ip2GeoCachedDao.has(datasourceName);
 
         // Verify
         assertFalse(hasDatasource);
@@ -96,7 +96,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
-        DatasourceState state = ip2GeoCache.getState(datasource.getName());
+        DatasourceState state = ip2GeoCachedDao.getState(datasource.getName());
 
         // Verify
         assertEquals(datasource.getState(), state);
@@ -115,13 +115,13 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(result.getResultType()).thenReturn(Engine.Result.Type.FAILURE);
 
         // Run
-        ip2GeoCache.postIndex(shardId, index, result);
+        ip2GeoCachedDao.postIndex(shardId, index, result);
 
         // Verify
-        assertFalse(ip2GeoCache.has(datasource.getName()));
-        assertTrue(ip2GeoCache.isExpired(datasource.getName()));
-        assertNull(ip2GeoCache.getIndexName(datasource.getName()));
-        assertNull(ip2GeoCache.getState(datasource.getName()));
+        assertFalse(ip2GeoCachedDao.has(datasource.getName()));
+        assertTrue(ip2GeoCachedDao.isExpired(datasource.getName()));
+        assertNull(ip2GeoCachedDao.getIndexName(datasource.getName()));
+        assertNull(ip2GeoCachedDao.getState(datasource.getName()));
     }
 
     @SneakyThrows
@@ -137,13 +137,13 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(result.getResultType()).thenReturn(Engine.Result.Type.SUCCESS);
 
         // Run
-        ip2GeoCache.postIndex(shardId, index, result);
+        ip2GeoCachedDao.postIndex(shardId, index, result);
 
         // Verify
-        assertTrue(ip2GeoCache.has(datasource.getName()));
-        assertFalse(ip2GeoCache.isExpired(datasource.getName()));
-        assertEquals(datasource.currentIndexName(), ip2GeoCache.getIndexName(datasource.getName()));
-        assertEquals(datasource.getState(), ip2GeoCache.getState(datasource.getName()));
+        assertTrue(ip2GeoCachedDao.has(datasource.getName()));
+        assertFalse(ip2GeoCachedDao.isExpired(datasource.getName()));
+        assertEquals(datasource.currentIndexName(), ip2GeoCachedDao.getIndexName(datasource.getName()));
+        assertEquals(datasource.getState(), ip2GeoCachedDao.getState(datasource.getName()));
     }
 
     public void testPostDelete_whenFailed_thenNoUpdate() {
@@ -156,10 +156,10 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(result.getResultType()).thenReturn(Engine.Result.Type.FAILURE);
 
         // Run
-        ip2GeoCache.postDelete(shardId, index, result);
+        ip2GeoCachedDao.postDelete(shardId, index, result);
 
         // Verify
-        assertTrue(ip2GeoCache.has(datasource.getName()));
+        assertTrue(ip2GeoCachedDao.has(datasource.getName()));
     }
 
     public void testPostDelete_whenSucceed_thenUpdate() {
@@ -173,9 +173,9 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         when(result.getResultType()).thenReturn(Engine.Result.Type.SUCCESS);
 
         // Run
-        ip2GeoCache.postDelete(shardId, index, result);
+        ip2GeoCachedDao.postDelete(shardId, index, result);
 
         // Verify
-        assertFalse(ip2GeoCache.has(datasource.getName()));
+        assertFalse(ip2GeoCachedDao.has(datasource.getName()));
     }
 }

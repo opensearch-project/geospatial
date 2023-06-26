@@ -51,12 +51,12 @@ import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceTransportAction;
-import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
+import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceRunner;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
@@ -94,7 +94,7 @@ import org.opensearch.watcher.ResourceWatcherService;
  */
 @Log4j2
 public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin, SystemIndexPlugin {
-    private Ip2GeoCache ip2GeoCache;
+    private Ip2GeoCachedDao ip2GeoCachedDao;
     private DatasourceDao datasourceDao;
     private GeoIpDataDao geoIpDataDao;
 
@@ -107,17 +107,17 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
         this.datasourceDao = new DatasourceDao(parameters.client, parameters.ingestService.getClusterService());
         this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client);
-        this.ip2GeoCache = new Ip2GeoCache(datasourceDao);
+        this.ip2GeoCachedDao = new Ip2GeoCachedDao(datasourceDao);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
-            .put(Ip2GeoProcessor.TYPE, new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceDao, geoIpDataDao, ip2GeoCache))
+            .put(Ip2GeoProcessor.TYPE, new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceDao, geoIpDataDao, ip2GeoCachedDao))
             .immutableMap();
     }
 
     @Override
     public void onIndexModule(IndexModule indexModule) {
         if (DatasourceExtension.JOB_INDEX_NAME.equals(indexModule.getIndex().getName())) {
-            indexModule.addIndexOperationListener(ip2GeoCache);
+            indexModule.addIndexOperationListener(ip2GeoCachedDao);
             log.info("Ip2GeoListener started listening to operations on index {}", DatasourceExtension.JOB_INDEX_NAME);
         }
     }
@@ -170,7 +170,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             ip2GeoExecutor,
             geoIpDataDao,
             ip2GeoLockService,
-            ip2GeoCache
+            ip2GeoCachedDao
         );
     }
 
