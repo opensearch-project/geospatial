@@ -24,10 +24,10 @@ import lombok.extern.log4j.Log4j2;
 import org.opensearch.action.ActionListener;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
-import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
+import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.IngestService;
@@ -57,7 +57,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     private final ClusterSettings clusterSettings;
     private final DatasourceDao datasourceDao;
     private final GeoIpDataDao geoIpDataDao;
-    private final Ip2GeoCache ip2GeoCache;
+    private final Ip2GeoCachedDao ip2GeoCachedDao;
 
     /**
      * Ip2Geo processor type
@@ -76,7 +76,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param clusterSettings the cluster settings
      * @param datasourceDao the datasource facade
      * @param geoIpDataDao the geoip data facade
-     * @param ip2GeoCache the cache
+     * @param ip2GeoCachedDao the cache
      */
     public Ip2GeoProcessor(
         final String tag,
@@ -89,7 +89,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final ClusterSettings clusterSettings,
         final DatasourceDao datasourceDao,
         final GeoIpDataDao geoIpDataDao,
-        final Ip2GeoCache ip2GeoCache
+        final Ip2GeoCachedDao ip2GeoCachedDao
     ) {
         super(tag, description);
         this.field = field;
@@ -100,7 +100,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         this.clusterSettings = clusterSettings;
         this.datasourceDao = datasourceDao;
         this.geoIpDataDao = geoIpDataDao;
-        this.ip2GeoCache = ip2GeoCache;
+        this.ip2GeoCachedDao = ip2GeoCachedDao;
     }
 
     /**
@@ -154,8 +154,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final String ip
     ) {
         validateDatasourceIsInAvailableState(datasourceName);
-        String indexName = ip2GeoCache.getIndexName(datasourceName);
-        if (ip2GeoCache.isExpired(datasourceName) || indexName == null) {
+        String indexName = ip2GeoCachedDao.getIndexName(datasourceName);
+        if (ip2GeoCachedDao.isExpired(datasourceName) || indexName == null) {
             handleExpiredData(ingestDocument, handler);
             return;
         }
@@ -209,11 +209,11 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     }
 
     private void validateDatasourceIsInAvailableState(final String datasourceName) {
-        if (ip2GeoCache.has(datasourceName) == false) {
+        if (ip2GeoCachedDao.has(datasourceName) == false) {
             throw new IllegalStateException("datasource does not exist");
         }
 
-        if (DatasourceState.AVAILABLE.equals(ip2GeoCache.getState(datasourceName)) == false) {
+        if (DatasourceState.AVAILABLE.equals(ip2GeoCachedDao.getState(datasourceName)) == false) {
             throw new IllegalStateException("datasource is not in an available state");
         }
     }
@@ -243,8 +243,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         }
 
         validateDatasourceIsInAvailableState(datasourceName);
-        String indexName = ip2GeoCache.getIndexName(datasourceName);
-        if (ip2GeoCache.isExpired(datasourceName) || indexName == null) {
+        String indexName = ip2GeoCachedDao.getIndexName(datasourceName);
+        if (ip2GeoCachedDao.isExpired(datasourceName) || indexName == null) {
             handleExpiredData(ingestDocument, handler);
             return;
         }
@@ -290,7 +290,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         private final IngestService ingestService;
         private final DatasourceDao datasourceDao;
         private final GeoIpDataDao geoIpDataDao;
-        private final Ip2GeoCache ip2GeoCache;
+        private final Ip2GeoCachedDao ip2GeoCachedDao;
 
         /**
          * Within this method, blocking request cannot be called because this method is executed in a transport thread.
@@ -320,7 +320,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 ingestService.getClusterService().getClusterSettings(),
                 datasourceDao,
                 geoIpDataDao,
-                ip2GeoCache
+                ip2GeoCachedDao
             );
         }
     }
