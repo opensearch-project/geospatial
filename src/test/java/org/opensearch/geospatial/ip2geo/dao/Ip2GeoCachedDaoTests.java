@@ -9,12 +9,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import lombok.SneakyThrows;
 
 import org.junit.Before;
 import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.network.NetworkAddress;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
@@ -177,5 +181,60 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertFalse(ip2GeoCachedDao.has(datasource.getName()));
+    }
+
+    @SneakyThrows
+    public void testUpdateMaxSize_whenBiggerSize_thenContainsAllData() {
+        int cacheSize = 10;
+        String datasource = GeospatialTestHelper.randomLowerCaseString();
+        Ip2GeoCachedDao.GeoDataCache geoDataCache = new Ip2GeoCachedDao.GeoDataCache(cacheSize);
+        List<String> ips = new ArrayList<>(cacheSize);
+        for (int i = 0; i < cacheSize; i++) {
+            String ip = NetworkAddress.format(randomIp(false));
+            ips.add(ip);
+            geoDataCache.putIfAbsent(datasource, ip, addr -> Collections.emptyMap());
+        }
+
+        // Verify all data exist in the cache
+        assertTrue(ips.stream().allMatch(ip -> geoDataCache.get(datasource, ip) != null));
+
+        // Update cache size
+        int newCacheSize = 15;
+        geoDataCache.updateMaxSize(newCacheSize);
+
+        // Verify all data exist in the cache
+        assertTrue(ips.stream().allMatch(ip -> geoDataCache.get(datasource, ip) != null));
+
+        // Add (newCacheSize - cacheSize + 1) data and the first data should not be available in the cache
+        for (int i = 0; i < newCacheSize - cacheSize + 1; i++) {
+            geoDataCache.putIfAbsent(datasource, NetworkAddress.format(randomIp(false)), addr -> Collections.emptyMap());
+        }
+        assertNull(geoDataCache.get(datasource, ips.get(0)));
+    }
+
+    @SneakyThrows
+    public void testUpdateMaxSize_whenSmallerSize_thenContainsPartialData() {
+        int cacheSize = 10;
+        String datasource = GeospatialTestHelper.randomLowerCaseString();
+        Ip2GeoCachedDao.GeoDataCache geoDataCache = new Ip2GeoCachedDao.GeoDataCache(cacheSize);
+        List<String> ips = new ArrayList<>(cacheSize);
+        for (int i = 0; i < cacheSize; i++) {
+            String ip = NetworkAddress.format(randomIp(false));
+            ips.add(ip);
+            geoDataCache.putIfAbsent(datasource, ip, addr -> Collections.emptyMap());
+        }
+
+        // Verify all data exist in the cache
+        assertTrue(ips.stream().allMatch(ip -> geoDataCache.get(datasource, ip) != null));
+
+        // Update cache size
+        int newCacheSize = 5;
+        geoDataCache.updateMaxSize(newCacheSize);
+
+        // Verify the last (cacheSize - newCacheSize) data is available in the cache
+        List<String> deleted = ips.subList(0, ips.size() - newCacheSize);
+        List<String> retained = ips.subList(ips.size() - newCacheSize, ips.size());
+        assertTrue(deleted.stream().allMatch(ip -> geoDataCache.get(datasource, ip) == null));
+        assertTrue(retained.stream().allMatch(ip -> geoDataCache.get(datasource, ip) != null));
     }
 }
