@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.common;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
 
@@ -58,16 +58,18 @@ import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.constants.IndexSetting;
+import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
 
 /**
- * Facade class for GeoIp data
+ * Data access object  for GeoIp data
  */
 @Log4j2
-public class GeoIpDataFacade {
+public class GeoIpDataDao {
     public static final int BUNDLE_SIZE = 128;
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
@@ -91,7 +93,7 @@ public class GeoIpDataFacade {
     private final ClusterSettings clusterSettings;
     private final Client client;
 
-    public GeoIpDataFacade(final ClusterService clusterService, final Client client) {
+    public GeoIpDataDao(final ClusterService clusterService, final Client client) {
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
         this.client = client;
@@ -150,7 +152,7 @@ public class GeoIpDataFacade {
      */
     private String getIndexMapping() {
         try {
-            try (InputStream is = DatasourceFacade.class.getResourceAsStream("/mappings/ip2geo_geoip.json")) {
+            try (InputStream is = DatasourceDao.class.getResourceAsStream("/mappings/ip2geo_geoip.json")) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                     return reader.lines().map(String::trim).collect(Collectors.joining());
                 }

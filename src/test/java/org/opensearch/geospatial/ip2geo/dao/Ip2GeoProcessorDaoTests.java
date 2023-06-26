@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.common;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import static org.mockito.Mockito.when;
 
@@ -23,19 +23,19 @@ import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
 import org.opensearch.ingest.IngestMetadata;
 import org.opensearch.ingest.PipelineConfiguration;
 
-public class Ip2GeoProcessorFacadeTests extends Ip2GeoTestCase {
-    private Ip2GeoProcessorFacade ip2GeoProcessorFacade;
+public class Ip2GeoProcessorDaoTests extends Ip2GeoTestCase {
+    private Ip2GeoProcessorDao ip2GeoProcessorDao;
 
     @Before
     public void init() {
-        ip2GeoProcessorFacade = new Ip2GeoProcessorFacade(ingestService);
+        ip2GeoProcessorDao = new Ip2GeoProcessorDao(ingestService);
     }
 
     public void testGetProcessors_whenNullMetadata_thenReturnEmpty() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         when(metadata.custom(IngestMetadata.TYPE)).thenReturn(null);
 
-        List<Ip2GeoProcessor> ip2GeoProcessorList = ip2GeoProcessorFacade.getProcessors(datasourceName);
+        List<Ip2GeoProcessor> ip2GeoProcessorList = ip2GeoProcessorDao.getProcessors(datasourceName);
         assertTrue(ip2GeoProcessorList.isEmpty());
     }
 
@@ -50,7 +50,7 @@ public class Ip2GeoProcessorFacadeTests extends Ip2GeoTestCase {
         Ip2GeoProcessor ip2GeoProcessor = randomIp2GeoProcessor(datasourceBeingUsed);
         when(ingestService.getProcessorsInPipeline(pipelineId, Ip2GeoProcessor.class)).thenReturn(Arrays.asList(ip2GeoProcessor));
 
-        List<Ip2GeoProcessor> ip2GeoProcessorList = ip2GeoProcessorFacade.getProcessors(datasourceNotBeingUsed);
+        List<Ip2GeoProcessor> ip2GeoProcessorList = ip2GeoProcessorDao.getProcessors(datasourceNotBeingUsed);
         assertTrue(ip2GeoProcessorList.isEmpty());
     }
 
@@ -64,7 +64,7 @@ public class Ip2GeoProcessorFacadeTests extends Ip2GeoTestCase {
         Ip2GeoProcessor ip2GeoProcessor = randomIp2GeoProcessor(datasourceName);
         when(ingestService.getProcessorsInPipeline(pipelineId, Ip2GeoProcessor.class)).thenReturn(Arrays.asList(ip2GeoProcessor));
 
-        List<Ip2GeoProcessor> ip2GeoProcessorList = ip2GeoProcessorFacade.getProcessors(datasourceName);
+        List<Ip2GeoProcessor> ip2GeoProcessorList = ip2GeoProcessorDao.getProcessors(datasourceName);
         assertEquals(1, ip2GeoProcessorList.size());
         assertEquals(ip2GeoProcessor.getDatasourceName(), ip2GeoProcessorList.get(0).getDatasourceName());
     }

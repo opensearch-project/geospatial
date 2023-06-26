@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.common;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -50,29 +50,30 @@ import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
+import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 
 @SuppressForbidden(reason = "unit test")
-public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
+public class GeoIpDataDaoTests extends Ip2GeoTestCase {
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
-    private GeoIpDataFacade noOpsGeoIpDataFacade;
-    private GeoIpDataFacade verifyingGeoIpDataFacade;
+    private GeoIpDataDao noOpsGeoIpDataDao;
+    private GeoIpDataDao verifyingGeoIpDataDao;
 
     @Before
     public void init() {
-        noOpsGeoIpDataFacade = new GeoIpDataFacade(clusterService, client);
-        verifyingGeoIpDataFacade = new GeoIpDataFacade(clusterService, verifyingClient);
+        noOpsGeoIpDataDao = new GeoIpDataDao(clusterService, client);
+        verifyingGeoIpDataDao = new GeoIpDataDao(clusterService, verifyingClient);
     }
 
     public void testCreateIndexIfNotExistsWithExistingIndex() {
         String index = GeospatialTestHelper.randomLowerCaseString();
         when(metadata.hasIndex(index)).thenReturn(true);
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> { throw new RuntimeException("Shouldn't get called"); });
-        verifyingGeoIpDataFacade.createIndexIfNotExists(index);
+        verifyingGeoIpDataDao.createIndexIfNotExists(index);
     }
 
     public void testCreateIndexIfNotExistsWithoutExistingIndex() {
@@ -94,7 +95,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             );
             return null;
         });
-        verifyingGeoIpDataFacade.createIndexIfNotExists(index);
+        verifyingGeoIpDataDao.createIndexIfNotExists(index);
     }
 
     @SneakyThrows
@@ -103,7 +104,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         String[] values = { "1.0.0.0/25", "USA", " ", "Seattle" };
         assertEquals(
             "{\"_cidr\":\"1.0.0.0/25\",\"_data\":{\"country\":\"USA\",\"city\":\"Seattle\"}}",
-            Strings.toString(noOpsGeoIpDataFacade.createDocument(names, values))
+            Strings.toString(noOpsGeoIpDataDao.createDocument(names, values))
         );
     }
 
@@ -117,7 +118,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             Instant.now().toEpochMilli(),
             "tester"
         );
-        CSVParser parser = noOpsGeoIpDataFacade.getDatabaseReader(manifest);
+        CSVParser parser = noOpsGeoIpDataDao.getDatabaseReader(manifest);
         String[] expectedHeader = { "network", "country_name" };
         assertArrayEquals(expectedHeader, parser.iterator().next().values());
         String[] expectedValues = { "1.0.0.0/24", "Australia" };
@@ -134,7 +135,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             Instant.now().toEpochMilli(),
             "tester"
         );
-        OpenSearchException exception = expectThrows(OpenSearchException.class, () -> noOpsGeoIpDataFacade.getDatabaseReader(manifest));
+        OpenSearchException exception = expectThrows(OpenSearchException.class, () -> noOpsGeoIpDataDao.getDatabaseReader(manifest));
         assertTrue(exception.getMessage().contains("does not exist"));
     }
 
@@ -154,7 +155,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         when(connection.getInputStream()).thenReturn(new FileInputStream(zipFile));
 
         // Run
-        noOpsGeoIpDataFacade.internalGetDatabaseReader(manifest, connection);
+        noOpsGeoIpDataDao.internalGetDatabaseReader(manifest, connection);
 
         // Verify
         verify(connection).addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
@@ -169,12 +170,12 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             assertEquals(index, request.indices()[0]);
             return new AcknowledgedResponse(true);
         });
-        verifyingGeoIpDataFacade.deleteIp2GeoDataIndex(index);
+        verifyingGeoIpDataDao.deleteIp2GeoDataIndex(index);
     }
 
     public void testDeleteIp2GeoDataIndexWithNonIp2GeoDataIndex() {
         String index = GeospatialTestHelper.randomLowerCaseString();
-        Exception e = expectThrows(OpenSearchException.class, () -> verifyingGeoIpDataFacade.deleteIp2GeoDataIndex(index));
+        Exception e = expectThrows(OpenSearchException.class, () -> verifyingGeoIpDataDao.deleteIp2GeoDataIndex(index));
         assertTrue(e.getMessage().contains("not ip2geo data index"));
         verify(verifyingClient, never()).index(any());
     }
@@ -216,7 +217,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
         try (CSVParser csvParser = CSVParser.parse(sampleIp2GeoFile(), StandardCharsets.UTF_8, CSVFormat.RFC4180)) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
             String[] fields = iterator.next().values();
-            verifyingGeoIpDataFacade.putGeoIpData(index, fields, iterator, renewLock);
+            verifyingGeoIpDataDao.putGeoIpData(index, fields, iterator, renewLock);
             verify(renewLock, times(2)).run();
         }
     }
@@ -247,7 +248,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             return response;
         });
         ActionListener<Map<String, Object>> listener = mock(ActionListener.class);
-        verifyingGeoIpDataFacade.getGeoIpData(indexName, ip, listener);
+        verifyingGeoIpDataDao.getGeoIpData(indexName, ip, listener);
         ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
         verify(listener).onResponse(captor.capture());
         assertEquals("seattle", captor.getValue().get("city"));
@@ -279,7 +280,7 @@ public class GeoIpDataFacadeTests extends Ip2GeoTestCase {
             return response;
         });
         ActionListener<List<Map<String, Object>>> listener = mock(ActionListener.class);
-        verifyingGeoIpDataFacade.getGeoIpData(indexName, Arrays.asList(ip), listener);
+        verifyingGeoIpDataDao.getGeoIpData(indexName, Arrays.asList(ip), listener);
         ArgumentCaptor<List<Map<String, Object>>> captor = ArgumentCaptor.forClass(List.class);
         verify(listener).onResponse(captor.capture());
         assertEquals("seattle", captor.getValue().get(0).get("city"));

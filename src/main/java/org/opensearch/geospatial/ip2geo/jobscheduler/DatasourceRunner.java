@@ -15,10 +15,10 @@ import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.jobscheduler.spi.JobExecutionContext;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
@@ -57,7 +57,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
     private ClusterService clusterService;
     private DatasourceUpdateService datasourceUpdateService;
     private Ip2GeoExecutor ip2GeoExecutor;
-    private DatasourceFacade datasourceFacade;
+    private DatasourceDao datasourceDao;
     private Ip2GeoLockService ip2GeoLockService;
     private boolean initialized;
 
@@ -72,13 +72,13 @@ public class DatasourceRunner implements ScheduledJobRunner {
         final ClusterService clusterService,
         final DatasourceUpdateService datasourceUpdateService,
         final Ip2GeoExecutor ip2GeoExecutor,
-        final DatasourceFacade datasourceFacade,
+        final DatasourceDao datasourceDao,
         final Ip2GeoLockService ip2GeoLockService
     ) {
         this.clusterService = clusterService;
         this.datasourceUpdateService = datasourceUpdateService;
         this.ip2GeoExecutor = ip2GeoExecutor;
-        this.datasourceFacade = datasourceFacade;
+        this.datasourceDao = datasourceDao;
         this.ip2GeoLockService = ip2GeoLockService;
         this.initialized = true;
     }
@@ -131,7 +131,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
 
     @VisibleForTesting
     protected void updateDatasource(final ScheduledJobParameter jobParameter, final Runnable renewLock) throws IOException {
-        Datasource datasource = datasourceFacade.getDatasource(jobParameter.getName());
+        Datasource datasource = datasourceDao.getDatasource(jobParameter.getName());
         /**
          * If delete request comes while update task is waiting on a queue for other update tasks to complete,
          * because update task for this datasource didn't acquire a lock yet, delete request is processed.
@@ -147,7 +147,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
             log.error("Invalid datasource state. Expecting {} but received {}", DatasourceState.AVAILABLE, datasource.getState());
             datasource.disable();
             datasource.getUpdateStats().setLastFailedAt(Instant.now());
-            datasourceFacade.updateDatasource(datasource);
+            datasourceDao.updateDatasource(datasource);
             return;
         }
 
@@ -160,7 +160,7 @@ public class DatasourceRunner implements ScheduledJobRunner {
         } catch (Exception e) {
             log.error("Failed to update datasource for {}", datasource.getName(), e);
             datasource.getUpdateStats().setLastFailedAt(Instant.now());
-            datasourceFacade.updateDatasource(datasource);
+            datasourceDao.updateDatasource(datasource);
         } finally {
             postProcessing(datasource);
         }

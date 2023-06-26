@@ -44,7 +44,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
             transportService,
             actionFilters,
             ip2GeoLockService,
-            datasourceFacade,
+            datasourceDao,
             datasourceUpdateService,
             threadPool
         );
@@ -94,7 +94,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         request.setUpdateInterval(TimeValue.timeValueDays(datasource.getSchedule().getInterval()));
 
         Task task = mock(Task.class);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         when(datasourceUpdateService.getHeaderFields(request.getEndpoint())).thenReturn(datasource.getDatabase().getFields());
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
         LockModel lockModel = randomLockModel();
@@ -110,8 +110,8 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         captor.getValue().onResponse(lockModel);
 
         // Verify
-        verify(datasourceFacade).getDatasource(datasource.getName());
-        verify(datasourceFacade).updateDatasource(datasource);
+        verify(datasourceDao).getDatasource(datasource.getName());
+        verify(datasourceDao).updateDatasource(datasource);
         verify(datasourceUpdateService).getHeaderFields(request.getEndpoint());
         assertEquals(request.getEndpoint(), datasource.getEndpoint());
         assertEquals(request.getUpdateInterval().days(), datasource.getUserSchedule().getInterval());
@@ -128,7 +128,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         request.setEndpoint(datasource.getEndpoint());
 
         Task task = mock(Task.class);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
         LockModel lockModel = randomLockModel();
 
@@ -143,9 +143,9 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         captor.getValue().onResponse(lockModel);
 
         // Verify
-        verify(datasourceFacade).getDatasource(datasource.getName());
+        verify(datasourceDao).getDatasource(datasource.getName());
         verify(datasourceUpdateService, never()).getHeaderFields(anyString());
-        verify(datasourceFacade, never()).updateDatasource(datasource);
+        verify(datasourceDao, never()).updateDatasource(datasource);
         verify(listener).onResponse(new AcknowledgedResponse(true));
         verify(ip2GeoLockService).releaseLock(eq(lockModel));
     }
@@ -184,7 +184,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         request.setEndpoint(sampleManifestUrl());
 
         Task task = mock(Task.class);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         List<String> newFields = datasource.getDatabase().getFields().subList(0, 0);
         when(datasourceUpdateService.getHeaderFields(request.getEndpoint())).thenReturn(newFields);
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
@@ -215,7 +215,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         request.setUpdateInterval(TimeValue.timeValueDays(datasource.getDatabase().getValidForInDays()));
 
         Task task = mock(Task.class);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
         LockModel lockModel = randomLockModel();
 
@@ -246,7 +246,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         request.setUpdateInterval(TimeValue.timeValueDays(1));
 
         Task task = mock(Task.class);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
         LockModel lockModel = randomLockModel();
 

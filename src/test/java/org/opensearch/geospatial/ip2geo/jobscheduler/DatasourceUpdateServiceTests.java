@@ -41,7 +41,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceFacade, geoIpDataFacade);
+        datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao);
     }
 
     @SneakyThrows
@@ -61,7 +61,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
         // Verify
         assertNotNull(datasource.getUpdateStats().getLastSkippedAt());
-        verify(datasourceFacade).updateDatasource(datasource);
+        verify(datasourceDao).updateDatasource(datasource);
     }
 
     @SneakyThrows
@@ -70,7 +70,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
 
         File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
-        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+        when(geoIpDataDao.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
 
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
@@ -84,12 +84,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class));
 
         // Verify
-        verify(geoIpDataFacade).putGeoIpData(
-            eq(datasource.currentIndexName()),
-            isA(String[].class),
-            any(Iterator.class),
-            any(Runnable.class)
-        );
+        verify(geoIpDataDao).putGeoIpData(eq(datasource.currentIndexName()), isA(String[].class), any(Iterator.class), any(Runnable.class));
     }
 
     @SneakyThrows
@@ -100,7 +95,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         File sampleFile = new File(
             this.getClass().getClassLoader().getResource("ip2geo/sample_invalid_less_than_two_fields.csv").getFile()
         );
-        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+        when(geoIpDataDao.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
 
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
@@ -119,7 +114,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
 
         File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
-        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+        when(geoIpDataDao.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
 
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
@@ -138,7 +133,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         DatasourceManifest manifest = DatasourceManifest.Builder.build(manifestFile.toURI().toURL());
 
         File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
-        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+        when(geoIpDataDao.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
 
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
@@ -159,13 +154,8 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         assertEquals(manifest.getValidForInDays(), datasource.getDatabase().getValidForInDays());
         assertNotNull(datasource.getUpdateStats().getLastSucceededAt());
         assertNotNull(datasource.getUpdateStats().getLastProcessingTimeInMillis());
-        verify(datasourceFacade, times(2)).updateDatasource(datasource);
-        verify(geoIpDataFacade).putGeoIpData(
-            eq(datasource.currentIndexName()),
-            isA(String[].class),
-            any(Iterator.class),
-            any(Runnable.class)
-        );
+        verify(datasourceDao, times(2)).updateDatasource(datasource);
+        verify(geoIpDataDao).putGeoIpData(eq(datasource.currentIndexName()), isA(String[].class), any(Iterator.class), any(Runnable.class));
     }
 
     @SneakyThrows
@@ -173,7 +163,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
 
         File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
-        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+        when(geoIpDataDao.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
 
         // Run
         assertEquals(Arrays.asList("country_name"), datasourceUpdateService.getHeaderFields(manifestFile.toURI().toURL().toExternalForm()));
@@ -203,8 +193,8 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
         assertEquals(1, datasource.getIndices().size());
         assertEquals(currentIndex, datasource.getIndices().get(0));
-        verify(datasourceFacade).updateDatasource(datasource);
-        verify(geoIpDataFacade).deleteIp2GeoDataIndex(oldIndex);
+        verify(datasourceDao).updateDatasource(datasource);
+        verify(geoIpDataDao).deleteIp2GeoDataIndex(oldIndex);
     }
 
     public void testUpdateDatasource_whenNoChange_thenNoUpdate() {
@@ -214,7 +204,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasourceUpdateService.updateDatasource(datasource, datasource.getSystemSchedule(), datasource.getTask());
 
         // Verify
-        verify(datasourceFacade, never()).updateDatasource(any());
+        verify(datasourceDao, never()).updateDatasource(any());
     }
 
     public void testUpdateDatasource_whenChange_thenUpdate() {
@@ -230,14 +220,14 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         datasourceUpdateService.updateDatasource(datasource, datasource.getSystemSchedule(), DatasourceTask.DELETE_UNUSED_INDICES);
 
         // Verify
-        verify(datasourceFacade, times(2)).updateDatasource(any());
+        verify(datasourceDao, times(2)).updateDatasource(any());
     }
 
     @SneakyThrows
     public void testGetHeaderFields_whenValidInput_thenSucceed() {
         File manifestFile = new File(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").getFile());
         File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
-        when(geoIpDataFacade.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+        when(geoIpDataDao.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
 
         // Run
         List<String> fields = datasourceUpdateService.getHeaderFields(manifestFile.toURI().toURL().toExternalForm());

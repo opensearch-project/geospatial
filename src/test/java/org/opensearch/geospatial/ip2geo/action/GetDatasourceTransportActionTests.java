@@ -26,7 +26,7 @@ public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        action = new GetDatasourceTransportAction(transportService, actionFilters, datasourceFacade);
+        action = new GetDatasourceTransportAction(transportService, actionFilters, datasourceDao);
     }
 
     public void testDoExecute_whenAll_thenSucceed() {
@@ -38,7 +38,7 @@ public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
         action.doExecute(task, request, listener);
 
         // Verify
-        verify(datasourceFacade).getAllDatasources(any(ActionListener.class));
+        verify(datasourceDao).getAllDatasources(any(ActionListener.class));
     }
 
     public void testDoExecute_whenNames_thenSucceed() {
@@ -53,7 +53,7 @@ public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
         action.doExecute(task, request, listener);
 
         // Verify
-        verify(datasourceFacade).getDatasources(eq(datasourceNames), any(ActionListener.class));
+        verify(datasourceDao).getDatasources(eq(datasourceNames), any(ActionListener.class));
     }
 
     public void testNewActionListener_whenOnResponse_thenSucceed() {

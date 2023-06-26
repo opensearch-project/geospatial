@@ -52,11 +52,11 @@ import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
+import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceRunner;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
@@ -95,8 +95,8 @@ import org.opensearch.watcher.ResourceWatcherService;
 @Log4j2
 public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin, SystemIndexPlugin {
     private Ip2GeoCache ip2GeoCache;
-    private DatasourceFacade datasourceFacade;
-    private GeoIpDataFacade geoIpDataFacade;
+    private DatasourceDao datasourceDao;
+    private GeoIpDataDao geoIpDataDao;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -105,15 +105,12 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
-        this.datasourceFacade = new DatasourceFacade(parameters.client, parameters.ingestService.getClusterService());
-        this.geoIpDataFacade = new GeoIpDataFacade(parameters.ingestService.getClusterService(), parameters.client);
-        this.ip2GeoCache = new Ip2GeoCache(datasourceFacade);
+        this.datasourceDao = new DatasourceDao(parameters.client, parameters.ingestService.getClusterService());
+        this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client);
+        this.ip2GeoCache = new Ip2GeoCache(datasourceDao);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
-            .put(
-                Ip2GeoProcessor.TYPE,
-                new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceFacade, geoIpDataFacade, ip2GeoCache)
-            )
+            .put(Ip2GeoProcessor.TYPE, new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceDao, geoIpDataDao, ip2GeoCache))
             .immutableMap();
     }
 
@@ -156,7 +153,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
-        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceFacade, geoIpDataFacade);
+        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao);
         Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         Ip2GeoLockService ip2GeoLockService = new Ip2GeoLockService(clusterService, client);
         /**
@@ -164,14 +161,14 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
          * does not use DI but it calls DatasourceExtension#getJobRunner to get DatasourceRunner instance.
          */
         DatasourceRunner.getJobRunnerInstance()
-            .initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceFacade, ip2GeoLockService);
+            .initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceDao, ip2GeoLockService);
 
         return List.of(
             UploadStats.getInstance(),
             datasourceUpdateService,
-            datasourceFacade,
+            datasourceDao,
             ip2GeoExecutor,
-            geoIpDataFacade,
+            geoIpDataDao,
             ip2GeoLockService,
             ip2GeoCache
         );

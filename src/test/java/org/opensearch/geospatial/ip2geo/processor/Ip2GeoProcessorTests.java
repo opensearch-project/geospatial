@@ -41,7 +41,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceFacade, geoIpDataFacade, ip2GeoCache);
+        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceDao, geoIpDataDao, ip2GeoCache);
     }
 
     public void testExecuteWithNoIpAndIgnoreMissing() throws Exception {
@@ -154,7 +154,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         processor.executeInternal(document, handler, ip);
 
         // Verify
-        verify(geoIpDataFacade).getGeoIpData(anyString(), anyString(), any(ActionListener.class));
+        verify(geoIpDataDao).getGeoIpData(anyString(), anyString(), any(ActionListener.class));
     }
 
     @SneakyThrows
@@ -282,7 +282,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         processor.executeInternal(document, handler, ips);
 
         // Verify
-        verify(geoIpDataFacade).getGeoIpData(anyString(), anyList(), any(ActionListener.class));
+        verify(geoIpDataDao).getGeoIpData(anyString(), anyList(), any(ActionListener.class));
     }
 
     private Ip2GeoProcessor createProcessor(final String datasourceName, final Map<String, Object> config) throws Exception {
@@ -294,7 +294,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
     }
 
     private Ip2GeoProcessor createProcessor(final Datasource datasource, final Map<String, Object> config) throws Exception {
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         Map<String, Object> baseConfig = new HashMap<>();
         baseConfig.put(CONFIG_FIELD_KEY, "ip");
         baseConfig.put(CONFIG_DATASOURCE_KEY, datasource.getName());
