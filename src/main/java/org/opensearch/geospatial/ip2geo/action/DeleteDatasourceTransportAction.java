@@ -18,11 +18,11 @@ import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.exceptions.ResourceInUseException;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
-import org.opensearch.geospatial.ip2geo.common.Ip2GeoProcessorFacade;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
+import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
+import org.opensearch.geospatial.ip2geo.dao.Ip2GeoProcessorDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.tasks.Task;
@@ -37,9 +37,9 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
     private static final long LOCK_DURATION_IN_SECONDS = 300l;
     private final Ip2GeoLockService lockService;
     private final IngestService ingestService;
-    private final DatasourceFacade datasourceFacade;
-    private final GeoIpDataFacade geoIpDataFacade;
-    private final Ip2GeoProcessorFacade ip2GeoProcessorFacade;
+    private final DatasourceDao datasourceDao;
+    private final GeoIpDataDao geoIpDataDao;
+    private final Ip2GeoProcessorDao ip2GeoProcessorDao;
     private final ThreadPool threadPool;
 
     /**
@@ -48,7 +48,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
      * @param actionFilters the action filters
      * @param lockService the lock service
      * @param ingestService the ingest service
-     * @param datasourceFacade the datasource facade
+     * @param datasourceDao the datasource facade
      */
     @Inject
     public DeleteDatasourceTransportAction(
@@ -56,17 +56,17 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         final ActionFilters actionFilters,
         final Ip2GeoLockService lockService,
         final IngestService ingestService,
-        final DatasourceFacade datasourceFacade,
-        final GeoIpDataFacade geoIpDataFacade,
-        final Ip2GeoProcessorFacade ip2GeoProcessorFacade,
+        final DatasourceDao datasourceDao,
+        final GeoIpDataDao geoIpDataDao,
+        final Ip2GeoProcessorDao ip2GeoProcessorDao,
         final ThreadPool threadPool
     ) {
         super(DeleteDatasourceAction.NAME, transportService, actionFilters, DeleteDatasourceRequest::new);
         this.lockService = lockService;
         this.ingestService = ingestService;
-        this.datasourceFacade = datasourceFacade;
-        this.geoIpDataFacade = geoIpDataFacade;
-        this.ip2GeoProcessorFacade = ip2GeoProcessorFacade;
+        this.datasourceDao = datasourceDao;
+        this.geoIpDataDao = geoIpDataDao;
+        this.ip2GeoProcessorDao = ip2GeoProcessorDao;
         this.threadPool = threadPool;
     }
 
@@ -107,32 +107,32 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
 
     @VisibleForTesting
     protected void deleteDatasource(final String datasourceName) throws IOException {
-        Datasource datasource = datasourceFacade.getDatasource(datasourceName);
+        Datasource datasource = datasourceDao.getDatasource(datasourceName);
         if (datasource == null) {
             throw new ResourceNotFoundException("no such datasource exist");
         }
 
         setDatasourceStateAsDeleting(datasource);
-        geoIpDataFacade.deleteIp2GeoDataIndex(datasource.getIndices());
-        datasourceFacade.deleteDatasource(datasource);
+        geoIpDataDao.deleteIp2GeoDataIndex(datasource.getIndices());
+        datasourceDao.deleteDatasource(datasource);
     }
 
     private void setDatasourceStateAsDeleting(final Datasource datasource) {
-        if (ip2GeoProcessorFacade.getProcessors(datasource.getName()).isEmpty() == false) {
+        if (ip2GeoProcessorDao.getProcessors(datasource.getName()).isEmpty() == false) {
             throw new ResourceInUseException("datasource is being used by one of processors");
         }
 
         DatasourceState previousState = datasource.getState();
         datasource.setState(DatasourceState.DELETING);
-        datasourceFacade.updateDatasource(datasource);
+        datasourceDao.updateDatasource(datasource);
 
         // Check again as processor might just have been created.
         // If it fails to update the state back to the previous state, the new processor
         // will fail to convert an ip to a geo data.
         // In such case, user have to delete the processor and delete this datasource again.
-        if (ip2GeoProcessorFacade.getProcessors(datasource.getName()).isEmpty() == false) {
+        if (ip2GeoProcessorDao.getProcessors(datasource.getName()).isEmpty() == false) {
             datasource.setState(previousState);
-            datasourceFacade.updateDatasource(datasource);
+            datasourceDao.updateDatasource(datasource);
             throw new ResourceInUseException("datasource is being used by one of processors");
         }
     }

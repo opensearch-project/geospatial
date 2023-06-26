@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.common;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -47,6 +47,7 @@ import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.shared.StashedThreadContext;
@@ -56,16 +57,16 @@ import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchHit;
 
 /**
- * Facade class for datasource
+ * Data access object for datasource
  */
 @Log4j2
-public class DatasourceFacade {
+public class DatasourceDao {
     private static final Integer MAX_SIZE = 1000;
     private final Client client;
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
 
-    public DatasourceFacade(final Client client, final ClusterService clusterService) {
+    public DatasourceDao(final Client client, final ClusterService clusterService) {
         this.client = client;
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
@@ -103,7 +104,7 @@ public class DatasourceFacade {
 
     private String getIndexMapping() {
         try {
-            try (InputStream is = DatasourceFacade.class.getResourceAsStream("/mappings/ip2geo_datasource.json")) {
+            try (InputStream is = DatasourceDao.class.getResourceAsStream("/mappings/ip2geo_datasource.json")) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                     return reader.lines().map(String::trim).collect(Collectors.joining());
                 }

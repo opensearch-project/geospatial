@@ -38,7 +38,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
     @Before
     public void init() {
         DatasourceRunner.getJobRunnerInstance()
-            .initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceFacade, ip2GeoLockService);
+            .initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceDao, ip2GeoLockService);
     }
 
     public void testRunJob_whenInvalidClass_thenThrowException() {
@@ -70,7 +70,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
 
         // Verify
         verify(ip2GeoLockService).acquireLock(datasource.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS);
-        verify(datasourceFacade).getDatasource(datasource.getName());
+        verify(datasourceDao).getDatasource(datasource.getName());
         verify(ip2GeoLockService).releaseLock(lockModel);
     }
 
@@ -97,7 +97,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         when(ip2GeoLockService.acquireLock(jobParameter.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS)).thenReturn(
             Optional.of(lockModel)
         );
-        when(datasourceFacade.getDatasource(jobParameter.getName())).thenThrow(new RuntimeException());
+        when(datasourceDao.getDatasource(jobParameter.getName())).thenThrow(new RuntimeException());
 
         // Run
         DatasourceRunner.getJobRunnerInstance().updateDatasourceRunner(jobParameter).run();
@@ -123,7 +123,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         datasource.enable();
         datasource.getUpdateStats().setLastFailedAt(null);
         datasource.setState(randomStateExcept(DatasourceState.AVAILABLE));
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
 
         // Run
         DatasourceRunner.getJobRunnerInstance().updateDatasource(datasource, mock(Runnable.class));
@@ -131,14 +131,14 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         // Verify
         assertFalse(datasource.isEnabled());
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
-        verify(datasourceFacade).updateDatasource(datasource);
+        verify(datasourceDao).updateDatasource(datasource);
     }
 
     @SneakyThrows
     public void testUpdateDatasource_whenValidInput_thenSucceed() {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         Runnable renewLock = mock(Runnable.class);
 
         // Run
@@ -155,7 +155,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
         datasource.setTask(DatasourceTask.DELETE_UNUSED_INDICES);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         Runnable renewLock = mock(Runnable.class);
 
         // Run
@@ -174,7 +174,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         datasource.getUpdateStats()
             .setLastSucceededAt(Instant.now().minus(datasource.getDatabase().getValidForInDays() + 1, ChronoUnit.DAYS));
         datasource.setState(DatasourceState.AVAILABLE);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         Runnable renewLock = mock(Runnable.class);
 
         // Run
@@ -193,7 +193,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         datasource.getUpdateStats()
             .setLastSucceededAt(Instant.now().minus(datasource.getDatabase().getValidForInDays(), ChronoUnit.DAYS).plusSeconds(60));
         datasource.setState(DatasourceState.AVAILABLE);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         Runnable renewLock = mock(Runnable.class);
 
         // Run
@@ -213,7 +213,7 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         Datasource datasource = new Datasource();
         datasource.setName(randomLowerCaseString());
         datasource.getUpdateStats().setLastFailedAt(null);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         doThrow(new RuntimeException("test failure")).when(datasourceUpdateService).deleteUnusedIndices(any());
 
         // Run
@@ -221,6 +221,6 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
 
         // Verify
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
-        verify(datasourceFacade).updateDatasource(datasource);
+        verify(datasourceDao).updateDatasource(datasource);
     }
 }

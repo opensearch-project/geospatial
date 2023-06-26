@@ -44,13 +44,13 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
-import org.opensearch.geospatial.ip2geo.common.Ip2GeoProcessorFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
+import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
+import org.opensearch.geospatial.ip2geo.dao.Ip2GeoProcessorDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
@@ -73,11 +73,11 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     @Mock
     protected DatasourceUpdateService datasourceUpdateService;
     @Mock
-    protected DatasourceFacade datasourceFacade;
+    protected DatasourceDao datasourceDao;
     @Mock
     protected Ip2GeoExecutor ip2GeoExecutor;
     @Mock
-    protected GeoIpDataFacade geoIpDataFacade;
+    protected GeoIpDataDao geoIpDataDao;
     @Mock
     protected Ip2GeoCache ip2GeoCache;
     @Mock
@@ -95,7 +95,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     @Mock
     protected Ip2GeoLockService ip2GeoLockService;
     @Mock
-    protected Ip2GeoProcessorFacade ip2GeoProcessorFacade;
+    protected Ip2GeoProcessorDao ip2GeoProcessorDao;
     protected IngestMetadata ingestMetadata;
     protected NoOpNodeClient client;
     protected VerifyingClient verifyingClient;
@@ -264,8 +264,8 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             properties,
             true,
             clusterSettings,
-            datasourceFacade,
-            geoIpDataFacade,
+            datasourceDao,
+            geoIpDataDao,
             ip2GeoCache
         );
         return ip2GeoProcessor;

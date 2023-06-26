@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.common;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -53,12 +53,12 @@ import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 
-public class DatasourceFacadeTests extends Ip2GeoTestCase {
-    private DatasourceFacade datasourceFacade;
+public class DatasourceDaoTests extends Ip2GeoTestCase {
+    private DatasourceDao datasourceDao;
 
     @Before
     public void init() {
-        datasourceFacade = new DatasourceFacade(verifyingClient, clusterService);
+        datasourceDao = new DatasourceDao(verifyingClient, clusterService);
     }
 
     public void testCreateIndexIfNotExists_whenIndexExist_thenCreateRequestIsNotCalled() {
@@ -69,7 +69,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
         // Run
         StepListener<Void> stepListener = new StepListener<>();
-        datasourceFacade.createIndexIfNotExists(stepListener);
+        datasourceDao.createIndexIfNotExists(stepListener);
 
         // Verify stepListener is called
         stepListener.result();
@@ -92,7 +92,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
         // Run
         StepListener<Void> stepListener = new StepListener<>();
-        datasourceFacade.createIndexIfNotExists(stepListener);
+        datasourceDao.createIndexIfNotExists(stepListener);
 
         // Verify stepListener is called
         stepListener.result();
@@ -106,7 +106,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
         // Run
         StepListener<Void> stepListener = new StepListener<>();
-        datasourceFacade.createIndexIfNotExists(stepListener);
+        datasourceDao.createIndexIfNotExists(stepListener);
 
         // Verify stepListener is called
         stepListener.result();
@@ -118,7 +118,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
 
         // Run
         StepListener<Void> stepListener = new StepListener<>();
-        datasourceFacade.createIndexIfNotExists(stepListener);
+        datasourceDao.createIndexIfNotExists(stepListener);
 
         // Verify stepListener is called
         expectThrows(RuntimeException.class, () -> stepListener.result());
@@ -144,7 +144,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
             return null;
         });
 
-        datasourceFacade.updateDatasource(datasource);
+        datasourceDao.updateDatasource(datasource);
         assertTrue(previousTime.isBefore(datasource.getLastUpdateTime()));
     }
 
@@ -164,36 +164,36 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
             return null;
         });
 
-        datasourceFacade.putDatasource(datasource, mock(ActionListener.class));
+        datasourceDao.putDatasource(datasource, mock(ActionListener.class));
         assertTrue(previousTime.isBefore(datasource.getLastUpdateTime()));
     }
 
     public void testGetDatasource_whenException_thenNull() throws Exception {
         Datasource datasource = setupClientForGetRequest(true, new IndexNotFoundException(DatasourceExtension.JOB_INDEX_NAME));
-        assertNull(datasourceFacade.getDatasource(datasource.getName()));
+        assertNull(datasourceDao.getDatasource(datasource.getName()));
     }
 
     public void testGetDatasource_whenExist_thenReturnDatasource() throws Exception {
         Datasource datasource = setupClientForGetRequest(true, null);
-        assertEquals(datasource, datasourceFacade.getDatasource(datasource.getName()));
+        assertEquals(datasource, datasourceDao.getDatasource(datasource.getName()));
     }
 
     public void testGetDatasource_whenNotExist_thenNull() throws Exception {
         Datasource datasource = setupClientForGetRequest(false, null);
-        assertNull(datasourceFacade.getDatasource(datasource.getName()));
+        assertNull(datasourceDao.getDatasource(datasource.getName()));
     }
 
     public void testGetDatasource_whenExistWithListener_thenListenerIsCalledWithDatasource() {
         Datasource datasource = setupClientForGetRequest(true, null);
         ActionListener<Datasource> listener = mock(ActionListener.class);
-        datasourceFacade.getDatasource(datasource.getName(), listener);
+        datasourceDao.getDatasource(datasource.getName(), listener);
         verify(listener).onResponse(eq(datasource));
     }
 
     public void testGetDatasource_whenNotExistWithListener_thenListenerIsCalledWithNull() {
         Datasource datasource = setupClientForGetRequest(false, null);
         ActionListener<Datasource> listener = mock(ActionListener.class);
-        datasourceFacade.getDatasource(datasource.getName(), listener);
+        datasourceDao.getDatasource(datasource.getName(), listener);
         verify(listener).onResponse(null);
     }
 
@@ -231,7 +231,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         });
 
         // Run
-        datasourceFacade.deleteDatasource(datasource);
+        datasourceDao.deleteDatasource(datasource);
     }
 
     public void testDeleteDatasource_whenIndexNotFound_thenThrowException() {
@@ -243,7 +243,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         });
 
         // Run
-        expectThrows(ResourceNotFoundException.class, () -> datasourceFacade.deleteDatasource(datasource));
+        expectThrows(ResourceNotFoundException.class, () -> datasourceDao.deleteDatasource(datasource));
     }
 
     public void testGetDatasources_whenValidInput_thenSucceed() {
@@ -273,7 +273,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         });
 
         // Run
-        datasourceFacade.getDatasources(names, listener);
+        datasourceDao.getDatasources(names, listener);
 
         // Verify
         ArgumentCaptor<List<Datasource>> captor = ArgumentCaptor.forClass(List.class);
@@ -302,7 +302,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         });
 
         // Run
-        datasourceFacade.getAllDatasources(listener);
+        datasourceDao.getAllDatasources(listener);
 
         // Verify
         ArgumentCaptor<List<Datasource>> captor = ArgumentCaptor.forClass(List.class);
@@ -329,10 +329,10 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
         });
 
         // Run
-        datasourceFacade.getAllDatasources();
+        datasourceDao.getAllDatasources();
 
         // Verify
-        assertEquals(datasources, datasourceFacade.getAllDatasources());
+        assertEquals(datasources, datasourceDao.getAllDatasources());
     }
 
     public void testUpdateDatasource_whenValidInput_thenUpdate() {
@@ -353,7 +353,7 @@ public class DatasourceFacadeTests extends Ip2GeoTestCase {
             return null;
         });
 
-        datasourceFacade.updateDatasource(datasources, mock(ActionListener.class));
+        datasourceDao.updateDatasource(datasources, mock(ActionListener.class));
     }
 
     private SearchHits getMockedSearchHits(List<Datasource> datasources) {

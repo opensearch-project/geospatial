@@ -38,11 +38,11 @@ import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
+import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.ip2geo.listener.Ip2GeoListener;
 import org.opensearch.geospatial.processor.FeatureProcessor;
@@ -77,9 +77,9 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
     private final Set<Class> SUPPORTED_COMPONENTS = Set.of(
         UploadStats.class,
         DatasourceUpdateService.class,
-        DatasourceFacade.class,
+        DatasourceDao.class,
         Ip2GeoExecutor.class,
-        GeoIpDataFacade.class,
+        GeoIpDataDao.class,
         Ip2GeoLockService.class,
         Ip2GeoCache.class
     );

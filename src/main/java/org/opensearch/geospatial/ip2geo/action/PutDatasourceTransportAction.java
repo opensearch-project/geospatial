@@ -22,9 +22,9 @@ import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.index.engine.VersionConflictEngineException;
@@ -39,7 +39,7 @@ import org.opensearch.transport.TransportService;
 @Log4j2
 public class PutDatasourceTransportAction extends HandledTransportAction<PutDatasourceRequest, AcknowledgedResponse> {
     private final ThreadPool threadPool;
-    private final DatasourceFacade datasourceFacade;
+    private final DatasourceDao datasourceDao;
     private final DatasourceUpdateService datasourceUpdateService;
     private final Ip2GeoLockService lockService;
 
@@ -48,7 +48,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
      * @param transportService the transport service
      * @param actionFilters the action filters
      * @param threadPool the thread pool
-     * @param datasourceFacade the datasource facade
+     * @param datasourceDao the datasource facade
      * @param datasourceUpdateService the datasource update service
      * @param lockService the lock service
      */
@@ -57,13 +57,13 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         final TransportService transportService,
         final ActionFilters actionFilters,
         final ThreadPool threadPool,
-        final DatasourceFacade datasourceFacade,
+        final DatasourceDao datasourceDao,
         final DatasourceUpdateService datasourceUpdateService,
         final Ip2GeoLockService lockService
     ) {
         super(PutDatasourceAction.NAME, transportService, actionFilters, PutDatasourceRequest::new);
         this.threadPool = threadPool;
-        this.datasourceFacade = datasourceFacade;
+        this.datasourceDao = datasourceDao;
         this.datasourceUpdateService = datasourceUpdateService;
         this.lockService = lockService;
     }
@@ -97,10 +97,10 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         final ActionListener<AcknowledgedResponse> listener
     ) {
         StepListener<Void> createIndexStep = new StepListener<>();
-        datasourceFacade.createIndexIfNotExists(createIndexStep);
+        datasourceDao.createIndexIfNotExists(createIndexStep);
         createIndexStep.whenComplete(v -> {
             Datasource datasource = Datasource.Builder.build(request);
-            datasourceFacade.putDatasource(datasource, getIndexResponseListener(datasource, lock, listener));
+            datasourceDao.putDatasource(datasource, getIndexResponseListener(datasource, lock, listener));
         }, exception -> {
             lockService.releaseLock(lock);
             listener.onFailure(exception);
@@ -165,7 +165,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
         datasource.getUpdateStats().setLastFailedAt(Instant.now());
         datasource.setState(DatasourceState.CREATE_FAILED);
         try {
-            datasourceFacade.updateDatasource(datasource);
+            datasourceDao.updateDatasource(datasource);
         } catch (Exception e) {
             log.error("Failed to mark datasource state as CREATE_FAILED for {}", datasource.getName(), e);
         }

@@ -25,8 +25,8 @@ import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.component.AbstractLifecycleComponent;
 import org.opensearch.common.inject.Inject;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
+import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
@@ -40,8 +40,8 @@ public class Ip2GeoListener extends AbstractLifecycleComponent implements Cluste
     private static final int DELAY_IN_MILLIS = 10000;
     private final ClusterService clusterService;
     private final ThreadPool threadPool;
-    private final DatasourceFacade datasourceFacade;
-    private final GeoIpDataFacade geoIpDataFacade;
+    private final DatasourceDao datasourceDao;
+    private final GeoIpDataDao geoIpDataDao;
 
     @Override
     public void clusterChanged(final ClusterChangedEvent event) {
@@ -63,17 +63,17 @@ public class Ip2GeoListener extends AbstractLifecycleComponent implements Cluste
                 .filter(index -> index.startsWith(IP2GEO_DATA_INDEX_NAME_PREFIX))
                 .collect(Collectors.toList());
             if (ip2GeoDataIndices.isEmpty() == false) {
-                threadPool.generic().submit(() -> geoIpDataFacade.deleteIp2GeoDataIndex(ip2GeoDataIndices));
+                threadPool.generic().submit(() -> geoIpDataDao.deleteIp2GeoDataIndex(ip2GeoDataIndices));
             }
         }
     }
 
     private void forceUpdateGeoIpData() {
-        datasourceFacade.getAllDatasources(new ActionListener<>() {
+        datasourceDao.getAllDatasources(new ActionListener<>() {
             @Override
             public void onResponse(final List<Datasource> datasources) {
                 datasources.stream().forEach(Ip2GeoListener.this::scheduleForceUpdate);
-                datasourceFacade.updateDatasource(datasources, new ActionListener<>() {
+                datasourceDao.updateDatasource(datasources, new ActionListener<>() {
                     @Override
                     public void onResponse(final BulkResponse bulkItemResponses) {
                         log.info("Datasources are updated for cleanup");

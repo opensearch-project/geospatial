@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.common;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,11 +14,14 @@ import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
 import org.opensearch.ingest.IngestMetadata;
 import org.opensearch.ingest.IngestService;
 
-public class Ip2GeoProcessorFacade {
+/**
+ * Data access object for Ip2Geo processors
+ */
+public class Ip2GeoProcessorDao {
     private final IngestService ingestService;
 
     @Inject
-    public Ip2GeoProcessorFacade(final IngestService ingestService) {
+    public Ip2GeoProcessorDao(final IngestService ingestService) {
         this.ingestService = ingestService;
     }
 
