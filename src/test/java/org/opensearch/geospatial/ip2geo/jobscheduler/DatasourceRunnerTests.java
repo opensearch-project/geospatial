@@ -6,7 +6,6 @@
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -16,16 +15,15 @@ import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 import lombok.SneakyThrows;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
-import org.opensearch.action.ActionListener;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
@@ -44,11 +42,15 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
     }
 
     public void testRunJob_whenInvalidClass_thenThrowException() {
-        JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
+        JobDocVersion jobDocVersion = new JobDocVersion(randomInt(), randomInt(), randomInt());
+        String jobIndexName = randomLowerCaseString();
+        String jobId = randomLowerCaseString();
+        JobExecutionContext jobExecutionContext = new JobExecutionContext(Instant.now(), jobDocVersion, lockService, jobIndexName, jobId);
         ScheduledJobParameter jobParameter = mock(ScheduledJobParameter.class);
         expectThrows(IllegalStateException.class, () -> DatasourceRunner.getJobRunnerInstance().runJob(jobParameter, jobExecutionContext));
     }
 
+    @SneakyThrows
     public void testRunJob_whenValidInput_thenSucceed() {
         JobDocVersion jobDocVersion = new JobDocVersion(randomInt(), randomInt(), randomInt());
         String jobIndexName = randomLowerCaseString();
@@ -56,59 +58,50 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
         JobExecutionContext jobExecutionContext = new JobExecutionContext(Instant.now(), jobDocVersion, lockService, jobIndexName, jobId);
         Datasource datasource = randomDatasource();
 
+        LockModel lockModel = randomLockModel();
+        when(ip2GeoLockService.acquireLock(datasource.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS)).thenReturn(
+            Optional.of(lockModel)
+        );
+
         // Run
         DatasourceRunner.getJobRunnerInstance().runJob(datasource, jobExecutionContext);
 
         // Verify
-        verify(ip2GeoLockService).acquireLock(
-            eq(datasource.getName()),
-            eq(Ip2GeoLockService.LOCK_DURATION_IN_SECONDS),
-            any(ActionListener.class)
-        );
+        verify(ip2GeoLockService).acquireLock(datasource.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS);
+        verify(datasourceFacade).getDatasource(datasource.getName());
+        verify(ip2GeoLockService).releaseLock(lockModel);
     }
 
     @SneakyThrows
-    public void testUpdateDatasourceRunner_whenFailedToAcquireLock_thenError() {
-        validateDoExecute(null, null);
-    }
-
-    @SneakyThrows
-    public void testUpdateDatasourceRunner_whenValidInput_thenSucceed() {
-        String jobIndexName = GeospatialTestHelper.randomLowerCaseString();
-        String jobId = GeospatialTestHelper.randomLowerCaseString();
-        LockModel lockModel = new LockModel(jobIndexName, jobId, Instant.now(), randomPositiveLong(), false);
-        validateDoExecute(lockModel, null);
-    }
-
-    @SneakyThrows
-    public void testUpdateDatasourceRunner_whenException_thenError() {
-        validateDoExecute(null, new RuntimeException());
-    }
-
-    private void validateDoExecute(final LockModel lockModel, final Exception exception) throws IOException {
+    public void testUpdateDatasourceRunner_whenExceptionBeforeAcquiringLock_thenNoReleaseLock() {
         ScheduledJobParameter jobParameter = mock(ScheduledJobParameter.class);
         when(jobParameter.getName()).thenReturn(GeospatialTestHelper.randomLowerCaseString());
+        when(ip2GeoLockService.acquireLock(jobParameter.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS)).thenThrow(
+            new RuntimeException()
+        );
+
+        // Run
+        expectThrows(Exception.class, () -> DatasourceRunner.getJobRunnerInstance().updateDatasourceRunner(jobParameter).run());
+
+        // Verify
+        verify(ip2GeoLockService, never()).releaseLock(any());
+    }
+
+    @SneakyThrows
+    public void testUpdateDatasourceRunner_whenExceptionAfterAcquiringLock_thenReleaseLock() {
+        ScheduledJobParameter jobParameter = mock(ScheduledJobParameter.class);
+        when(jobParameter.getName()).thenReturn(GeospatialTestHelper.randomLowerCaseString());
+        LockModel lockModel = randomLockModel();
+        when(ip2GeoLockService.acquireLock(jobParameter.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS)).thenReturn(
+            Optional.of(lockModel)
+        );
+        when(datasourceFacade.getDatasource(jobParameter.getName())).thenThrow(new RuntimeException());
 
         // Run
         DatasourceRunner.getJobRunnerInstance().updateDatasourceRunner(jobParameter).run();
 
         // Verify
-        ArgumentCaptor<ActionListener<LockModel>> captor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(ip2GeoLockService).acquireLock(eq(jobParameter.getName()), anyLong(), captor.capture());
-
-        if (exception == null) {
-            // Run
-            captor.getValue().onResponse(lockModel);
-
-            // Verify
-            verify(ip2GeoLockService, lockModel == null ? never() : times(1)).releaseLock(eq(lockModel));
-        } else {
-            // Run
-            captor.getValue().onFailure(exception);
-
-            // Verify
-            verify(ip2GeoLockService, never()).releaseLock(eq(lockModel));
-        }
+        verify(ip2GeoLockService).releaseLock(any());
     }
 
     @SneakyThrows

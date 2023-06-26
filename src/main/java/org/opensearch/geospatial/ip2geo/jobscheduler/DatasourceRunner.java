@@ -8,11 +8,11 @@ package org.opensearch.geospatial.ip2geo.jobscheduler;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.extern.log4j.Log4j2;
 
-import org.opensearch.action.ActionListener;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
@@ -20,6 +20,7 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.jobscheduler.spi.JobExecutionContext;
+import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.ScheduledJobRunner;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
@@ -108,16 +109,23 @@ public class DatasourceRunner implements ScheduledJobRunner {
     @VisibleForTesting
     protected Runnable updateDatasourceRunner(final ScheduledJobParameter jobParameter) {
         return () -> {
-            ip2GeoLockService.acquireLock(jobParameter.getName(), Ip2GeoLockService.LOCK_DURATION_IN_SECONDS, ActionListener.wrap(lock -> {
-                if (lock == null) {
-                    return;
-                }
-                try {
-                    updateDatasource(jobParameter, ip2GeoLockService.getRenewLockRunnable(new AtomicReference<>(lock)));
-                } finally {
-                    ip2GeoLockService.releaseLock(lock);
-                }
-            }, exception -> { log.error("Failed to acquire lock for job [{}]", jobParameter.getName(), exception); }));
+            Optional<LockModel> lockModel = ip2GeoLockService.acquireLock(
+                jobParameter.getName(),
+                Ip2GeoLockService.LOCK_DURATION_IN_SECONDS
+            );
+            if (lockModel.isEmpty()) {
+                log.error("Failed to update. Another processor is holding a lock for datasource[{}]", jobParameter.getName());
+                return;
+            }
+
+            LockModel lock = lockModel.get();
+            try {
+                updateDatasource(jobParameter, ip2GeoLockService.getRenewLockRunnable(new AtomicReference<>(lock)));
+            } catch (Exception e) {
+                log.error("Failed to update datasource[{}]", jobParameter.getName(), e);
+            } finally {
+                ip2GeoLockService.releaseLock(lock);
+            }
         };
     }
 
