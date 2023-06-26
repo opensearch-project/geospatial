@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import lombok.extern.log4j.Log4j2;
+
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionResponse;
 import org.opensearch.client.Client;
@@ -49,11 +51,13 @@ import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceTransportAction;
+import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceRunner;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.ip2geo.listener.Ip2GeoListener;
@@ -66,6 +70,7 @@ import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.geospatial.stats.upload.UploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStatsTransportAction;
+import org.opensearch.index.IndexModule;
 import org.opensearch.index.mapper.Mapper;
 import org.opensearch.indices.SystemIndexDescriptor;
 import org.opensearch.ingest.Processor;
@@ -87,7 +92,11 @@ import org.opensearch.watcher.ResourceWatcherService;
  * Entry point for Geospatial features. It provides additional Processors, Actions
  * to interact with Cluster.
  */
+@Log4j2
 public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin, SystemIndexPlugin {
+    private Ip2GeoCache ip2GeoCache;
+    private DatasourceFacade datasourceFacade;
+    private GeoIpDataFacade geoIpDataFacade;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -96,17 +105,24 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
+        this.datasourceFacade = new DatasourceFacade(parameters.client, parameters.ingestService.getClusterService());
+        this.geoIpDataFacade = new GeoIpDataFacade(parameters.ingestService.getClusterService(), parameters.client);
+        this.ip2GeoCache = new Ip2GeoCache(datasourceFacade);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
             .put(
                 Ip2GeoProcessor.TYPE,
-                new Ip2GeoProcessor.Factory(
-                    parameters.ingestService,
-                    new DatasourceFacade(parameters.client, parameters.ingestService.getClusterService()),
-                    new GeoIpDataFacade(parameters.ingestService.getClusterService(), parameters.client)
-                )
+                new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceFacade, geoIpDataFacade, ip2GeoCache)
             )
             .immutableMap();
+    }
+
+    @Override
+    public void onIndexModule(IndexModule indexModule) {
+        if (DatasourceExtension.JOB_INDEX_NAME.equals(indexModule.getIndex().getName())) {
+            indexModule.addIndexOperationListener(ip2GeoCache);
+            log.info("Ip2GeoListener started listening to operations on index {}", DatasourceExtension.JOB_INDEX_NAME);
+        }
     }
 
     @Override
@@ -140,8 +156,6 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
-        GeoIpDataFacade geoIpDataFacade = new GeoIpDataFacade(clusterService, client);
-        DatasourceFacade datasourceFacade = new DatasourceFacade(client, clusterService);
         DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceFacade, geoIpDataFacade);
         Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         Ip2GeoLockService ip2GeoLockService = new Ip2GeoLockService(clusterService, client);
@@ -158,7 +172,8 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             datasourceFacade,
             ip2GeoExecutor,
             geoIpDataFacade,
-            ip2GeoLockService
+            ip2GeoLockService,
+            ip2GeoCache
         );
     }
 

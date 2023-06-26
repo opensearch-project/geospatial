@@ -8,7 +8,6 @@ package org.opensearch.geospatial.ip2geo.processor;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -42,7 +41,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceFacade, geoIpDataFacade);
+        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceFacade, geoIpDataFacade, ip2GeoCache);
     }
 
     public void testExecuteWithNoIpAndIgnoreMissing() throws Exception {
@@ -87,41 +86,52 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         verify(handler).accept(isNull(), any(IllegalArgumentException.class));
     }
 
-    public void testExecuteWithNullDatasource() throws Exception {
-        BiConsumer<IngestDocument, Exception> handler = (doc, e) -> {
-            assertNull(doc);
-            assertTrue(e.getMessage().contains("datasource is not available"));
-        };
-        getActionListener(Collections.emptyMap(), handler).onResponse(null);
-    }
-
-    public void testExecuteWithExpiredDatasource() throws Exception {
-        Datasource datasource = mock(Datasource.class);
-        when(datasource.getState()).thenReturn(DatasourceState.AVAILABLE);
-        when(datasource.isExpired()).thenReturn(true);
-        BiConsumer<IngestDocument, Exception> handler = (doc, e) -> {
-            assertEquals("ip2geo_data_expired", doc.getFieldValue(DEFAULT_TARGET_FIELD + ".error", String.class));
-            assertNull(e);
-        };
-        getActionListener(Collections.emptyMap(), handler).onResponse(datasource);
-    }
-
-    private ActionListener<Datasource> getActionListener(
-        final Map<String, Object> config,
-        final BiConsumer<IngestDocument, Exception> handler
-    ) throws Exception {
+    @SneakyThrows
+    public void testExecute_whenNoDatasource_thenNotExistError() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
-        Ip2GeoProcessor processor = createProcessor(datasourceName, config);
+        Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
 
         Map<String, Object> source = new HashMap<>();
         String ip = randomIpAddress();
         source.put("ip", ip);
         IngestDocument document = new IngestDocument(source, new HashMap<>());
 
+        when(ip2GeoCache.has(datasourceName)).thenReturn(false);
+        BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
+
+        // Run
         processor.execute(document, handler);
-        ArgumentCaptor<ActionListener<Datasource>> captor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(datasourceFacade).getDatasource(eq(datasourceName), captor.capture());
-        return captor.getValue();
+
+        // Verify
+        ArgumentCaptor<Exception> captor = ArgumentCaptor.forClass(Exception.class);
+        verify(handler).accept(isNull(), captor.capture());
+        captor.getValue().getMessage().contains("not exist");
+    }
+
+    @SneakyThrows
+    public void testExecute_whenExpired_thenExpiredMsg() {
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
+
+        Map<String, Object> source = new HashMap<>();
+        String ip = randomIpAddress();
+        source.put("ip", ip);
+        IngestDocument document = new IngestDocument(source, new HashMap<>());
+
+        String index = GeospatialTestHelper.randomLowerCaseString();
+        when(ip2GeoCache.getIndexName(datasourceName)).thenReturn(index);
+        when(ip2GeoCache.has(datasourceName)).thenReturn(true);
+        when(ip2GeoCache.isExpired(datasourceName)).thenReturn(true);
+        when(ip2GeoCache.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
+
+        BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
+
+        // Run
+        processor.execute(document, handler);
+
+        // Verify
+        verify(handler).accept(document, null);
+        assertEquals("ip2geo_data_expired", document.getFieldValue(DEFAULT_TARGET_FIELD + ".error", String.class));
     }
 
     @SneakyThrows
@@ -132,18 +142,18 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         String ip = randomIpAddress();
         source.put("ip", ip);
         IngestDocument document = new IngestDocument(source, new HashMap<>());
-
         BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
+
+        String indexName = GeospatialTestHelper.randomLowerCaseString();
+        when(ip2GeoCache.getIndexName(datasourceName)).thenReturn(indexName);
+        when(ip2GeoCache.has(datasourceName)).thenReturn(true);
+        when(ip2GeoCache.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
+        when(ip2GeoCache.isExpired(datasourceName)).thenReturn(false);
+
+        // Run
         processor.executeInternal(document, handler, ip);
 
-        ArgumentCaptor<ActionListener<Datasource>> captor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(datasourceFacade).getDatasource(eq(datasourceName), captor.capture());
-        Datasource datasource = mock(Datasource.class);
-        when(datasource.isExpired()).thenReturn(false);
-        when(datasource.getState()).thenReturn(DatasourceState.AVAILABLE);
-        when(datasource.currentIndexName()).thenReturn(GeospatialTestHelper.randomLowerCaseString());
-
-        captor.getValue().onResponse(datasource);
+        // Verify
         verify(geoIpDataFacade).getGeoIpData(anyString(), anyString(), any(ActionListener.class));
     }
 
@@ -255,23 +265,23 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
     public void testExecuteInternal_whenMultiIps_thenGetDatasourceIsCalled() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
-        List<?> ips = Arrays.asList(randomIpAddress(), randomIpAddress());
         Map<String, Object> source = new HashMap<>();
         String ip = randomIpAddress();
         source.put("ip", ip);
         IngestDocument document = new IngestDocument(source, new HashMap<>());
-
         BiConsumer<IngestDocument, Exception> handler = mock(BiConsumer.class);
+        List<?> ips = Arrays.asList(randomIpAddress(), randomIpAddress());
+
+        String indexName = GeospatialTestHelper.randomLowerCaseString();
+        when(ip2GeoCache.getIndexName(datasourceName)).thenReturn(indexName);
+        when(ip2GeoCache.has(datasourceName)).thenReturn(true);
+        when(ip2GeoCache.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
+        when(ip2GeoCache.isExpired(datasourceName)).thenReturn(false);
+
+        // Run
         processor.executeInternal(document, handler, ips);
 
-        ArgumentCaptor<ActionListener<Datasource>> captor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(datasourceFacade).getDatasource(eq(datasourceName), captor.capture());
-        Datasource datasource = mock(Datasource.class);
-        when(datasource.isExpired()).thenReturn(false);
-        when(datasource.getState()).thenReturn(DatasourceState.AVAILABLE);
-        when(datasource.currentIndexName()).thenReturn(GeospatialTestHelper.randomLowerCaseString());
-
-        captor.getValue().onResponse(datasource);
+        // Verify
         verify(geoIpDataFacade).getGeoIpData(anyString(), anyList(), any(ActionListener.class));
     }
 

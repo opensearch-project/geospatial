@@ -43,6 +43,7 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
 import org.opensearch.geospatial.GeospatialTestHelper;
+import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
@@ -77,6 +78,8 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     protected Ip2GeoExecutor ip2GeoExecutor;
     @Mock
     protected GeoIpDataFacade geoIpDataFacade;
+    @Mock
+    protected Ip2GeoCache ip2GeoCache;
     @Mock
     protected ClusterState clusterState;
     @Mock
@@ -262,7 +265,8 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
             true,
             clusterSettings,
             datasourceFacade,
-            geoIpDataFacade
+            geoIpDataFacade,
+            ip2GeoCache
         );
         return ip2GeoProcessor;
     }

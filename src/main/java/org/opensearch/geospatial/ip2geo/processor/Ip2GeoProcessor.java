@@ -17,17 +17,17 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.action.ActionListener;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
+import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
-import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
-import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.IngestService;
@@ -57,6 +57,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     private final ClusterSettings clusterSettings;
     private final DatasourceFacade datasourceFacade;
     private final GeoIpDataFacade geoIpDataFacade;
+    private final Ip2GeoCache ip2GeoCache;
 
     /**
      * Ip2Geo processor type
@@ -75,6 +76,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param clusterSettings the cluster settings
      * @param datasourceFacade the datasource facade
      * @param geoIpDataFacade the geoip data facade
+     * @param ip2GeoCache the cache
      */
     public Ip2GeoProcessor(
         final String tag,
@@ -86,7 +88,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final boolean ignoreMissing,
         final ClusterSettings clusterSettings,
         final DatasourceFacade datasourceFacade,
-        final GeoIpDataFacade geoIpDataFacade
+        final GeoIpDataFacade geoIpDataFacade,
+        final Ip2GeoCache ip2GeoCache
     ) {
         super(tag, description);
         this.field = field;
@@ -97,6 +100,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         this.clusterSettings = clusterSettings;
         this.datasourceFacade = datasourceFacade;
         this.geoIpDataFacade = geoIpDataFacade;
+        this.ip2GeoCache = ip2GeoCache;
     }
 
     /**
@@ -149,42 +153,18 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final BiConsumer<IngestDocument, Exception> handler,
         final String ip
     ) {
-        datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
-            @Override
-            public void onResponse(final Datasource datasource) {
-                if (datasource == null) {
-                    handler.accept(null, new IllegalStateException("datasource is not available"));
-                    return;
-                }
+        validateDatasourceIsInAvailableState(datasourceName);
+        String indexName = ip2GeoCache.getIndexName(datasourceName);
+        if (ip2GeoCache.isExpired(datasourceName) || indexName == null) {
+            handleExpiredData(ingestDocument, handler);
+            return;
+        }
 
-                if (DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
-                    handler.accept(null, new IllegalStateException("datasource is not in an available state"));
-                    return;
-                }
-
-                String indexName = datasource.currentIndexName();
-                if (indexName == null) {
-                    ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
-                    handler.accept(ingestDocument, null);
-                    return;
-                }
-
-                try {
-                    geoIpDataFacade.getGeoIpData(indexName, ip, getSingleGeoIpDataListener(ingestDocument, handler));
-                } catch (Exception e) {
-                    handler.accept(null, e);
-                }
-            }
-
-            @Override
-            public void onFailure(final Exception e) {
-                if (e instanceof IndexNotFoundException) {
-                    handler.accept(null, new IllegalStateException("datasource is not available"));
-                    return;
-                }
-                handler.accept(null, e);
-            }
-        });
+        try {
+            geoIpDataFacade.getGeoIpData(indexName, ip, getSingleGeoIpDataListener(ingestDocument, handler));
+        } catch (Exception e) {
+            handler.accept(null, e);
+        }
     }
 
     @VisibleForTesting
@@ -228,6 +208,21 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         return geoData.stream().map(this::filteredGeoData).collect(Collectors.toList());
     }
 
+    private void validateDatasourceIsInAvailableState(final String datasourceName) {
+        if (ip2GeoCache.has(datasourceName) == false) {
+            throw new IllegalStateException("datasource does not exist");
+        }
+
+        if (DatasourceState.AVAILABLE.equals(ip2GeoCache.getState(datasourceName)) == false) {
+            throw new IllegalStateException("datasource is not in an available state");
+        }
+    }
+
+    private void handleExpiredData(final IngestDocument ingestDocument, final BiConsumer<IngestDocument, Exception> handler) {
+        ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
+        handler.accept(ingestDocument, null);
+    }
+
     /**
      * Handle multiple ips
      *
@@ -246,37 +241,15 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 throw new IllegalArgumentException("array in field [" + field + "] should only contain strings");
             }
         }
-        datasourceFacade.getDatasource(datasourceName, new ActionListener<>() {
-            @Override
-            public void onResponse(final Datasource datasource) {
-                if (datasource == null || DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
-                    handler.accept(null, new IllegalStateException("datasource is not available"));
-                    return;
-                }
 
-                String indexName = datasource.currentIndexName();
-                if (indexName == null) {
-                    ingestDocument.setFieldValue(targetField, DATA_EXPIRED);
-                    handler.accept(ingestDocument, null);
-                    return;
-                }
+        validateDatasourceIsInAvailableState(datasourceName);
+        String indexName = ip2GeoCache.getIndexName(datasourceName);
+        if (ip2GeoCache.isExpired(datasourceName) || indexName == null) {
+            handleExpiredData(ingestDocument, handler);
+            return;
+        }
 
-                try {
-                    geoIpDataFacade.getGeoIpData(indexName, (List<String>) ips, getMultiGeoIpDataListener(ingestDocument, handler));
-                } catch (Exception e) {
-                    handler.accept(null, e);
-                }
-            }
-
-            @Override
-            public void onFailure(final Exception e) {
-                if (e instanceof IndexNotFoundException) {
-                    handler.accept(null, new IllegalStateException("datasource is not available"));
-                    return;
-                }
-                handler.accept(null, e);
-            }
-        });
+        geoIpDataFacade.getGeoIpData(indexName, (List<String>) ips, getMultiGeoIpDataListener(ingestDocument, handler));
     }
 
     @VisibleForTesting
@@ -312,23 +285,12 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     /**
      * Ip2Geo processor factory
      */
+    @AllArgsConstructor
     public static final class Factory implements Processor.Factory {
         private final IngestService ingestService;
         private final DatasourceFacade datasourceFacade;
         private final GeoIpDataFacade geoIpDataFacade;
-
-        /**
-         * Default constructor
-         *
-         * @param ingestService the ingest service
-         * @param datasourceFacade the datasource facade
-         * @param geoIpDataFacade the geoip data facade
-         */
-        public Factory(final IngestService ingestService, final DatasourceFacade datasourceFacade, final GeoIpDataFacade geoIpDataFacade) {
-            this.ingestService = ingestService;
-            this.datasourceFacade = datasourceFacade;
-            this.geoIpDataFacade = geoIpDataFacade;
-        }
+        private final Ip2GeoCache ip2GeoCache;
 
         /**
          * Within this method, blocking request cannot be called because this method is executed in a transport thread.
@@ -357,7 +319,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 ignoreMissing,
                 ingestService.getClusterService().getClusterSettings(),
                 datasourceFacade,
-                geoIpDataFacade
+                geoIpDataFacade,
+                ip2GeoCache
             );
         }
     }
