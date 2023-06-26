@@ -17,8 +17,8 @@ import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.engine.Engine;
 import org.opensearch.index.shard.IndexingOperationListener;
@@ -26,11 +26,11 @@ import org.opensearch.index.shard.ShardId;
 
 @Log4j2
 public class Ip2GeoCache implements IndexingOperationListener {
-    private final DatasourceFacade datasourceFacade;
+    private final DatasourceDao datasourceDao;
     private Map<String, DatasourceMetadata> data;
 
-    public Ip2GeoCache(final DatasourceFacade datasourceFacade) {
-        this.datasourceFacade = datasourceFacade;
+    public Ip2GeoCache(final DatasourceDao datasourceDao) {
+        this.datasourceDao = datasourceDao;
     }
 
     public String getIndexName(final String datasourceName) {
@@ -58,7 +58,7 @@ public class Ip2GeoCache implements IndexingOperationListener {
                 return data;
             }
             Map<String, DatasourceMetadata> tempData = new ConcurrentHashMap<>();
-            datasourceFacade.getAllDatasources()
+            datasourceDao.getAllDatasources()
                 .stream()
                 .forEach(datasource -> tempData.put(datasource.getName(), new DatasourceMetadata(datasource)));
             data = tempData;

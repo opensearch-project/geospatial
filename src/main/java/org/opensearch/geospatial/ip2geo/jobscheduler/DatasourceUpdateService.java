@@ -22,28 +22,28 @@ import org.apache.commons.csv.CSVRecord;
 import org.opensearch.OpenSearchException;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.ClusterSettings;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
+import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 @Log4j2
 public class DatasourceUpdateService {
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
-    private final DatasourceFacade datasourceFacade;
-    private final GeoIpDataFacade geoIpDataFacade;
+    private final DatasourceDao datasourceDao;
+    private final GeoIpDataDao geoIpDataDao;
 
     public DatasourceUpdateService(
         final ClusterService clusterService,
-        final DatasourceFacade datasourceFacade,
-        final GeoIpDataFacade geoIpDataFacade
+        final DatasourceDao datasourceDao,
+        final GeoIpDataDao geoIpDataDao
     ) {
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
-        this.datasourceFacade = datasourceFacade;
-        this.geoIpDataFacade = geoIpDataFacade;
+        this.datasourceDao = datasourceDao;
+        this.geoIpDataDao = geoIpDataDao;
     }
 
     /**
@@ -64,7 +64,7 @@ public class DatasourceUpdateService {
         if (shouldUpdate(datasource, manifest) == false) {
             log.info("Skipping GeoIP database update. Update is not required for {}", datasource.getName());
             datasource.getUpdateStats().setLastSkippedAt(Instant.now());
-            datasourceFacade.updateDatasource(datasource);
+            datasourceDao.updateDatasource(datasource);
             return;
         }
 
@@ -72,7 +72,7 @@ public class DatasourceUpdateService {
         String indexName = setupIndex(datasource);
         String[] header;
         List<String> fieldsToStore;
-        try (CSVParser reader = geoIpDataFacade.getDatabaseReader(manifest)) {
+        try (CSVParser reader = geoIpDataDao.getDatabaseReader(manifest)) {
             CSVRecord headerLine = reader.iterator().next();
             header = validateHeader(headerLine).values();
             fieldsToStore = Arrays.asList(header).subList(1, header.length);
@@ -83,7 +83,7 @@ public class DatasourceUpdateService {
                     datasource.getDatabase().getFields().toString()
                 );
             }
-            geoIpDataFacade.putGeoIpData(indexName, header, reader.iterator(), renewLock);
+            geoIpDataDao.putGeoIpData(indexName, header, reader.iterator(), renewLock);
         }
 
         Instant endTime = Instant.now();
@@ -103,7 +103,7 @@ public class DatasourceUpdateService {
         URL url = new URL(manifestUrl);
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
 
-        try (CSVParser reader = geoIpDataFacade.getDatabaseReader(manifest)) {
+        try (CSVParser reader = geoIpDataDao.getDatabaseReader(manifest)) {
             String[] fields = reader.iterator().next().values();
             return Arrays.asList(fields).subList(1, fields.length);
         }
@@ -125,7 +125,7 @@ public class DatasourceUpdateService {
 
             if (deletedIndices.isEmpty() == false) {
                 datasource.getIndices().removeAll(deletedIndices);
-                datasourceFacade.updateDatasource(datasource);
+                datasourceDao.updateDatasource(datasource);
             }
         } catch (Exception e) {
             log.error("Failed to delete old indices for {}", datasource.getName(), e);
@@ -151,7 +151,7 @@ public class DatasourceUpdateService {
         }
 
         if (updated) {
-            datasourceFacade.updateDatasource(datasource);
+            datasourceDao.updateDatasource(datasource);
         }
     }
 
@@ -164,7 +164,7 @@ public class DatasourceUpdateService {
             }
 
             try {
-                geoIpDataFacade.deleteIp2GeoDataIndex(index);
+                geoIpDataDao.deleteIp2GeoDataIndex(index);
                 deletedIndices.add(index);
             } catch (Exception e) {
                 log.error("Failed to delete an index [{}]", index, e);
@@ -212,7 +212,7 @@ public class DatasourceUpdateService {
         datasource.getUpdateStats().setLastProcessingTimeInMillis(endTime.toEpochMilli() - startTime.toEpochMilli());
         datasource.enable();
         datasource.setState(DatasourceState.AVAILABLE);
-        datasourceFacade.updateDatasource(datasource);
+        datasourceDao.updateDatasource(datasource);
         log.info(
             "GeoIP database creation succeeded for {} and took {} seconds",
             datasource.getName(),
@@ -229,8 +229,8 @@ public class DatasourceUpdateService {
     private String setupIndex(final Datasource datasource) {
         String indexName = datasource.newIndexName(UUID.randomUUID().toString());
         datasource.getIndices().add(indexName);
-        datasourceFacade.updateDatasource(datasource);
-        geoIpDataFacade.createIndexIfNotExists(indexName);
+        datasourceDao.updateDatasource(datasource);
+        geoIpDataDao.createIndexIfNotExists(indexName);
         return indexName;
     }
 

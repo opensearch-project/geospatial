@@ -14,7 +14,7 @@ import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.tasks.Task;
@@ -24,31 +24,31 @@ import org.opensearch.transport.TransportService;
  * Transport action to get datasource
  */
 public class GetDatasourceTransportAction extends HandledTransportAction<GetDatasourceRequest, GetDatasourceResponse> {
-    private final DatasourceFacade datasourceFacade;
+    private final DatasourceDao datasourceDao;
 
     /**
      * Default constructor
      * @param transportService the transport service
      * @param actionFilters the action filters
-     * @param datasourceFacade the datasource facade
+     * @param datasourceDao the datasource facade
      */
     @Inject
     public GetDatasourceTransportAction(
         final TransportService transportService,
         final ActionFilters actionFilters,
-        final DatasourceFacade datasourceFacade
+        final DatasourceDao datasourceDao
     ) {
         super(GetDatasourceAction.NAME, transportService, actionFilters, GetDatasourceRequest::new);
-        this.datasourceFacade = datasourceFacade;
+        this.datasourceDao = datasourceDao;
     }
 
     @Override
     protected void doExecute(final Task task, final GetDatasourceRequest request, final ActionListener<GetDatasourceResponse> listener) {
         if (shouldGetAllDatasource(request)) {
             // We don't expect too many data sources. Therefore, querying all data sources without pagination should be fine.
-            datasourceFacade.getAllDatasources(newActionListener(listener));
+            datasourceDao.getAllDatasources(newActionListener(listener));
         } else {
-            datasourceFacade.getDatasources(request.getNames(), newActionListener(listener));
+            datasourceDao.getDatasources(request.getNames(), newActionListener(listener));
         }
     }
 

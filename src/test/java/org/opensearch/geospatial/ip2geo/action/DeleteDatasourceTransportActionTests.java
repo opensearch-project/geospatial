@@ -46,9 +46,9 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
             actionFilters,
             ip2GeoLockService,
             ingestService,
-            datasourceFacade,
-            geoIpDataFacade,
-            ip2GeoProcessorFacade,
+            datasourceDao,
+            geoIpDataDao,
+            ip2GeoProcessorDao,
             threadPool
         );
     }
@@ -74,7 +74,7 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
     private void validateDoExecute(final LockModel lockModel, final Exception exception) throws IOException {
         Task task = mock(Task.class);
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
         DeleteDatasourceRequest request = new DeleteDatasourceRequest(datasource.getName());
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
 
@@ -113,45 +113,43 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
     @SneakyThrows
     public void testDeleteDatasource_whenSafeToDelete_thenDelete() {
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
-        when(ip2GeoProcessorFacade.getProcessors(datasource.getName())).thenReturn(Collections.emptyList());
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(ip2GeoProcessorDao.getProcessors(datasource.getName())).thenReturn(Collections.emptyList());
 
         // Run
         action.deleteDatasource(datasource.getName());
 
         // Verify
         assertEquals(DatasourceState.DELETING, datasource.getState());
-        verify(datasourceFacade).updateDatasource(datasource);
-        InOrder inOrder = Mockito.inOrder(geoIpDataFacade, datasourceFacade);
-        inOrder.verify(geoIpDataFacade).deleteIp2GeoDataIndex(datasource.getIndices());
-        inOrder.verify(datasourceFacade).deleteDatasource(datasource);
+        verify(datasourceDao).updateDatasource(datasource);
+        InOrder inOrder = Mockito.inOrder(geoIpDataDao, datasourceDao);
+        inOrder.verify(geoIpDataDao).deleteIp2GeoDataIndex(datasource.getIndices());
+        inOrder.verify(datasourceDao).deleteDatasource(datasource);
     }
 
     @SneakyThrows
     public void testDeleteDatasource_whenProcessorIsUsingDatasource_thenThrowException() {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
-        when(ip2GeoProcessorFacade.getProcessors(datasource.getName())).thenReturn(
-            Arrays.asList(randomIp2GeoProcessor(datasource.getName()))
-        );
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(ip2GeoProcessorDao.getProcessors(datasource.getName())).thenReturn(Arrays.asList(randomIp2GeoProcessor(datasource.getName())));
 
         // Run
         expectThrows(OpenSearchException.class, () -> action.deleteDatasource(datasource.getName()));
 
         // Verify
         assertEquals(DatasourceState.AVAILABLE, datasource.getState());
-        verify(datasourceFacade, never()).updateDatasource(datasource);
-        verify(geoIpDataFacade, never()).deleteIp2GeoDataIndex(datasource.getIndices());
-        verify(datasourceFacade, never()).deleteDatasource(datasource);
+        verify(datasourceDao, never()).updateDatasource(datasource);
+        verify(geoIpDataDao, never()).deleteIp2GeoDataIndex(datasource.getIndices());
+        verify(datasourceDao, never()).deleteDatasource(datasource);
     }
 
     @SneakyThrows
     public void testDeleteDatasource_whenProcessorIsCreatedDuringDeletion_thenThrowException() {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
-        when(datasourceFacade.getDatasource(datasource.getName())).thenReturn(datasource);
-        when(ip2GeoProcessorFacade.getProcessors(datasource.getName())).thenReturn(
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
+        when(ip2GeoProcessorDao.getProcessors(datasource.getName())).thenReturn(
             Collections.emptyList(),
             Arrays.asList(randomIp2GeoProcessor(datasource.getName()))
         );
@@ -160,8 +158,8 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
         expectThrows(OpenSearchException.class, () -> action.deleteDatasource(datasource.getName()));
 
         // Verify
-        verify(datasourceFacade, times(2)).updateDatasource(datasource);
-        verify(geoIpDataFacade, never()).deleteIp2GeoDataIndex(datasource.getIndices());
-        verify(datasourceFacade, never()).deleteDatasource(datasource);
+        verify(datasourceDao, times(2)).updateDatasource(datasource);
+        verify(geoIpDataDao, never()).deleteIp2GeoDataIndex(datasource.getIndices());
+        verify(datasourceDao, never()).deleteDatasource(datasource);
     }
 }

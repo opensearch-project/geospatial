@@ -42,7 +42,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
             transportService,
             actionFilters,
             threadPool,
-            datasourceFacade,
+            datasourceDao,
             datasourceUpdateService,
             ip2GeoLockService
         );
@@ -74,7 +74,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         PutDatasourceRequest request = new PutDatasourceRequest(datasource.getName());
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
         if (after != null) {
-            doThrow(after).when(datasourceFacade).createIndexIfNotExists(any(StepListener.class));
+            doThrow(after).when(datasourceDao).createIndexIfNotExists(any(StepListener.class));
         }
 
         // Run
@@ -118,14 +118,14 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
 
         // Verify
         ArgumentCaptor<StepListener> captor = ArgumentCaptor.forClass(StepListener.class);
-        verify(datasourceFacade).createIndexIfNotExists(captor.capture());
+        verify(datasourceDao).createIndexIfNotExists(captor.capture());
 
         // Run
         captor.getValue().onResponse(null);
         // Verify
         ArgumentCaptor<Datasource> datasourceCaptor = ArgumentCaptor.forClass(Datasource.class);
         ArgumentCaptor<ActionListener> actionListenerCaptor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(datasourceFacade).putDatasource(datasourceCaptor.capture(), actionListenerCaptor.capture());
+        verify(datasourceDao).putDatasource(datasourceCaptor.capture(), actionListenerCaptor.capture());
         assertEquals(request.getName(), datasourceCaptor.getValue().getName());
         assertEquals(request.getEndpoint(), datasourceCaptor.getValue().getEndpoint());
         assertEquals(request.getUpdateInterval().days(), datasourceCaptor.getValue().getUserSchedule().getInterval());
@@ -162,7 +162,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         assertEquals(DatasourceState.CREATE_FAILED, datasource.getState());
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
-        verify(datasourceFacade).updateDatasource(datasource);
+        verify(datasourceDao).updateDatasource(datasource);
         verify(datasourceUpdateService, never()).updateOrCreateGeoIpData(any(Datasource.class), any(Runnable.class));
     }
 
@@ -177,7 +177,7 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         // Verify
         assertEquals(DatasourceState.CREATE_FAILED, datasource.getState());
         assertNotNull(datasource.getUpdateStats().getLastFailedAt());
-        verify(datasourceFacade).updateDatasource(datasource);
+        verify(datasourceDao).updateDatasource(datasource);
     }
 
     @SneakyThrows

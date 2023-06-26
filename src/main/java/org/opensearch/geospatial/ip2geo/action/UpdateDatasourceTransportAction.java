@@ -23,9 +23,9 @@ import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
@@ -41,7 +41,7 @@ import org.opensearch.transport.TransportService;
 public class UpdateDatasourceTransportAction extends HandledTransportAction<UpdateDatasourceRequest, AcknowledgedResponse> {
     private static final long LOCK_DURATION_IN_SECONDS = 300l;
     private final Ip2GeoLockService lockService;
-    private final DatasourceFacade datasourceFacade;
+    private final DatasourceDao datasourceDao;
     private final DatasourceUpdateService datasourceUpdateService;
     private final ThreadPool threadPool;
 
@@ -51,7 +51,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
      * @param transportService the transport service
      * @param actionFilters the action filters
      * @param lockService the lock service
-     * @param datasourceFacade the datasource facade
+     * @param datasourceDao the datasource facade
      * @param datasourceUpdateService the datasource update service
      */
     @Inject
@@ -59,14 +59,14 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         final TransportService transportService,
         final ActionFilters actionFilters,
         final Ip2GeoLockService lockService,
-        final DatasourceFacade datasourceFacade,
+        final DatasourceDao datasourceDao,
         final DatasourceUpdateService datasourceUpdateService,
         final ThreadPool threadPool
     ) {
         super(UpdateDatasourceAction.NAME, transportService, actionFilters, UpdateDatasourceRequest::new);
         this.lockService = lockService;
         this.datasourceUpdateService = datasourceUpdateService;
-        this.datasourceFacade = datasourceFacade;
+        this.datasourceDao = datasourceDao;
         this.threadPool = threadPool;
     }
 
@@ -90,7 +90,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
                 // TODO: makes every sub-methods as async call to avoid using a thread in generic pool
                 threadPool.generic().submit(() -> {
                     try {
-                        Datasource datasource = datasourceFacade.getDatasource(request.getName());
+                        Datasource datasource = datasourceDao.getDatasource(request.getName());
                         if (datasource == null) {
                             throw new ResourceNotFoundException("no such datasource exist");
                         }
@@ -124,7 +124,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         }
 
         if (isChanged) {
-            datasourceFacade.updateDatasource(datasource);
+            datasourceDao.updateDatasource(datasource);
         }
     }
 

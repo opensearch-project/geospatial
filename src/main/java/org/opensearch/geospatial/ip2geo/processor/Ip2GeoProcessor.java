@@ -25,9 +25,9 @@ import org.opensearch.action.ActionListener;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
-import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
-import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
+import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.IngestService;
@@ -55,8 +55,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     private final Set<String> properties;
     private final boolean ignoreMissing;
     private final ClusterSettings clusterSettings;
-    private final DatasourceFacade datasourceFacade;
-    private final GeoIpDataFacade geoIpDataFacade;
+    private final DatasourceDao datasourceDao;
+    private final GeoIpDataDao geoIpDataDao;
     private final Ip2GeoCache ip2GeoCache;
 
     /**
@@ -74,8 +74,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
      * @param properties     the properties
      * @param ignoreMissing  true if documents with a missing value for the field should be ignored
      * @param clusterSettings the cluster settings
-     * @param datasourceFacade the datasource facade
-     * @param geoIpDataFacade the geoip data facade
+     * @param datasourceDao the datasource facade
+     * @param geoIpDataDao the geoip data facade
      * @param ip2GeoCache the cache
      */
     public Ip2GeoProcessor(
@@ -87,8 +87,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         final Set<String> properties,
         final boolean ignoreMissing,
         final ClusterSettings clusterSettings,
-        final DatasourceFacade datasourceFacade,
-        final GeoIpDataFacade geoIpDataFacade,
+        final DatasourceDao datasourceDao,
+        final GeoIpDataDao geoIpDataDao,
         final Ip2GeoCache ip2GeoCache
     ) {
         super(tag, description);
@@ -98,8 +98,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         this.properties = properties;
         this.ignoreMissing = ignoreMissing;
         this.clusterSettings = clusterSettings;
-        this.datasourceFacade = datasourceFacade;
-        this.geoIpDataFacade = geoIpDataFacade;
+        this.datasourceDao = datasourceDao;
+        this.geoIpDataDao = geoIpDataDao;
         this.ip2GeoCache = ip2GeoCache;
     }
 
@@ -161,7 +161,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         }
 
         try {
-            geoIpDataFacade.getGeoIpData(indexName, ip, getSingleGeoIpDataListener(ingestDocument, handler));
+            geoIpDataDao.getGeoIpData(indexName, ip, getSingleGeoIpDataListener(ingestDocument, handler));
         } catch (Exception e) {
             handler.accept(null, e);
         }
@@ -249,7 +249,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             return;
         }
 
-        geoIpDataFacade.getGeoIpData(indexName, (List<String>) ips, getMultiGeoIpDataListener(ingestDocument, handler));
+        geoIpDataDao.getGeoIpData(indexName, (List<String>) ips, getMultiGeoIpDataListener(ingestDocument, handler));
     }
 
     @VisibleForTesting
@@ -288,8 +288,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     @AllArgsConstructor
     public static final class Factory implements Processor.Factory {
         private final IngestService ingestService;
-        private final DatasourceFacade datasourceFacade;
-        private final GeoIpDataFacade geoIpDataFacade;
+        private final DatasourceDao datasourceDao;
+        private final GeoIpDataDao geoIpDataDao;
         private final Ip2GeoCache ip2GeoCache;
 
         /**
@@ -318,8 +318,8 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
                 propertyNames == null ? null : new HashSet<>(propertyNames),
                 ignoreMissing,
                 ingestService.getClusterService().getClusterSettings(),
-                datasourceFacade,
-                geoIpDataFacade,
+                datasourceDao,
+                geoIpDataDao,
                 ip2GeoCache
             );
         }

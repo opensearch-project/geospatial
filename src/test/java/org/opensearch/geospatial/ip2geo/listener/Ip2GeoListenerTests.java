@@ -36,7 +36,7 @@ public class Ip2GeoListenerTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        ip2GeoListener = new Ip2GeoListener(clusterService, threadPool, datasourceFacade, geoIpDataFacade);
+        ip2GeoListener = new Ip2GeoListener(clusterService, threadPool, datasourceDao, geoIpDataDao);
     }
 
     public void testDoStart_whenClusterManagerNode_thenAddListener() {
@@ -151,7 +151,7 @@ public class Ip2GeoListenerTests extends Ip2GeoTestCase {
         // Verify
         verify(threadPool).generic();
         ArgumentCaptor<ActionListener<List<Datasource>>> captor = ArgumentCaptor.forClass(ActionListener.class);
-        verify(datasourceFacade).getAllDatasources(captor.capture());
+        verify(datasourceDao).getAllDatasources(captor.capture());
 
         // Run
         List<Datasource> datasources = Arrays.asList(randomDatasource(), randomDatasource());
@@ -167,7 +167,7 @@ public class Ip2GeoListenerTests extends Ip2GeoTestCase {
             assertTrue(datasource.getSystemSchedule().getNextExecutionTime(Instant.now()).isAfter(Instant.now()));
             assertTrue(datasource.getSystemSchedule().getNextExecutionTime(Instant.now()).isBefore(Instant.now().plusSeconds(60)));
         });
-        verify(datasourceFacade).updateDatasource(eq(datasources), any());
+        verify(datasourceDao).updateDatasource(eq(datasources), any());
     }
 
     public void testClusterChanged_whenGeoIpDataIsRestored_thenDelete() {
@@ -193,7 +193,7 @@ public class Ip2GeoListenerTests extends Ip2GeoTestCase {
 
         // Verify
         verify(threadPool).generic();
-        verify(geoIpDataFacade).deleteIp2GeoDataIndex(Arrays.asList(datasource.currentIndexName()));
+        verify(geoIpDataDao).deleteIp2GeoDataIndex(Arrays.asList(datasource.currentIndexName()));
     }
 
 }

@@ -28,12 +28,12 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        ip2GeoCache = new Ip2GeoCache(datasourceFacade);
+        ip2GeoCache = new Ip2GeoCache(datasourceDao);
     }
 
     public void testGetIndexName_whenCalled_thenReturnIndexName() {
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
         String indexName = ip2GeoCache.getIndexName(datasource.getName());
@@ -46,7 +46,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         Datasource datasource = randomDatasource();
         datasource.getUpdateStats().setLastSucceededAt(Instant.MIN);
         datasource.getUpdateStats().setLastSkippedAt(null);
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
         boolean isExpired = ip2GeoCache.isExpired(datasource.getName());
@@ -59,7 +59,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
         Datasource datasource = randomDatasource();
         datasource.getUpdateStats().setLastSucceededAt(Instant.now());
         datasource.getUpdateStats().setLastSkippedAt(null);
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
         boolean isExpired = ip2GeoCache.isExpired(datasource.getName());
@@ -70,7 +70,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     public void testHas_whenHasDatasource_thenReturnTrue() {
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
         boolean hasDatasource = ip2GeoCache.has(datasource.getName());
@@ -81,7 +81,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     public void testHas_whenNoDatasource_thenReturnFalse() {
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         // Run
@@ -93,7 +93,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     public void testGetState_whenCalled_thenReturnState() {
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
         DatasourceState state = ip2GeoCache.getState(datasource.getName());
@@ -104,7 +104,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     @SneakyThrows
     public void testPostIndex_whenFailed_thenNoUpdate() {
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList());
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
         Datasource datasource = randomDatasource();
 
         ShardId shardId = mock(ShardId.class);
@@ -126,7 +126,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     @SneakyThrows
     public void testPostIndex_whenSucceed_thenUpdate() {
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList());
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
         Datasource datasource = randomDatasource();
 
         ShardId shardId = mock(ShardId.class);
@@ -148,7 +148,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     public void testPostDelete_whenFailed_thenNoUpdate() {
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         ShardId shardId = mock(ShardId.class);
         Engine.Delete index = mock(Engine.Delete.class);
@@ -164,7 +164,7 @@ public class Ip2GeoCacheTests extends Ip2GeoTestCase {
 
     public void testPostDelete_whenSucceed_thenUpdate() {
         Datasource datasource = randomDatasource();
-        when(datasourceFacade.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         ShardId shardId = mock(ShardId.class);
         Engine.Delete index = mock(Engine.Delete.class);
