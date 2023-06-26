@@ -38,6 +38,14 @@ public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
         noOpsLockService.acquireLock(GeospatialTestHelper.randomLowerCaseString(), randomPositiveLong(), mock(ActionListener.class));
     }
 
+    public void testAcquireLock_whenCalled_thenNotBlocked() {
+        long expectedDurationInMillis = 1000;
+        Instant before = Instant.now();
+        assertTrue(ip2GeoLockService.acquireLock(null, null).isEmpty());
+        Instant after = Instant.now();
+        assertTrue(after.toEpochMilli() - before.toEpochMilli() < expectedDurationInMillis);
+    }
+
     public void testReleaseLock_whenValidInput_thenSucceed() {
         // Cannot test because LockService is final class
         // Simply calling method to increase coverage
