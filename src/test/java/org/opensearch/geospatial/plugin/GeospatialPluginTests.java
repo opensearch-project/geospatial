@@ -37,6 +37,7 @@ import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
+import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.DatasourceFacade;
 import org.opensearch.geospatial.ip2geo.common.GeoIpDataFacade;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
@@ -79,7 +80,8 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         DatasourceFacade.class,
         Ip2GeoExecutor.class,
         GeoIpDataFacade.class,
-        Ip2GeoLockService.class
+        Ip2GeoLockService.class,
+        Ip2GeoCache.class
     );
 
     @Mock
@@ -107,6 +109,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
     private NodeEnvironment nodeEnvironment;
     private Settings settings;
     private AutoCloseable openMocks;
+    private GeospatialPlugin plugin;
 
     @Before
     public void init() {
@@ -117,6 +120,9 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         when(clusterService.getSettings()).thenReturn(settings);
         when(ingestService.getClusterService()).thenReturn(clusterService);
         nodeEnvironment = null;
+        plugin = new GeospatialPlugin();
+        // Need to call getProcessors to initialize few instances in plugin class
+        plugin.getProcessors(getProcessorParameter());
     }
 
     @After
@@ -125,7 +131,6 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
     }
 
     public void testSystemIndexDescriptors() {
-        GeospatialPlugin plugin = new GeospatialPlugin();
         Set<String> registeredSystemIndexPatterns = new HashSet<>();
         for (SystemIndexDescriptor descriptor : plugin.getSystemIndexDescriptors(Settings.EMPTY)) {
             registeredSystemIndexPatterns.add(descriptor.getIndexPattern());
@@ -135,12 +140,10 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
     }
 
     public void testExecutorBuilders() {
-        GeospatialPlugin plugin = new GeospatialPlugin();
         assertEquals(1, plugin.getExecutorBuilders(Settings.EMPTY).size());
     }
 
     public void testCreateComponents() {
-        GeospatialPlugin plugin = new GeospatialPlugin();
         Set<Class> registeredComponents = new HashSet<>();
         Collection<Object> components = plugin.createComponents(
             client,
@@ -162,18 +165,34 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
     }
 
     public void testGetGuiceServiceClasses() {
-        GeospatialPlugin plugin = new GeospatialPlugin();
         Collection<Class<? extends LifecycleComponent>> classes = List.of(Ip2GeoListener.class);
         assertEquals(classes, plugin.getGuiceServiceClasses());
     }
 
     public void testIsAnIngestPlugin() {
-        GeospatialPlugin plugin = new GeospatialPlugin();
         assertTrue(plugin instanceof IngestPlugin);
     }
 
     public void testFeatureProcessorIsAdded() {
-        Processor.Parameters parameters = new Processor.Parameters(
+        Map<String, Processor.Factory> processors = plugin.getProcessors(getProcessorParameter());
+        assertTrue(processors.containsKey(FeatureProcessor.TYPE));
+        assertTrue(processors.get(FeatureProcessor.TYPE) instanceof FeatureProcessor.Factory);
+    }
+
+    public void testTotalRestHandlers() {
+        assertEquals(
+            SUPPORTED_REST_HANDLERS.size(),
+            plugin.getRestHandlers(Settings.EMPTY, null, clusterSettings, null, null, null, null).size()
+        );
+    }
+
+    public void testUploadGeoJSONTransportIsAdded() {
+        final List<ActionPlugin.ActionHandler<? extends ActionRequest, ? extends ActionResponse>> actions = plugin.getActions();
+        assertEquals(1, actions.stream().filter(actionHandler -> actionHandler.getAction() instanceof UploadGeoJSONAction).count());
+    }
+
+    private Processor.Parameters getProcessorParameter() {
+        return new Processor.Parameters(
             mock(Environment.class),
             mock(ScriptService.class),
             null,
@@ -184,24 +203,5 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
             client,
             null
         );
-
-        GeospatialPlugin plugin = new GeospatialPlugin();
-        Map<String, Processor.Factory> processors = plugin.getProcessors(parameters);
-        assertTrue(processors.containsKey(FeatureProcessor.TYPE));
-        assertTrue(processors.get(FeatureProcessor.TYPE) instanceof FeatureProcessor.Factory);
-    }
-
-    public void testTotalRestHandlers() {
-        GeospatialPlugin plugin = new GeospatialPlugin();
-        assertEquals(
-            SUPPORTED_REST_HANDLERS.size(),
-            plugin.getRestHandlers(Settings.EMPTY, null, clusterSettings, null, null, null, null).size()
-        );
-    }
-
-    public void testUploadGeoJSONTransportIsAdded() {
-        GeospatialPlugin plugin = new GeospatialPlugin();
-        final List<ActionPlugin.ActionHandler<? extends ActionRequest, ? extends ActionResponse>> actions = plugin.getActions();
-        assertEquals(1, actions.stream().filter(actionHandler -> actionHandler.getAction() instanceof UploadGeoJSONAction).count());
     }
 }

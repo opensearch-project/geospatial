@@ -297,6 +297,23 @@ public class DatasourceFacade {
         );
     }
 
+    /**
+     * Get all datasources up to {@code MAX_SIZE} from an index {@code DatasourceExtension.JOB_INDEX_NAME}
+     */
+    public List<Datasource> getAllDatasources() {
+        SearchResponse response = StashedThreadContext.run(
+            client,
+            () -> client.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
+                .setQuery(QueryBuilders.matchAllQuery())
+                .setSize(MAX_SIZE)
+                .execute()
+                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
+        );
+
+        List<BytesReference> bytesReferences = toBytesReferences(response);
+        return bytesReferences.stream().map(bytesRef -> toDatasource(bytesRef)).collect(Collectors.toList());
+    }
+
     private <T> ActionListener<T> createGetDataSourceQueryActionLister(
         final Class<T> response,
         final ActionListener<List<Datasource>> actionListener
