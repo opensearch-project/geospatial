@@ -37,12 +37,12 @@ import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestGetDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestPutDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
-import org.opensearch.geospatial.ip2geo.cache.Ip2GeoCache;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
+import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.ip2geo.listener.Ip2GeoListener;
 import org.opensearch.geospatial.processor.FeatureProcessor;
@@ -81,7 +81,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         Ip2GeoExecutor.class,
         GeoIpDataDao.class,
         Ip2GeoLockService.class,
-        Ip2GeoCache.class
+        Ip2GeoCachedDao.class
     );
 
     @Mock

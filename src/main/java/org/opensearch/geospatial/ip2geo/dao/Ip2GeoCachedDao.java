@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.ip2geo.cache;
+package org.opensearch.geospatial.ip2geo.dao;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -18,18 +18,20 @@ import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
-import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.engine.Engine;
 import org.opensearch.index.shard.IndexingOperationListener;
 import org.opensearch.index.shard.ShardId;
 
+/**
+ * Data access object for Datasource and GeoIP data with added caching layer
+ */
 @Log4j2
-public class Ip2GeoCache implements IndexingOperationListener {
+public class Ip2GeoCachedDao implements IndexingOperationListener {
     private final DatasourceDao datasourceDao;
     private Map<String, DatasourceMetadata> data;
 
-    public Ip2GeoCache(final DatasourceDao datasourceDao) {
+    public Ip2GeoCachedDao(final DatasourceDao datasourceDao) {
         this.datasourceDao = datasourceDao;
     }
 
