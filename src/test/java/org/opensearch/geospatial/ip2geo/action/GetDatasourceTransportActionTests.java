@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.junit.Before;
+import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
@@ -54,6 +55,18 @@ public class GetDatasourceTransportActionTests extends Ip2GeoTestCase {
 
         // Verify
         verify(datasourceDao).getDatasources(eq(datasourceNames), any(ActionListener.class));
+    }
+
+    public void testDoExecute_whenNull_thenException() {
+        Task task = mock(Task.class);
+        GetDatasourceRequest request = new GetDatasourceRequest((String[]) null);
+        ActionListener<GetDatasourceResponse> listener = mock(ActionListener.class);
+
+        // Run
+        Exception exception = expectThrows(OpenSearchException.class, () -> action.doExecute(task, request, listener));
+
+        // Verify
+        assertTrue(exception.getMessage().contains("should not be null"));
     }
 
     public void testNewActionListener_whenOnResponse_thenSucceed() {

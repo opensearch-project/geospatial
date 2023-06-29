@@ -5,6 +5,7 @@
 
 package org.opensearch.geospatial.ip2geo.action;
 
+import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.common.io.stream.BytesStreamInput;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.geospatial.GeospatialTestHelper;
@@ -39,5 +40,16 @@ public class GetDatasourceRequestTests extends Ip2GeoTestCase {
 
         // Verify
         assertArrayEquals(request.getNames(), copiedRequest.getNames());
+    }
+
+    public void testValidate_whenNull_thenError() {
+        GetDatasourceRequest request = new GetDatasourceRequest((String[]) null);
+
+        // Run
+        ActionRequestValidationException error = request.validate();
+
+        // Verify
+        assertNotNull(error.validationErrors());
+        assertFalse(error.validationErrors().isEmpty());
     }
 }

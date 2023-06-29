@@ -37,7 +37,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.util.Strings;
 import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
-import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteRequest;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.bulk.BulkRequest;
@@ -62,7 +61,6 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
-import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
 
 /**
@@ -242,94 +240,26 @@ public class GeoIpDataDao {
      *
      * @param indexName index
      * @param ip ip address
-     * @param actionListener action listener
+     * @return geoIP data
      */
-    public void getGeoIpData(final String indexName, final String ip, final ActionListener<Map<String, Object>> actionListener) {
-        StashedThreadContext.run(
+    public Map<String, Object> getGeoIpData(final String indexName, final String ip) {
+        SearchResponse response = StashedThreadContext.run(
             client,
             () -> client.prepareSearch(indexName)
                 .setSize(1)
                 .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
                 .setPreference("_local")
                 .setRequestCache(true)
-                .execute(new ActionListener<>() {
-                    @Override
-                    public void onResponse(final SearchResponse searchResponse) {
-                        try {
-                            if (searchResponse.getHits().getHits().length == 0) {
-                                actionListener.onResponse(Collections.emptyMap());
-                            } else {
-                                Map<String, Object> geoIpData = (Map<String, Object>) XContentHelper.convertToMap(
-                                    searchResponse.getHits().getAt(0).getSourceRef(),
-                                    false,
-                                    XContentType.JSON
-                                ).v2().get(DATA_FIELD_NAME);
-                                actionListener.onResponse(geoIpData);
-                            }
-                        } catch (Exception e) {
-                            actionListener.onFailure(e);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(final Exception e) {
-                        actionListener.onFailure(e);
-                    }
-                })
+                .get(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
         );
-    }
 
-    /**
-     * Query a given index using a given list of ip addresses to get geoip data
-     *
-     * @param indexName index
-     * @param ips list of ip addresses
-     * @param actionListener action listener
-     */
-    public void getGeoIpData(
-        final String indexName,
-        final List<String> ips,
-        final ActionListener<List<Map<String, Object>>> actionListener
-    ) {
-        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-        ips.stream().forEach(ip -> boolQueryBuilder.should(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip)));
-        StashedThreadContext.run(
-            client,
-            () -> client.prepareSearch(indexName)
-                .setSize(ips.size())
-                .setQuery(boolQueryBuilder)
-                .setPreference("_local")
-                .setRequestCache(true)
-                .execute(new ActionListener<>() {
-                    @Override
-                    public void onResponse(final SearchResponse searchResponse) {
-                        try {
-                            actionListener.onResponse(toGeoIpDataList(searchResponse));
-                        } catch (Exception e) {
-                            actionListener.onFailure(e);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(final Exception e) {
-                        actionListener.onFailure(e);
-                    }
-                })
-        );
-    }
-
-    private List<Map<String, Object>> toGeoIpDataList(final SearchResponse searchResponse) {
-        if (searchResponse.getHits().getHits().length == 0) {
-            return Collections.emptyList();
+        if (response.getHits().getHits().length == 0) {
+            return Collections.emptyMap();
+        } else {
+            return (Map<String, Object>) XContentHelper.convertToMap(response.getHits().getAt(0).getSourceRef(), false, XContentType.JSON)
+                .v2()
+                .get(DATA_FIELD_NAME);
         }
-
-        return Arrays.stream(searchResponse.getHits().getHits())
-            .map(
-                data -> (Map<String, Object>) XContentHelper.convertToMap(data.getSourceRef(), false, XContentType.JSON)
-                    .v2()
-                    .get(DATA_FIELD_NAME)
-            )
-            .collect(Collectors.toList());
     }
 
     /**

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import lombok.SneakyThrows;
 
@@ -24,6 +25,7 @@ import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.engine.Engine;
 import org.opensearch.index.shard.ShardId;
 
@@ -32,7 +34,7 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        ip2GeoCachedDao = new Ip2GeoCachedDao(datasourceDao);
+        ip2GeoCachedDao = new Ip2GeoCachedDao(clusterService, datasourceDao, geoIpDataDao);
     }
 
     public void testGetIndexName_whenCalled_thenReturnIndexName() {
@@ -44,6 +46,16 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertEquals(datasource.currentIndexName(), indexName);
+    }
+
+    public void testGetIndexName_whenIndexNotFound_thenReturnNull() {
+        when(datasourceDao.getAllDatasources()).thenThrow(new IndexNotFoundException("not found"));
+
+        // Run
+        String indexName = ip2GeoCachedDao.getIndexName(GeospatialTestHelper.randomLowerCaseString());
+
+        // Verify
+        assertNull(indexName);
     }
 
     public void testIsExpired_whenExpired_thenReturnTrue() {
@@ -104,6 +116,19 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertEquals(datasource.getState(), state);
+    }
+
+    public void testGetGeoData_whenCalled_thenReturnGeoData() {
+        Datasource datasource = randomDatasource();
+        String ip = NetworkAddress.format(randomIp(false));
+        Map<String, Object> expectedGeoData = Map.of("city", "Seattle");
+        when(geoIpDataDao.getGeoIpData(datasource.currentIndexName(), ip)).thenReturn(expectedGeoData);
+
+        // Run
+        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(datasource.currentIndexName(), ip);
+
+        // Verify
+        assertEquals(expectedGeoData, geoData);
     }
 
     @SneakyThrows

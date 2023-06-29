@@ -41,6 +41,10 @@ public class DatasourceRunnerTests extends Ip2GeoTestCase {
             .initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceDao, ip2GeoLockService);
     }
 
+    public void testGetJobRunnerInstance_whenCalledAgain_thenReturnSameInstance() {
+        assertTrue(DatasourceRunner.getJobRunnerInstance() == DatasourceRunner.getJobRunnerInstance());
+    }
+
     public void testRunJob_whenInvalidClass_thenThrowException() {
         JobDocVersion jobDocVersion = new JobDocVersion(randomInt(), randomInt(), randomInt());
         String jobIndexName = randomLowerCaseString();
