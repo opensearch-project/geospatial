@@ -41,6 +41,7 @@ import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.master.AcknowledgedResponse;
+import org.opensearch.cluster.routing.Preference;
 import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.bytes.BytesReference;
@@ -236,7 +237,7 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assert actionRequest instanceof SearchRequest;
             SearchRequest request = (SearchRequest) actionRequest;
-            assertEquals("_local", request.preference());
+            assertEquals(Preference.LOCAL.type(), request.preference());
             assertEquals(1, request.source().size());
             assertEquals(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip), request.source().query());
 
@@ -269,7 +270,7 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
         verifyingClient.setExecuteVerifier((actionResponse, actionRequest) -> {
             assert actionRequest instanceof SearchRequest;
             SearchRequest request = (SearchRequest) actionRequest;
-            assertEquals("_local", request.preference());
+            assertEquals(Preference.LOCAL.type(), request.preference());
             assertEquals(1, request.source().size());
             assertEquals(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip), request.source().query());
 
