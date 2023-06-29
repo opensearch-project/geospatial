@@ -107,7 +107,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
         this.datasourceDao = new DatasourceDao(parameters.client, parameters.ingestService.getClusterService());
         this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client);
-        this.ip2GeoCachedDao = new Ip2GeoCachedDao(datasourceDao);
+        this.ip2GeoCachedDao = new Ip2GeoCachedDao(parameters.ingestService.getClusterService(), datasourceDao, geoIpDataDao);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
             .put(Ip2GeoProcessor.TYPE, new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceDao, geoIpDataDao, ip2GeoCachedDao))

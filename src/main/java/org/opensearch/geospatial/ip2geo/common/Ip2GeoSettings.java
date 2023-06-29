@@ -52,16 +52,11 @@ public class Ip2GeoSettings {
     );
 
     /**
-     * Multi search max concurrent searches
-     *
-     * Multi search is used only when a field contains a list of ip addresses.
-     *
-     * When the value is 0, it will use default value which will be decided
-     * based on node count and search thread pool size.
+     * Max size for geo data cache
      */
-    public static final Setting<Integer> MAX_CONCURRENT_SEARCHES = Setting.intSetting(
-        "plugins.geospatial.ip2geo.processor.max_concurrent_searches",
-        0,
+    public static final Setting<Long> CACHE_SIZE = Setting.longSetting(
+        "plugins.geospatial.ip2geo.processor.cache_size",
+        1000,
         0,
         Setting.Property.NodeScope,
         Setting.Property.Dynamic
@@ -72,7 +67,7 @@ public class Ip2GeoSettings {
      * @return a list of all settings for Ip2Geo feature
      */
     public static final List<Setting<?>> settings() {
-        return List.of(DATASOURCE_ENDPOINT, DATASOURCE_UPDATE_INTERVAL, TIMEOUT, MAX_CONCURRENT_SEARCHES);
+        return List.of(DATASOURCE_ENDPOINT, DATASOURCE_UPDATE_INTERVAL, TIMEOUT, CACHE_SIZE);
     }
 
     /**
