@@ -39,6 +39,7 @@ import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest;
+import org.opensearch.cluster.routing.Preference;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.json.JsonXContent;
@@ -205,6 +206,7 @@ public class DatasourceDaoTests extends Ip2GeoTestCase {
             GetRequest request = (GetRequest) actionRequest;
             assertEquals(datasource.getName(), request.id());
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
+            assertEquals(Preference.PRIMARY.type(), request.preference());
             GetResponse response = getMockedGetResponse(isExist ? datasource : null);
             if (exception != null) {
                 throw exception;
@@ -262,6 +264,7 @@ public class DatasourceDaoTests extends Ip2GeoTestCase {
             assertTrue(actionRequest instanceof MultiGetRequest);
             MultiGetRequest request = (MultiGetRequest) actionRequest;
             assertEquals(2, request.getItems().size());
+            assertEquals(Preference.PRIMARY.type(), request.preference());
             for (MultiGetRequest.Item item : request.getItems()) {
                 assertEquals(DatasourceExtension.JOB_INDEX_NAME, item.index());
                 assertTrue(datasources.stream().filter(datasource -> datasource.getName().equals(item.id())).findAny().isPresent());
@@ -295,6 +298,7 @@ public class DatasourceDaoTests extends Ip2GeoTestCase {
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.indices()[0]);
             assertEquals(QueryBuilders.matchAllQuery(), request.source().query());
             assertEquals(1000, request.source().size());
+            assertEquals(Preference.PRIMARY.type(), request.preference());
 
             SearchResponse response = mock(SearchResponse.class);
             when(response.getHits()).thenReturn(searchHits);
@@ -322,6 +326,7 @@ public class DatasourceDaoTests extends Ip2GeoTestCase {
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.indices()[0]);
             assertEquals(QueryBuilders.matchAllQuery(), request.source().query());
             assertEquals(1000, request.source().size());
+            assertEquals(Preference.PRIMARY.type(), request.preference());
 
             SearchResponse response = mock(SearchResponse.class);
             when(response.getHits()).thenReturn(searchHits);

@@ -38,6 +38,7 @@ import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
+import org.opensearch.cluster.routing.Preference;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.ClusterSettings;
@@ -156,6 +157,7 @@ public class DatasourceDao {
             indexRequest.index(DatasourceExtension.JOB_INDEX_NAME);
             indexRequest.id(datasource.getName());
             indexRequest.opType(DocWriteRequest.OpType.INDEX);
+            indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             indexRequest.source(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS));
             return indexRequest;
         } catch (IOException e) {
@@ -215,7 +217,7 @@ public class DatasourceDao {
      * @throws IOException exception
      */
     public Datasource getDatasource(final String name) throws IOException {
-        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
+        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name).preference(Preference.PRIMARY.type());
         GetResponse response;
         try {
             response = StashedThreadContext.run(client, () -> client.get(request).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT)));
@@ -242,7 +244,7 @@ public class DatasourceDao {
      * @param actionListener the action listener
      */
     public void getDatasource(final String name, final ActionListener<Datasource> actionListener) {
-        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
+        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name).preference(Preference.PRIMARY.type());
         StashedThreadContext.run(client, () -> client.get(request, new ActionListener<>() {
             @Override
             public void onResponse(final GetResponse response) {
@@ -280,6 +282,7 @@ public class DatasourceDao {
             client,
             () -> client.prepareMultiGet()
                 .add(DatasourceExtension.JOB_INDEX_NAME, names)
+                .setPreference(Preference.PRIMARY.type())
                 .execute(createGetDataSourceQueryActionLister(MultiGetResponse.class, actionListener))
         );
     }
@@ -293,6 +296,7 @@ public class DatasourceDao {
             client,
             () -> client.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
                 .setQuery(QueryBuilders.matchAllQuery())
+                .setPreference(Preference.PRIMARY.type())
                 .setSize(MAX_SIZE)
                 .execute(createGetDataSourceQueryActionLister(SearchResponse.class, actionListener))
         );
@@ -306,6 +310,7 @@ public class DatasourceDao {
             client,
             () -> client.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
                 .setQuery(QueryBuilders.matchAllQuery())
+                .setPreference(Preference.PRIMARY.type())
                 .setSize(MAX_SIZE)
                 .execute()
                 .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))

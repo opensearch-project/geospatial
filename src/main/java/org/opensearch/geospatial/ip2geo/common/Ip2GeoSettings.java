@@ -41,6 +41,17 @@ public class Ip2GeoSettings {
     );
 
     /**
+     * Bulk size for indexing GeoIP data
+     */
+    public static final Setting<Integer> BATCH_SIZE = Setting.intSetting(
+        "plugins.geospatial.ip2geo.datasource.batch_size",
+        10000,
+        1,
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
+
+    /**
      * Timeout value for Ip2Geo processor
      */
     public static final Setting<TimeValue> TIMEOUT = Setting.timeSetting(
@@ -67,7 +78,7 @@ public class Ip2GeoSettings {
      * @return a list of all settings for Ip2Geo feature
      */
     public static final List<Setting<?>> settings() {
-        return List.of(DATASOURCE_ENDPOINT, DATASOURCE_UPDATE_INTERVAL, TIMEOUT, CACHE_SIZE);
+        return List.of(DATASOURCE_ENDPOINT, DATASOURCE_UPDATE_INTERVAL, BATCH_SIZE, TIMEOUT, CACHE_SIZE);
     }
 
     /**

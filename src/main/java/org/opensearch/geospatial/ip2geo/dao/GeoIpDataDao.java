@@ -47,6 +47,7 @@ import org.opensearch.action.support.IndicesOptions;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.client.Client;
 import org.opensearch.client.Requests;
+import org.opensearch.cluster.routing.Preference;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.settings.ClusterSettings;
@@ -68,7 +69,6 @@ import org.opensearch.index.query.QueryBuilders;
  */
 @Log4j2
 public class GeoIpDataDao {
-    public static final int BUNDLE_SIZE = 128;
     private static final String IP_RANGE_FIELD_NAME = "_cidr";
     private static final String DATA_FIELD_NAME = "_data";
     private static final Map<String, Object> INDEX_SETTING_TO_CREATE = Map.of(
@@ -248,7 +248,7 @@ public class GeoIpDataDao {
             () -> client.prepareSearch(indexName)
                 .setSize(1)
                 .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
-                .setPreference("_local")
+                .setPreference(Preference.LOCAL.type())
                 .setRequestCache(true)
                 .get(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
         );
@@ -277,9 +277,10 @@ public class GeoIpDataDao {
         @NonNull final Runnable renewLock
     ) throws IOException {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
+        Integer batchSize = clusterSettings.get(Ip2GeoSettings.BATCH_SIZE);
         final BulkRequest bulkRequest = new BulkRequest();
         Queue<DocWriteRequest> requests = new LinkedList<>();
-        for (int i = 0; i < BUNDLE_SIZE; i++) {
+        for (int i = 0; i < batchSize; i++) {
             requests.add(Requests.indexRequest(indexName));
         }
         while (iterator.hasNext()) {
@@ -289,7 +290,7 @@ public class GeoIpDataDao {
             indexRequest.source(document);
             indexRequest.id(record.get(0));
             bulkRequest.add(indexRequest);
-            if (iterator.hasNext() == false || bulkRequest.requests().size() == BUNDLE_SIZE) {
+            if (iterator.hasNext() == false || bulkRequest.requests().size() == batchSize) {
                 BulkResponse response = StashedThreadContext.run(client, () -> client.bulk(bulkRequest).actionGet(timeout));
                 if (response.hasFailures()) {
                     throw new OpenSearchException(
@@ -304,6 +305,7 @@ public class GeoIpDataDao {
             renewLock.run();
         }
         freezeIndex(indexName);
+
     }
 
     public void deleteIp2GeoDataIndex(final String index) {
