@@ -6,6 +6,7 @@
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
@@ -28,6 +29,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.junit.Before;
 import org.opensearch.OpenSearchException;
+import org.opensearch.cluster.routing.ShardRouting;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
@@ -134,6 +136,9 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
         File sampleFile = new File(this.getClass().getClassLoader().getResource("ip2geo/sample_valid.csv").getFile());
         when(geoIpDataDao.getDatabaseReader(any())).thenReturn(CSVParser.parse(sampleFile, StandardCharsets.UTF_8, CSVFormat.RFC4180));
+        ShardRouting shardRouting = mock(ShardRouting.class);
+        when(shardRouting.started()).thenReturn(true);
+        when(routingTable.allShards(anyString())).thenReturn(Arrays.asList(shardRouting));
 
         Datasource datasource = new Datasource();
         datasource.setState(DatasourceState.AVAILABLE);
@@ -156,6 +161,34 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         assertNotNull(datasource.getUpdateStats().getLastProcessingTimeInMillis());
         verify(datasourceDao, times(2)).updateDatasource(datasource);
         verify(geoIpDataDao).putGeoIpData(eq(datasource.currentIndexName()), isA(String[].class), any(Iterator.class), any(Runnable.class));
+    }
+
+    public void testWaitUntilAllShardsStarted_whenTimedOut_thenThrowException() {
+        String indexName = GeospatialTestHelper.randomLowerCaseString();
+        ShardRouting shardRouting = mock(ShardRouting.class);
+        when(shardRouting.started()).thenReturn(false);
+        when(routingTable.allShards(indexName)).thenReturn(Arrays.asList(shardRouting));
+
+        // Run
+        Exception e = expectThrows(OpenSearchException.class, () -> datasourceUpdateService.waitUntilAllShardsStarted(indexName, 10));
+
+        // Verify
+        assertTrue(e.getMessage().contains("did not complete"));
+    }
+
+    @SneakyThrows
+    public void testWaitUntilAllShardsStarted_whenInterrupted_thenThrowException() {
+        String indexName = GeospatialTestHelper.randomLowerCaseString();
+        ShardRouting shardRouting = mock(ShardRouting.class);
+        when(shardRouting.started()).thenReturn(false);
+        when(routingTable.allShards(indexName)).thenReturn(Arrays.asList(shardRouting));
+
+        // Run
+        Thread.currentThread().interrupt();
+        Exception e = expectThrows(RuntimeException.class, () -> datasourceUpdateService.waitUntilAllShardsStarted(indexName, 10));
+
+        // Verify
+        assertEquals(InterruptedException.class, e.getCause().getClass());
     }
 
     @SneakyThrows

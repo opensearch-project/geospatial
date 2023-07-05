@@ -22,6 +22,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.opensearch.OpenSearchException;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.ClusterSettings;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
@@ -30,6 +31,8 @@ import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 
 @Log4j2
 public class DatasourceUpdateService {
+    private static final int SLEEP_TIME_IN_MILLIS = 5000; // 5 seconds
+    private static final int MAX_WAIT_TIME_FOR_REPLICATION_TO_COMPLETE_IN_MILLIS = 10 * 60 * 60 * 1000; // 10 hours
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
     private final DatasourceDao datasourceDao;
@@ -86,8 +89,34 @@ public class DatasourceUpdateService {
             geoIpDataDao.putGeoIpData(indexName, header, reader.iterator(), renewLock);
         }
 
+        waitUntilAllShardsStarted(indexName, MAX_WAIT_TIME_FOR_REPLICATION_TO_COMPLETE_IN_MILLIS);
         Instant endTime = Instant.now();
         updateDatasourceAsSucceeded(indexName, datasource, manifest, fieldsToStore, startTime, endTime);
+    }
+
+    /**
+     * We wait until all shards are ready to serve search requests before updating datasource metadata to
+     * point to a new index so that there won't be latency degradation during GeoIP data update
+     *
+     * @param indexName the indexName
+     */
+    @VisibleForTesting
+    protected void waitUntilAllShardsStarted(final String indexName, final int timeout) {
+        Instant start = Instant.now();
+        try {
+            while (Instant.now().toEpochMilli() - start.toEpochMilli() < timeout) {
+                if (clusterService.state().routingTable().allShards(indexName).stream().allMatch(shard -> shard.started())) {
+                    return;
+                }
+                Thread.sleep(SLEEP_TIME_IN_MILLIS);
+            }
+            throw new OpenSearchException(
+                "index[{}] replication did not complete after {} millis",
+                MAX_WAIT_TIME_FOR_REPLICATION_TO_COMPLETE_IN_MILLIS
+            );
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
