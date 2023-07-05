@@ -96,6 +96,8 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     protected Ip2GeoLockService ip2GeoLockService;
     @Mock
     protected Ip2GeoProcessorDao ip2GeoProcessorDao;
+    @Mock
+    protected RoutingTable routingTable;
     protected IngestMetadata ingestMetadata;
     protected NoOpNodeClient client;
     protected VerifyingClient verifyingClient;
@@ -119,7 +121,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         when(clusterService.state()).thenReturn(clusterState);
         when(clusterState.metadata()).thenReturn(metadata);
         when(clusterState.getMetadata()).thenReturn(metadata);
-        when(clusterState.routingTable()).thenReturn(RoutingTable.EMPTY_ROUTING_TABLE);
+        when(clusterState.routingTable()).thenReturn(routingTable);
         when(ip2GeoExecutor.forDatasourceUpdate()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
         when(ingestService.getClusterService()).thenReturn(clusterService);
         when(threadPool.generic()).thenReturn(OpenSearchExecutors.newDirectExecutorService());
