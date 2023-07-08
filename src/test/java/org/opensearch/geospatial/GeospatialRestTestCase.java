@@ -33,7 +33,6 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.common.CheckedConsumer;
-import org.opensearch.common.Strings;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.geo.GeoJson;
 import org.opensearch.common.geo.ShapeRelation;
@@ -41,6 +40,7 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geometry.Geometry;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
@@ -87,7 +87,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request("PUT", buildPipelinePath(name));
-        request.setJsonEntity(Strings.toString(builder));
+        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
         client().performRequest(request);
     }
 
@@ -102,7 +102,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
             xContentBuilder.startObject(entry.getKey()).field(FIELD_TYPE_KEY, entry.getValue()).endObject();
         }
         xContentBuilder.endObject().endObject();
-        String mapping = Strings.toString(xContentBuilder);
+        String mapping = org.opensearch.common.Strings.toString(xContentBuilder);
         createIndex(name, settings, mapping.substring(1, mapping.length() - 1));
     }
 
@@ -249,7 +249,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         XContentBuilder builder = JsonXContent.contentBuilder().startObject();
         build.accept(builder);
         builder.endObject();
-        return Strings.toString(builder);
+        return org.opensearch.common.Strings.toString(builder);
     }
 
     public String buildSearchAggregationsBodyAsString(CheckedConsumer<XContentBuilder, IOException> aggregationsBuilder)
