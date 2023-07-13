@@ -9,7 +9,7 @@ import static org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHe
 
 import java.io.IOException;
 
-import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.InternalGeoGridBucket;
 import org.opensearch.geospatial.h3.H3;
 import org.opensearch.search.aggregations.InternalAggregations;

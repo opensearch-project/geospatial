@@ -13,9 +13,9 @@ import static org.opensearch.rest.RestRequest.Method.PUT;
 import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
-import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequest;
 import org.opensearch.rest.BaseRestHandler;

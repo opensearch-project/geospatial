@@ -14,8 +14,8 @@ import java.io.IOException;
 import org.apache.http.util.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialRestTestCase;
-import org.opensearch.rest.RestStatus;
 
 public class RestUploadStatsActionIT extends GeospatialRestTestCase {
 

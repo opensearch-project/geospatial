@@ -12,7 +12,7 @@ import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.opensearch.common.bytes.BytesArray;
+import org.opensearch.core.common.bytes.BytesArray;
 import org.opensearch.geospatial.geojson.Feature;
 import org.opensearch.test.OpenSearchTestCase;
 
