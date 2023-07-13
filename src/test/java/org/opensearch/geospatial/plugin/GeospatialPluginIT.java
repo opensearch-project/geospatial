@@ -8,8 +8,8 @@ package org.opensearch.geospatial.plugin;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialRestTestCase;
-import org.opensearch.rest.RestStatus;
 
 public class GeospatialPluginIT extends GeospatialRestTestCase {
 

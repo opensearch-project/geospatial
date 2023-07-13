@@ -21,8 +21,8 @@ import org.json.JSONObject;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialRestTestCase;
-import org.opensearch.rest.RestStatus;
 
 public class FeatureProcessorIT extends GeospatialRestTestCase {
 
