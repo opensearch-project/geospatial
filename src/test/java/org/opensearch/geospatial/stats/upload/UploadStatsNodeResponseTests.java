@@ -8,7 +8,7 @@ package org.opensearch.geospatial.stats.upload;
 import java.io.IOException;
 
 import org.opensearch.common.io.stream.BytesStreamOutput;
-import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 

@@ -13,9 +13,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.json.JSONObject;
-import org.opensearch.common.bytes.BytesArray;
 import org.opensearch.common.io.stream.BytesStreamOutput;
-import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.core.common.bytes.BytesArray;
+import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.test.OpenSearchTestCase;
 
