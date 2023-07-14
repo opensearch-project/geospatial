@@ -12,9 +12,9 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
-import org.opensearch.common.bytes.BytesArray;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.bytes.BytesArray;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.test.rest.FakeRestRequest;

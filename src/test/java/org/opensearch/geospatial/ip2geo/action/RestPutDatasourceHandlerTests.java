@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
 import org.opensearch.common.SuppressForbidden;
-import org.opensearch.common.bytes.BytesArray;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.bytes.BytesArray;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.rest.RestRequest;

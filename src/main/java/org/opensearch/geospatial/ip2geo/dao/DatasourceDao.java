@@ -40,11 +40,12 @@ import org.opensearch.action.support.WriteRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.routing.Preference;
 import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentHelper;
+import org.opensearch.core.common.bytes.BytesReference;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentParser;
@@ -54,7 +55,6 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
-import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchHit;
 
 /**

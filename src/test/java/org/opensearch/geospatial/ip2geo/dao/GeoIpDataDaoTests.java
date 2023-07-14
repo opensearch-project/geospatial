@@ -44,7 +44,7 @@ import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.cluster.routing.Preference;
 import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
-import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;

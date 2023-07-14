@@ -6,8 +6,8 @@
 package org.opensearch.geospatial.ip2geo.action;
 
 import org.opensearch.action.ActionRequestValidationException;
-import org.opensearch.common.io.stream.BytesStreamInput;
 import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.core.common.io.stream.BytesStreamInput;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 
