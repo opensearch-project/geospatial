@@ -44,6 +44,7 @@ import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.core.common.Strings;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geometry.Geometry;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
@@ -52,7 +53,6 @@ import org.opensearch.geospatial.index.query.xyshape.XYShapeQueryBuilder;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.ingest.Pipeline;
-import org.opensearch.rest.RestStatus;
 
 public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCase {
     public static final String SOURCE = "_source";

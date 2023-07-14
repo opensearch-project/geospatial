@@ -21,8 +21,8 @@ import java.util.Map;
 import org.opensearch.client.Response;
 import org.opensearch.client.ResponseException;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialRestTestCase;
-import org.opensearch.rest.RestStatus;
 
 public class RestUploadGeoJSONActionIT extends GeospatialRestTestCase {
 

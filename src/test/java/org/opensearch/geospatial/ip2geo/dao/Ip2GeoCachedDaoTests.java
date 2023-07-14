@@ -18,16 +18,16 @@ import java.util.Map;
 import lombok.SneakyThrows;
 
 import org.junit.Before;
-import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.network.NetworkAddress;
 import org.opensearch.common.xcontent.XContentFactory;
+import org.opensearch.core.common.bytes.BytesReference;
+import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.engine.Engine;
-import org.opensearch.index.shard.ShardId;
 
 public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
     private Ip2GeoCachedDao ip2GeoCachedDao;

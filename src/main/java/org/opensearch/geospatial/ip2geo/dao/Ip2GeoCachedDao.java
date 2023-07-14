@@ -23,6 +23,7 @@ import org.opensearch.common.cache.Cache;
 import org.opensearch.common.cache.CacheBuilder;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
@@ -32,7 +33,6 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.engine.Engine;
 import org.opensearch.index.shard.IndexingOperationListener;
-import org.opensearch.index.shard.ShardId;
 
 /**
  * Data access object for Datasource and GeoIP data with added caching layer

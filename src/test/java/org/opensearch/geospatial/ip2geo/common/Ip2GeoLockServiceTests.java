@@ -17,9 +17,9 @@ import org.opensearch.action.ActionListener;
 import org.opensearch.action.DocWriteResponse;
 import org.opensearch.action.update.UpdateRequest;
 import org.opensearch.action.update.UpdateResponse;
+import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
-import org.opensearch.index.shard.ShardId;
 import org.opensearch.jobscheduler.spi.LockModel;
 
 public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {

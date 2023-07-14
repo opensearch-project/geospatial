@@ -41,8 +41,9 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.WriteRequest;
 import org.opensearch.cluster.routing.Preference;
 import org.opensearch.common.Randomness;
-import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.common.bytes.BytesReference;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
@@ -50,7 +51,6 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
-import org.opensearch.rest.RestStatus;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 

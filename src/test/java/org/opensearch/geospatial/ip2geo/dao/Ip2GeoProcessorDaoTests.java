@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
-import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.processor.Ip2GeoProcessor;
