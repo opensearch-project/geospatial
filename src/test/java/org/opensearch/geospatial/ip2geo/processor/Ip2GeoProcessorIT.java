@@ -20,11 +20,11 @@ import lombok.SneakyThrows;
 import org.opensearch.client.Response;
 import org.opensearch.client.ResponseException;
 import org.opensearch.common.Randomness;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoDataServer;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceRequest;
-import org.opensearch.rest.RestStatus;
 
 public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
     // Use this value in resource name to avoid name conflict among tests

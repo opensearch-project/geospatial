@@ -16,10 +16,10 @@ import lombok.SneakyThrows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.opensearch.client.ResponseException;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoDataServer;
-import org.opensearch.rest.RestStatus;
 
 public class UpdateDatasourceIT extends GeospatialRestTestCase {
     // Use this value in resource name to avoid name conflict among tests
