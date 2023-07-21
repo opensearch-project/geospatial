@@ -12,8 +12,8 @@ import java.util.Map;
 
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.common.geo.GeoBoundingBox;
-import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.xcontent.support.XContentMapValues;
+import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.GeoGridAggregationBuilder;
