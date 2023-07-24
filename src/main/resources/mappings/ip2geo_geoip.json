@@ -1,0 +1,9 @@
+{
+  "dynamic": false,
+  "properties": {
+    "_cidr": {
+      "type": "ip_range",
+      "doc_values": false
+    }
+  }
+}
