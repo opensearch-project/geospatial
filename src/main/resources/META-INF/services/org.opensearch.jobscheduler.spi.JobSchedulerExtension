@@ -1,0 +1,11 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# The OpenSearch Contributors require contributions made to
+# this file be licensed under the Apache-2.0 license or a
+# compatible open source license.
+#
+
+# This file is needed to register DatasourceExtension in job scheduler framework
+# See https://github.com/opensearch-project/job-scheduler/blob/main/README.md#getting-started
+org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension

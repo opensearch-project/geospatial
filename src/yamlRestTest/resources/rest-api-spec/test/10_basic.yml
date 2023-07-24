@@ -1,8 +1,8 @@
-"Test that geospatial plugin is loaded in OpenSearch":
+"Test that geospatial and job scheduler plugins are loaded in OpenSearch":
   - do:
       cat.plugins:
         local: true
         h: component
 
   - match:
-      $body: /^opensearch-geospatial\n$/
+      $body: /^opensearch-geospatial\nopensearch-job-scheduler\n$/
