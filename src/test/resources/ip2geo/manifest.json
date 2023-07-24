@@ -1,0 +1,8 @@
+{
+  "url": "https://test.com/db.zip",
+  "db_name": "sample_valid.csv",
+  "sha256_hash": "safasdfaskkkesadfasdf",
+  "valid_for_in_days": 30,
+  "updated_at_in_epoch_milli": 3134012341236,
+  "provider": "sample_provider"
+}
