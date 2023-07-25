@@ -14,8 +14,8 @@ import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.collect.Tuple;
-import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.common.bytes.BytesReference;
+import org.opensearch.core.xcontent.MediaType;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequest;
 import org.opensearch.rest.BaseRestHandler;
@@ -84,7 +84,7 @@ public class RestUploadGeoJSONAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
-        Tuple<XContentType, BytesReference> sourceTuple = restRequest.contentOrSourceParam();
+        Tuple<MediaType, BytesReference> sourceTuple = restRequest.contentOrSourceParam();
         RestRequest.Method method = restRequest.getHttpRequest().method();
         UploadGeoJSONRequest request = new UploadGeoJSONRequest(method, sourceTuple.v2());
         return channel -> client.execute(UploadGeoJSONAction.INSTANCE, request, new RestToXContentListener<>(channel));
