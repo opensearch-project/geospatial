@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.9...2.x)
 ### Features
+* IP2Geo processor implementation ([#362](https://github.com/opensearch-project/geospatial/pull/362))
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
