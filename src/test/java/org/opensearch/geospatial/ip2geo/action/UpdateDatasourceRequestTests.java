@@ -69,6 +69,20 @@ public class UpdateDatasourceRequestTests extends Ip2GeoTestCase {
         assertNull(request.validate());
     }
 
+    public void testValidate_whenInvalidDatasourceName_thenFails() {
+        String invalidName = "_" + GeospatialTestHelper.randomLowerCaseString();
+        UpdateDatasourceRequest request = new UpdateDatasourceRequest(invalidName);
+        request.setEndpoint(sampleManifestUrl());
+        request.setUpdateInterval(TimeValue.timeValueDays(1));
+
+        // Run
+        ActionRequestValidationException exception = request.validate();
+
+        // Verify
+        assertEquals(1, exception.validationErrors().size());
+        assertTrue(exception.validationErrors().get(0).contains("no such datasource"));
+    }
+
     @SneakyThrows
     public void testValidate_whenZeroUpdateInterval_thenFails() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();

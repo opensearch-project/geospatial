@@ -15,6 +15,7 @@ import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.geospatial.ip2geo.common.ParameterValidator;
 
 /**
  * GeoIP datasource delete request
@@ -23,6 +24,7 @@ import org.opensearch.core.common.io.stream.StreamOutput;
 @Setter
 @AllArgsConstructor
 public class DeleteDatasourceRequest extends ActionRequest {
+    private static final ParameterValidator VALIDATOR = new ParameterValidator();
     /**
      * @param name the datasource name
      * @return the datasource name
@@ -43,9 +45,9 @@ public class DeleteDatasourceRequest extends ActionRequest {
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException errors = null;
-        if (name == null || name.isBlank()) {
+        if (VALIDATOR.validateDatasourceName(name).isEmpty() == false) {
             errors = new ActionRequestValidationException();
-            errors.addValidationError("Datasource name should not be empty");
+            errors.addValidationError("no such datasource exist");
         }
         return errors;
     }
