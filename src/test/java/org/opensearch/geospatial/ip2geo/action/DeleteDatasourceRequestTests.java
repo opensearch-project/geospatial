@@ -50,4 +50,16 @@ public class DeleteDatasourceRequestTests extends Ip2GeoTestCase {
         assertNotNull(error.validationErrors());
         assertFalse(error.validationErrors().isEmpty());
     }
+
+    public void testValidate_whenInvalidDatasourceName_thenFails() {
+        String invalidName = "_" + GeospatialTestHelper.randomLowerCaseString();
+        DeleteDatasourceRequest request = new DeleteDatasourceRequest(invalidName);
+
+        // Run
+        ActionRequestValidationException exception = request.validate();
+
+        // Verify
+        assertEquals(1, exception.validationErrors().size());
+        assertTrue(exception.validationErrors().get(0).contains("no such datasource"));
+    }
 }

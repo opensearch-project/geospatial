@@ -24,6 +24,7 @@ import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
+import org.opensearch.geospatial.ip2geo.common.ParameterValidator;
 
 /**
  * Ip2Geo datasource update request
@@ -36,6 +37,8 @@ public class UpdateDatasourceRequest extends ActionRequest {
     public static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
     public static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
     private static final int MAX_DATASOURCE_NAME_BYTES = 255;
+    private static final ParameterValidator VALIDATOR = new ParameterValidator();
+
     /**
      * @param name the datasource name
      * @return the datasource name
@@ -93,6 +96,9 @@ public class UpdateDatasourceRequest extends ActionRequest {
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException errors = new ActionRequestValidationException();
+        if (VALIDATOR.validateDatasourceName(name).isEmpty() == false) {
+            errors.addValidationError("no such datasource exist");
+        }
         if (endpoint == null && updateInterval == null) {
             errors.addValidationError("no values to update");
         }

@@ -4,6 +4,7 @@
  */
 package org.opensearch.geospatial.ip2geo.processor;
 
+import static org.opensearch.ingest.ConfigurationUtils.newConfigurationException;
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalList;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
@@ -17,12 +18,12 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.geospatial.ip2geo.common.ParameterValidator;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
@@ -232,12 +233,24 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     /**
      * Ip2Geo processor factory
      */
-    @AllArgsConstructor
     public static final class Factory implements Processor.Factory {
+        private static final ParameterValidator VALIDATOR = new ParameterValidator();
         private final IngestService ingestService;
         private final DatasourceDao datasourceDao;
         private final GeoIpDataDao geoIpDataDao;
         private final Ip2GeoCachedDao ip2GeoCachedDao;
+
+        public Factory(
+            final IngestService ingestService,
+            final DatasourceDao datasourceDao,
+            final GeoIpDataDao geoIpDataDao,
+            final Ip2GeoCachedDao ip2GeoCachedDao
+        ) {
+            this.ingestService = ingestService;
+            this.datasourceDao = datasourceDao;
+            this.geoIpDataDao = geoIpDataDao;
+            this.ip2GeoCachedDao = ip2GeoCachedDao;
+        }
 
         /**
          * Within this method, blocking request cannot be called because this method is executed in a transport thread.
@@ -255,6 +268,11 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             String datasourceName = readStringProperty(TYPE, processorTag, config, CONFIG_DATASOURCE);
             List<String> propertyNames = readOptionalList(TYPE, processorTag, config, CONFIG_PROPERTIES);
             boolean ignoreMissing = readBooleanProperty(TYPE, processorTag, config, CONFIG_IGNORE_MISSING, false);
+
+            List<String> error = VALIDATOR.validateDatasourceName(datasourceName);
+            if (error.isEmpty() == false) {
+                throw newConfigurationException(TYPE, processorTag, "datasource", error.get(0));
+            }
 
             return new Ip2GeoProcessor(
                 processorTag,
