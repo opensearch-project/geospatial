@@ -24,6 +24,7 @@ import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoProcessorDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
+import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.tasks.Task;
 import org.opensearch.threadpool.ThreadPool;
@@ -81,9 +82,7 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
     protected void doExecute(final Task task, final DeleteDatasourceRequest request, final ActionListener<AcknowledgedResponse> listener) {
         lockService.acquireLock(request.getName(), LOCK_DURATION_IN_SECONDS, ActionListener.wrap(lock -> {
             if (lock == null) {
-                listener.onFailure(
-                    new ConcurrentModificationException("another processor is holding a lock on the resource. Try again later")
-                );
+                datasourceDao.getDatasource(request.getName(), actionListenerForGetDatasourceWhenAcquireLockFailed(listener));
                 return;
             }
             try {
@@ -103,6 +102,25 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
                 listener.onFailure(e);
             }
         }, exception -> { listener.onFailure(exception); }));
+    }
+
+    @VisibleForTesting
+    protected ActionListener actionListenerForGetDatasourceWhenAcquireLockFailed(final ActionListener<AcknowledgedResponse> listener) {
+        return ActionListener.wrap(datasource -> {
+            if (datasource == null) {
+                listener.onFailure(new ResourceNotFoundException("no such datasource exist"));
+            } else {
+                listener.onFailure(
+                    new ConcurrentModificationException("another processor is holding a lock on the resource. Try again later")
+                );
+            }
+        }, exception -> {
+            if (exception instanceof IndexNotFoundException) {
+                listener.onFailure(new ResourceNotFoundException("no such datasource exist"));
+            } else {
+                listener.onFailure(exception);
+            }
+        });
     }
 
     @VisibleForTesting

@@ -28,6 +28,7 @@ import org.opensearch.common.Randomness;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
+import org.opensearch.geospatial.ip2geo.common.InputFormatValidator;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.ingest.IngestDocument;
 
@@ -35,10 +36,13 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
     private static final String DEFAULT_TARGET_FIELD = "ip2geo";
     private static final List<String> SUPPORTED_FIELDS = Arrays.asList("city", "country");
     private Ip2GeoProcessor.Factory factory;
+    private InputFormatValidator inputFormatValidator;
 
     @Before
     public void init() {
+        inputFormatValidator = mock(InputFormatValidator.class);
         factory = new Ip2GeoProcessor.Factory(ingestService, datasourceDao, geoIpDataDao, ip2GeoCachedDao);
+        factory.setInputFormatValidator(inputFormatValidator);
     }
 
     public void testExecuteWithNoIpAndIgnoreMissing() throws Exception {
@@ -238,7 +242,8 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         assertEquals(geoData.get("country"), addedValue.get("country"));
     }
 
-    public void testExecute_whenNoHandler_thenException() throws Exception {
+    @SneakyThrows
+    public void testExecute_whenNoHandler_thenException() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
         IngestDocument document = new IngestDocument(Collections.emptyMap(), Collections.emptyMap());
@@ -246,7 +251,8 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         assertTrue(e.getMessage().contains("Not implemented"));
     }
 
-    public void testExecute_whenContainsNonString_thenException() throws Exception {
+    @SneakyThrows
+    public void testExecute_whenContainsNonString_thenException() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
         Ip2GeoProcessor processor = createProcessor(datasourceName, Collections.emptyMap());
         List<?> ips = Arrays.asList(randomIpAddress(), 1);
@@ -262,6 +268,17 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         ArgumentCaptor<Exception> captor = ArgumentCaptor.forClass(IllegalArgumentException.class);
         verify(handler).accept(isNull(), captor.capture());
         assertTrue(captor.getValue().getMessage().contains("should only contain strings"));
+    }
+
+    @SneakyThrows
+    public void testCreate_whenCalled_thenValidatorIsCalled() {
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+
+        // Run
+        createProcessor(datasourceName, Collections.emptyMap());
+
+        // Verify
+        verify(inputFormatValidator).validateDatasourceName(datasourceName);
     }
 
     private Ip2GeoProcessor createProcessor(final String datasourceName, final Map<String, Object> config) throws Exception {

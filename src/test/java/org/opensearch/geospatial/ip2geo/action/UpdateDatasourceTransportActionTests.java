@@ -23,15 +23,16 @@ import lombok.SneakyThrows;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
-import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.unit.TimeValue;
+import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
+import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.tasks.Task;
 
@@ -50,15 +51,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         );
     }
 
-    public void testDoExecute_whenFailedToAcquireLock_thenError() {
-        validateDoExecuteWithLockError(null);
-    }
-
-    public void testDoExecute_whenExceptionToAcquireLock_thenError() {
-        validateDoExecuteWithLockError(new RuntimeException());
-    }
-
-    private void validateDoExecuteWithLockError(final Exception exception) {
+    public void testDoExecute_whenFailedToAcquireLock_thenTryToGetDatasource() {
         Task task = mock(Task.class);
         Datasource datasource = randomDatasource();
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
@@ -71,17 +64,31 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         ArgumentCaptor<ActionListener<LockModel>> captor = ArgumentCaptor.forClass(ActionListener.class);
         verify(ip2GeoLockService).acquireLock(eq(datasource.getName()), anyLong(), captor.capture());
 
-        if (exception == null) {
-            // Run
-            captor.getValue().onResponse(null);
-            // Verify
-            verify(listener).onFailure(any(OpenSearchException.class));
-        } else {
-            // Run
-            captor.getValue().onFailure(exception);
-            // Verify
-            verify(listener).onFailure(exception);
-        }
+        // Run
+        captor.getValue().onResponse(null);
+
+        // Verify
+        verify(datasourceDao).getDatasource(eq(request.getName()), any(ActionListener.class));
+    }
+
+    public void testDoExecute_whenExceptionToAcquireLock_thenError() {
+        Task task = mock(Task.class);
+        Datasource datasource = randomDatasource();
+        UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        action.doExecute(task, request, listener);
+
+        // Verify
+        ArgumentCaptor<ActionListener<LockModel>> captor = ArgumentCaptor.forClass(ActionListener.class);
+        verify(ip2GeoLockService).acquireLock(eq(datasource.getName()), anyLong(), captor.capture());
+
+        // Run
+        Exception exception = new RuntimeException();
+        captor.getValue().onFailure(exception);
+        // Verify
+        verify(listener).onFailure(exception);
     }
 
     @SneakyThrows
@@ -266,5 +273,57 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         assertEquals(IllegalArgumentException.class, exceptionCaptor.getValue().getClass());
         exceptionCaptor.getValue().getMessage().contains("will expire");
         verify(ip2GeoLockService).releaseLock(eq(lockModel));
+    }
+
+    public void testActionListenerForGetDatasourceWhenAcquireLockFailed_whenDatasourceNotExist_thenNotFoundException() {
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        action.actionListenerForGetDatasourceWhenAcquireLockFailed(listener).onResponse(null);
+
+        // Verify
+        ArgumentCaptor<Exception> captor = ArgumentCaptor.forClass(Exception.class);
+        verify(listener).onFailure(captor.capture());
+        assertTrue(captor.getValue() instanceof ResourceNotFoundException);
+        assertTrue(captor.getValue().getMessage().contains("no such datasource"));
+
+    }
+
+    public void testActionListenerForGetDatasourceWhenAcquireLockFailed_whenIndexNotExist_thenNotFoundException() {
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        action.actionListenerForGetDatasourceWhenAcquireLockFailed(listener).onFailure(new IndexNotFoundException(""));
+
+        // Verify
+        ArgumentCaptor<Exception> captor = ArgumentCaptor.forClass(Exception.class);
+        verify(listener).onFailure(captor.capture());
+        assertTrue(captor.getValue() instanceof ResourceNotFoundException);
+        assertTrue(captor.getValue().getMessage().contains("no such datasource"));
+    }
+
+    public void testActionListenerForGetDatasourceWhenAcquireLockFailed_whenDatasourceExist_thenConcurrentException() {
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        action.actionListenerForGetDatasourceWhenAcquireLockFailed(listener).onResponse(randomDatasource());
+
+        // Verify
+        ArgumentCaptor<Exception> captor = ArgumentCaptor.forClass(Exception.class);
+        verify(listener).onFailure(captor.capture());
+        assertTrue(captor.getValue() instanceof ConcurrentModificationException);
+        assertTrue(captor.getValue().getMessage().contains("holding a lock"));
+    }
+
+    public void testActionListenerForGetDatasourceWhenAcquireLockFailed_whenException_thenException() {
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        action.actionListenerForGetDatasourceWhenAcquireLockFailed(listener).onFailure(new RuntimeException());
+
+        // Verify
+        ArgumentCaptor<Exception> captor = ArgumentCaptor.forClass(Exception.class);
+        verify(listener).onFailure(captor.capture());
+        assertTrue(captor.getValue() instanceof RuntimeException);
     }
 }

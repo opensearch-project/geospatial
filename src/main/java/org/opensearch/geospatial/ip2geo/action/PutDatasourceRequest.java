@@ -6,27 +6,25 @@
 package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Locale;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 
-import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
-import org.opensearch.common.Strings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ObjectParser;
+import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
+import org.opensearch.geospatial.ip2geo.common.InputFormatValidator;
 
 /**
  * Ip2Geo datasource creation request
@@ -34,11 +32,13 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 @Getter
 @Setter
 @Log4j2
-@EqualsAndHashCode(callSuper = false)
 public class PutDatasourceRequest extends ActionRequest {
-    private static final int MAX_DATASOURCE_NAME_BYTES = 255;
     public static final ParseField ENDPOINT_FIELD = new ParseField("endpoint");
     public static final ParseField UPDATE_INTERVAL_IN_DAYS_FIELD = new ParseField("update_interval_in_days");
+    @VisibleForTesting
+    @Setter
+    private InputFormatValidator inputFormatValidator;
+
     /**
      * @param name the datasource name
      * @return the datasource name
@@ -70,6 +70,7 @@ public class PutDatasourceRequest extends ActionRequest {
      * @param name name of a datasource
      */
     public PutDatasourceRequest(final String name) {
+        this.inputFormatValidator = new InputFormatValidator();
         this.name = name;
     }
 
@@ -83,6 +84,7 @@ public class PutDatasourceRequest extends ActionRequest {
         this.name = in.readString();
         this.endpoint = in.readString();
         this.updateInterval = in.readTimeValue();
+        this.inputFormatValidator = new InputFormatValidator();
     }
 
     @Override
@@ -96,48 +98,13 @@ public class PutDatasourceRequest extends ActionRequest {
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException errors = new ActionRequestValidationException();
-        validateDatasourceName(errors);
+        String errorMsg = inputFormatValidator.validateDatasourceName(name);
+        if (errorMsg != null) {
+            errors.addValidationError(errorMsg);
+        }
         validateEndpoint(errors);
         validateUpdateInterval(errors);
         return errors.validationErrors().isEmpty() ? null : errors;
-    }
-
-    private void validateDatasourceName(final ActionRequestValidationException errors) {
-        if (!Strings.validFileName(name)) {
-            errors.addValidationError("Datasource name must not contain the following characters " + Strings.INVALID_FILENAME_CHARS);
-            return;
-        }
-        if (name.isEmpty()) {
-            errors.addValidationError("Datasource name must not be empty");
-            return;
-        }
-        if (name.contains("#")) {
-            errors.addValidationError("Datasource name must not contain '#'");
-            return;
-        }
-        if (name.contains(":")) {
-            errors.addValidationError("Datasource name must not contain ':'");
-            return;
-        }
-        if (name.charAt(0) == '_' || name.charAt(0) == '-' || name.charAt(0) == '+') {
-            errors.addValidationError("Datasource name must not start with '_', '-', or '+'");
-            return;
-        }
-        int byteCount = 0;
-        try {
-            byteCount = name.getBytes("UTF-8").length;
-        } catch (UnsupportedEncodingException e) {
-            // UTF-8 should always be supported, but rethrow this if it is not for some reason
-            throw new OpenSearchException("Unable to determine length of datasource name", e);
-        }
-        if (byteCount > MAX_DATASOURCE_NAME_BYTES) {
-            errors.addValidationError("Datasource name is too long, (" + byteCount + " > " + MAX_DATASOURCE_NAME_BYTES + ")");
-            return;
-        }
-        if (name.equals(".") || name.equals("..")) {
-            errors.addValidationError("Datasource name must not be '.' or '..'");
-            return;
-        }
     }
 
     /**
