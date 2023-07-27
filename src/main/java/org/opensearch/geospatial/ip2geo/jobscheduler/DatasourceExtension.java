@@ -26,7 +26,7 @@ public class DatasourceExtension implements JobSchedulerExtension {
     /**
      * Job index name for a datasource
      */
-    public static final String JOB_INDEX_NAME = ".scheduler_geospatial_ip2geo_datasource";
+    public static final String JOB_INDEX_NAME = ".scheduler-geospatial-ip2geo-datasource";
     /**
      * Job index setting
      *
