@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -192,7 +193,9 @@ public class GeoIpDataDao {
             }
             return new CSVParser(new BufferedReader(new InputStreamReader(zipIn)), CSVFormat.RFC4180);
         }
-        throw new OpenSearchException("database file [{}] does not exist in the zip file [{}]", manifest.getDbName(), manifest.getUrl());
+        throw new IllegalArgumentException(
+            String.format(Locale.ROOT, "database file [%s] does not exist in the zip file [%s]", manifest.getDbName(), manifest.getUrl())
+        );
     }
 
     /**
