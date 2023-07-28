@@ -13,8 +13,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.opensearch.common.Strings;
-import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.test.OpenSearchTestCase;
@@ -43,7 +43,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
 
     public void testToXContentWithEmptyUploadStats() throws IOException {
         TotalUploadStats totalUploadStats = new TotalUploadStats(Collections.emptyList());
-        XContentBuilder contentBuilder = XContentFactory.contentBuilder(XContentType.JSON);
+        XContentBuilder contentBuilder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
@@ -58,7 +58,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
         long expectedSum = INIT;
         expectedSum += randomUploadStats.stream().mapToLong(UploadStats::getTotalAPICount).sum();
         TotalUploadStats totalUploadStats = new TotalUploadStats(randomUploadStats);
-        XContentBuilder contentBuilder = XContentFactory.contentBuilder(XContentType.JSON);
+        XContentBuilder contentBuilder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
@@ -74,7 +74,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
             expectedSum += stats.getMetrics().stream().mapToLong(UploadMetric::getUploadCount).sum();
         }
         TotalUploadStats totalUploadStats = new TotalUploadStats(randomUploadStats);
-        XContentBuilder contentBuilder = XContentFactory.contentBuilder(XContentType.JSON);
+        XContentBuilder contentBuilder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
@@ -90,7 +90,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
             expectedSum += stats.getMetrics().stream().mapToLong(UploadMetric::getSuccessCount).sum();
         }
         TotalUploadStats totalUploadStats = new TotalUploadStats(randomUploadStats);
-        XContentBuilder contentBuilder = XContentFactory.contentBuilder(XContentType.JSON);
+        XContentBuilder contentBuilder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
@@ -106,7 +106,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
             expectedSum += stats.getMetrics().stream().mapToLong(UploadMetric::getFailedCount).sum();
         }
         TotalUploadStats totalUploadStats = new TotalUploadStats(randomUploadStats);
-        XContentBuilder contentBuilder = XContentFactory.contentBuilder(XContentType.JSON);
+        XContentBuilder contentBuilder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
@@ -122,7 +122,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
             expectedSum += stats.getMetrics().stream().mapToLong(UploadMetric::getDuration).sum();
         }
         TotalUploadStats totalUploadStats = new TotalUploadStats(randomUploadStats);
-        XContentBuilder contentBuilder = XContentFactory.contentBuilder(XContentType.JSON);
+        XContentBuilder contentBuilder = MediaTypeRegistry.contentBuilder(XContentType.JSON);
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
