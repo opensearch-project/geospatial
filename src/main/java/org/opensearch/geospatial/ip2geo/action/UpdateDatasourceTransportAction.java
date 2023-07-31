@@ -24,6 +24,7 @@ import org.opensearch.common.inject.Inject;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
+import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
@@ -93,6 +94,11 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
                         Datasource datasource = datasourceDao.getDatasource(request.getName());
                         if (datasource == null) {
                             throw new ResourceNotFoundException("no such datasource exist");
+                        }
+                        if (DatasourceState.AVAILABLE.equals(datasource.getState()) == false) {
+                            throw new IllegalArgumentException(
+                                String.format(Locale.ROOT, "data source is not in an [%s] state", DatasourceState.AVAILABLE)
+                            );
                         }
                         validate(request, datasource);
                         updateIfChanged(request, datasource);

@@ -30,6 +30,7 @@ import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
+import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.jobscheduler.spi.LockModel;
@@ -87,6 +88,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
     @SneakyThrows
     public void testDoExecute_whenValidInput_thenUpdate() {
         Datasource datasource = randomDatasource(Instant.now().minusSeconds(60));
+        datasource.setState(DatasourceState.AVAILABLE);
         datasource.setTask(DatasourceTask.DELETE_UNUSED_INDICES);
         Instant originalStartTime = datasource.getSchedule().getStartTime();
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
@@ -124,6 +126,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
     @SneakyThrows
     public void testDoExecute_whenNoChangesInValues_thenNoUpdate() {
         Datasource datasource = randomDatasource();
+        datasource.setState(DatasourceState.AVAILABLE);
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
         request.setEndpoint(datasource.getEndpoint());
 
@@ -178,8 +181,39 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
     }
 
     @SneakyThrows
+    public void testDoExecute_whenNotInAvailableState_thenError() {
+        Datasource datasource = randomDatasource();
+        datasource.setState(DatasourceState.CREATE_FAILED);
+        UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
+        request.setEndpoint(datasource.getEndpoint());
+
+        Task task = mock(Task.class);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+        LockModel lockModel = randomLockModel();
+
+        // Run
+        action.doExecute(task, request, listener);
+
+        // Verify
+        ArgumentCaptor<ActionListener<LockModel>> captor = ArgumentCaptor.forClass(ActionListener.class);
+        verify(ip2GeoLockService).acquireLock(eq(datasource.getName()), anyLong(), captor.capture());
+
+        // Run
+        captor.getValue().onResponse(lockModel);
+
+        // Verify
+        ArgumentCaptor<Exception> exceptionCaptor = ArgumentCaptor.forClass(Exception.class);
+        verify(listener).onFailure(exceptionCaptor.capture());
+        assertEquals(IllegalArgumentException.class, exceptionCaptor.getValue().getClass());
+        exceptionCaptor.getValue().getMessage().contains("not in an available");
+        verify(ip2GeoLockService).releaseLock(eq(lockModel));
+    }
+
+    @SneakyThrows
     public void testDoExecute_whenIncompatibleFields_thenError() {
         Datasource datasource = randomDatasource();
+        datasource.setState(DatasourceState.AVAILABLE);
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
         request.setEndpoint(sampleManifestUrl());
 
@@ -211,6 +245,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
     @SneakyThrows
     public void testDoExecute_whenLargeUpdateInterval_thenError() {
         Datasource datasource = randomDatasource();
+        datasource.setState(DatasourceState.AVAILABLE);
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
         request.setUpdateInterval(TimeValue.timeValueDays(datasource.getDatabase().getValidForInDays()));
 
