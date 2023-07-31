@@ -144,7 +144,7 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
             Instant.now().toEpochMilli(),
             "tester"
         );
-        OpenSearchException exception = expectThrows(OpenSearchException.class, () -> noOpsGeoIpDataDao.getDatabaseReader(manifest));
+        Exception exception = expectThrows(IllegalArgumentException.class, () -> noOpsGeoIpDataDao.getDatabaseReader(manifest));
         assertTrue(exception.getMessage().contains("does not exist"));
     }
 
