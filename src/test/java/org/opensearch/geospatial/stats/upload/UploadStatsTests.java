@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -91,7 +90,7 @@ public class UploadStatsTests extends OpenSearchTestCase {
     public void testToXContent() throws IOException {
         UploadStats stats = UploadStatsBuilder.randomUploadStats();
         XContentBuilder statsContent = XContentFactory.jsonBuilder().startObject();
-        String statsAsString = Strings.toString(stats.toXContent(statsContent, ToXContent.EMPTY_PARAMS).endObject());
+        String statsAsString = stats.toXContent(statsContent, ToXContent.EMPTY_PARAMS).endObject().toString();
         assertNotNull(statsAsString);
         assertTrue(statsAsString.contains(buildFieldNameValuePair(UploadStats.FIELDS.REQUEST_COUNT.toString(), stats.getTotalAPICount())));
         stats.getMetrics().forEach(uploadMetric -> {

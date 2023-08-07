@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.core.common.io.stream.BytesStreamInput;
@@ -35,7 +34,7 @@ public class GetDatasourceResponseTests extends Ip2GeoTestCase {
     public void testToXContent_whenValidInput_thenSucceed() throws Exception {
         List<Datasource> datasourceList = Arrays.asList(randomDatasource(), randomDatasource());
         GetDatasourceResponse response = new GetDatasourceResponse(datasourceList);
-        String json = Strings.toString(response.toXContent(JsonXContent.contentBuilder(), null));
+        String json = response.toXContent(JsonXContent.contentBuilder(), null).toString();
         for (Datasource datasource : datasourceList) {
             assertTrue(json.contains(String.format(Locale.ROOT, "\"name\":\"%s\"", datasource.getName())));
             assertTrue(json.contains(String.format(Locale.ROOT, "\"state\":\"%s\"", datasource.getState())));

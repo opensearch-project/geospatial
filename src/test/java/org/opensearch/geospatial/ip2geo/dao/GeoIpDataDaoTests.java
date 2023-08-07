@@ -42,7 +42,6 @@ import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.cluster.routing.Preference;
-import org.opensearch.common.Strings;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.geospatial.GeospatialTestHelper;
@@ -101,7 +100,7 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
         String[] values = { "1.0.0.0/25", "USA", " ", "Seattle" };
         assertEquals(
             "{\"_cidr\":\"1.0.0.0/25\",\"_data\":{\"country\":\"USA\",\"city\":\"Seattle\"}}",
-            Strings.toString(noOpsGeoIpDataDao.createDocument(names, values))
+            noOpsGeoIpDataDao.createDocument(names, values).toString()
         );
     }
 
