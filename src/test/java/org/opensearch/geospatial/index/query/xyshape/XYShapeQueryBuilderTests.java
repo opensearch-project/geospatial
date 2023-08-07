@@ -27,7 +27,6 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
-import org.opensearch.common.Strings;
 import org.opensearch.common.compress.CompressedXContent;
 import org.opensearch.common.geo.GeoJson;
 import org.opensearch.common.geo.ShapeRelation;
@@ -92,12 +91,10 @@ public class XYShapeQueryBuilderTests extends AbstractQueryTestCase<XYShapeQuery
         mapperService.merge(
             DOC_TYPE,
             new CompressedXContent(
-                Strings.toString(
-                    PutMappingRequest.simpleMapping(
-                        XY_SHAPE_FIELD_NAME,
-                        String.format(Locale.ROOT, "%s=%s", MAPPING_FIELD_TYPE_KEY, XYShapeQueryBuilder.NAME)
-                    )
-                )
+                PutMappingRequest.simpleMapping(
+                    XY_SHAPE_FIELD_NAME,
+                    String.format(Locale.ROOT, "%s=%s", MAPPING_FIELD_TYPE_KEY, XYShapeQueryBuilder.NAME)
+                ).toString()
             ),
             MapperService.MergeReason.MAPPING_UPDATE
         );
@@ -120,7 +117,7 @@ public class XYShapeQueryBuilderTests extends AbstractQueryTestCase<XYShapeQuery
             builder.field(expectedShapePath, (contentBuilder, params) -> GeoJson.toXContent(indexedShapeToReturn, contentBuilder, params));
             builder.field(randomAlphaOfLengthBetween(10, 20), randomLowerCaseString());
             builder.endObject();
-            json = Strings.toString(builder);
+            json = builder.toString();
         } catch (IOException ex) {
             throw new OpenSearchException(ex);
         }

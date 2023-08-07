@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
-import org.opensearch.common.Strings;
+import org.opensearch.core.common.Strings;
 
 /**
  * Parameter validator for IP2Geo APIs

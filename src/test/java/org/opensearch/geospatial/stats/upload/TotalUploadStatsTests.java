@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import org.opensearch.common.Strings;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.ToXContent;
@@ -47,7 +46,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
-        String summary = Strings.toString(contentBuilder);
+        String summary = contentBuilder.toString();
         assertNotNull(summary);
         String expectedEmptyContent = "{\"total\":{}}";
         assertEquals(expectedEmptyContent, summary);
@@ -62,7 +61,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
-        String summary = Strings.toString(contentBuilder);
+        String summary = contentBuilder.toString();
         assertNotNull(summary);
         assertTrue(summary.contains(buildFieldNameValuePair(TotalUploadStats.FIELDS.REQUEST_COUNT.toString(), expectedSum)));
     }
@@ -78,7 +77,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
-        String summary = Strings.toString(contentBuilder);
+        String summary = contentBuilder.toString();
         assertNotNull(summary);
         assertTrue(summary.contains(buildFieldNameValuePair(TotalUploadStats.FIELDS.UPLOAD.toString(), expectedSum)));
     }
@@ -94,7 +93,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
-        String summary = Strings.toString(contentBuilder);
+        String summary = contentBuilder.toString();
         assertNotNull(summary);
         assertTrue(summary.contains(buildFieldNameValuePair(TotalUploadStats.FIELDS.SUCCESS.toString(), expectedSum)));
     }
@@ -110,7 +109,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
-        String summary = Strings.toString(contentBuilder);
+        String summary = contentBuilder.toString();
         assertNotNull(summary);
         assertTrue(summary.contains(buildFieldNameValuePair(TotalUploadStats.FIELDS.FAILED.toString(), expectedSum)));
     }
@@ -126,7 +125,7 @@ public class TotalUploadStatsTests extends OpenSearchTestCase {
         contentBuilder.startObject();
         totalUploadStats.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         contentBuilder.endObject();
-        String summary = Strings.toString(contentBuilder);
+        String summary = contentBuilder.toString();
         assertNotNull(summary);
         assertTrue(summary.contains(buildFieldNameValuePair(TotalUploadStats.FIELDS.DURATION.toString(), expectedSum)));
     }

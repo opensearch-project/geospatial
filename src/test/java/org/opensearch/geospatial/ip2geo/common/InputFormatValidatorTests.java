@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.opensearch.common.Randomness;
-import org.opensearch.common.Strings;
+import org.opensearch.core.common.Strings;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 

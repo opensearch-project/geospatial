@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.opensearch.common.Strings;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.GeospatialTestHelper;
@@ -43,7 +42,7 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
         UploadStatsService service = new UploadStatsService(randomMap);
         final XContentBuilder serviceContentBuilder = jsonBuilder();
         service.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
-        String content = Strings.toString(serviceContentBuilder);
+        String content = serviceContentBuilder.toString();
         assertNotNull(content);
         for (String nodeID : randomMap.keySet()) {
             assertTrue(nodeID + " is missing", content.contains(buildFieldNameValuePair(UploadStatsService.NODE_ID, nodeID)));
@@ -55,7 +54,7 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
         final XContentBuilder contentBuilder = jsonBuilder();
         service.toXContent(contentBuilder, ToXContent.EMPTY_PARAMS);
         String emptyContent = "{\"total\":{},\"metrics\":[]}";
-        assertEquals(emptyContent, Strings.toString(contentBuilder));
+        assertEquals(emptyContent, contentBuilder.toString());
     }
 
     public void testXContentWithTotalUploadStats() throws IOException {
@@ -68,14 +67,14 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
         UploadStatsService service = new UploadStatsService(randomMap);
         final XContentBuilder serviceContentBuilder = jsonBuilder();
         service.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
-        String content = Strings.toString(serviceContentBuilder);
+        String content = serviceContentBuilder.toString();
         assertNotNull(content);
 
         final XContentBuilder summary = jsonBuilder().startObject();
         TotalUploadStats expectedSummary = new TotalUploadStats(uploadStats);
         expectedSummary.toXContent(summary, ToXContent.EMPTY_PARAMS);
         summary.endObject();
-        final String totalUploadStatsSummary = Strings.toString(summary);
+        final String totalUploadStatsSummary = summary.toString();
         assertNotNull(totalUploadStatsSummary);
         assertTrue(content.contains(removeStartAndEndObject(totalUploadStatsSummary)));
     }
@@ -91,14 +90,14 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
         UploadStatsService service = new UploadStatsService(randomMap);
         final XContentBuilder serviceContentBuilder = jsonBuilder();
         service.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
-        String content = Strings.toString(serviceContentBuilder);
+        String content = serviceContentBuilder.toString();
         assertNotNull(content);
 
         for (UploadMetric metric : randomMetrics) {
             XContentBuilder metricsAsContent = jsonBuilder().startObject();
             metric.toXContent(metricsAsContent, ToXContent.EMPTY_PARAMS);
             metricsAsContent.endObject();
-            final String metricsAsString = Strings.toString(metricsAsContent);
+            final String metricsAsString = metricsAsContent.toString();
             assertNotNull(metricsAsString);
             assertTrue(content.contains(removeStartAndEndObject(metricsAsString)));
         }
