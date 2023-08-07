@@ -101,7 +101,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request("PUT", buildPipelinePath(name));
-        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
+        request.setJsonEntity(builder.toString());
         return client().performRequest(request);
     }
 
@@ -118,7 +118,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request(PUT, buildDatasourcePath(name));
-        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
+        request.setJsonEntity(builder.toString());
         return client().performRequest(request);
     }
 
@@ -178,7 +178,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request(PUT, String.join(URL_DELIMITER, buildDatasourcePath(name), SETTINGS));
-        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
+        request.setJsonEntity(builder.toString());
         return client().performRequest(request);
     }
 
@@ -188,7 +188,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         builder.endObject();
 
         Request request = new Request(GET, String.join(URL_DELIMITER, buildPipelinePath(name), SIMULATE));
-        request.setJsonEntity(org.opensearch.common.Strings.toString(builder));
+        request.setJsonEntity(builder.toString());
         Response response = client().performRequest(request);
         return createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())).map();
     }
@@ -199,7 +199,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
             xContentBuilder.startObject(entry.getKey()).field(FIELD_TYPE_KEY, entry.getValue()).endObject();
         }
         xContentBuilder.endObject().endObject();
-        String mapping = org.opensearch.common.Strings.toString(xContentBuilder);
+        String mapping = xContentBuilder.toString();
         createIndex(name, settings, mapping.substring(1, mapping.length() - 1));
     }
 
@@ -346,7 +346,7 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         XContentBuilder builder = JsonXContent.contentBuilder().startObject();
         build.accept(builder);
         builder.endObject();
-        return org.opensearch.common.Strings.toString(builder);
+        return builder.toString();
     }
 
     public String buildSearchAggregationsBodyAsString(CheckedConsumer<XContentBuilder, IOException> aggregationsBuilder)

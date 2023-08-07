@@ -11,9 +11,9 @@ import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseStri
 
 import java.io.IOException;
 
-import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.Strings;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;

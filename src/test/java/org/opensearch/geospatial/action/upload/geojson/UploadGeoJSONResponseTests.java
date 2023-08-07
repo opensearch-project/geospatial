@@ -6,8 +6,8 @@
 package org.opensearch.geospatial.action.upload.geojson;
 
 import org.opensearch.action.bulk.BulkResponse;
-import org.opensearch.common.Strings;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.Strings;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 
