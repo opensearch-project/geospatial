@@ -22,11 +22,11 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.opensearch.action.ActionListener;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.bulk.BulkResponse;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.stats.upload.UploadMetric;
 import org.opensearch.geospatial.stats.upload.UploadStats;
