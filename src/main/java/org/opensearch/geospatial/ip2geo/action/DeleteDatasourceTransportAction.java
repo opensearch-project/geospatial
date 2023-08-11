@@ -10,11 +10,11 @@ import java.io.IOException;
 import lombok.extern.log4j.Log4j2;
 
 import org.opensearch.ResourceNotFoundException;
-import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.common.inject.Inject;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
 import org.opensearch.geospatial.exceptions.ResourceInUseException;

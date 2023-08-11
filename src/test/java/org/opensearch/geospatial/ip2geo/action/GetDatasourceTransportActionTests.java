@@ -16,7 +16,7 @@ import java.util.List;
 
 import org.junit.Before;
 import org.opensearch.OpenSearchException;
-import org.opensearch.action.ActionListener;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.IndexNotFoundException;
