@@ -8,6 +8,7 @@ package org.opensearch.geospatial.ip2geo.action;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -161,5 +162,20 @@ public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
         verify(datasourceDao, times(2)).updateDatasource(datasource);
         verify(geoIpDataDao, never()).deleteIp2GeoDataIndex(datasource.getIndices());
         verify(datasourceDao, never()).deleteDatasource(datasource);
+    }
+
+    @SneakyThrows
+    public void testDeleteDatasource_whenDeleteFailsAfterStateIsChanged_thenRevertState() {
+        Datasource datasource = randomDatasource();
+        datasource.setState(DatasourceState.AVAILABLE);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
+        doThrow(new RuntimeException()).when(geoIpDataDao).deleteIp2GeoDataIndex(datasource.getIndices());
+
+        // Run
+        expectThrows(RuntimeException.class, () -> action.deleteDatasource(datasource.getName()));
+
+        // Verify
+        verify(datasourceDao, times(2)).updateDatasource(datasource);
+        assertEquals(DatasourceState.AVAILABLE, datasource.getState());
     }
 }
