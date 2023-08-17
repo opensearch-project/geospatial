@@ -111,9 +111,18 @@ public class DeleteDatasourceTransportAction extends HandledTransportAction<Dele
         if (datasource == null) {
             throw new ResourceNotFoundException("no such datasource exist");
         }
-
+        DatasourceState previousState = datasource.getState();
         setDatasourceStateAsDeleting(datasource);
-        geoIpDataDao.deleteIp2GeoDataIndex(datasource.getIndices());
+
+        try {
+            geoIpDataDao.deleteIp2GeoDataIndex(datasource.getIndices());
+        } catch (Exception e) {
+            if (previousState.equals(datasource.getState()) == false) {
+                datasource.setState(previousState);
+                datasourceDao.updateDatasource(datasource);
+            }
+            throw e;
+        }
         datasourceDao.deleteDatasource(datasource);
     }
 
