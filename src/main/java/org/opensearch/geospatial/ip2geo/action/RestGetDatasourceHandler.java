@@ -12,7 +12,7 @@ import static org.opensearch.rest.RestRequest.Method.GET;
 import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
-import org.opensearch.common.Strings;
+import org.opensearch.core.common.Strings;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;

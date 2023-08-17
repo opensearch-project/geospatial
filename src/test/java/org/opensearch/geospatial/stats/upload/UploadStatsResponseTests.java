@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.opensearch.cluster.ClusterName;
-import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -38,7 +37,7 @@ public class UploadStatsResponseTests extends OpenSearchTestCase {
         );
         final XContentBuilder serviceContentBuilder = jsonBuilder();
         uploadStatsResponse.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
-        String nodesResponseAsString = Strings.toString(serviceContentBuilder);
+        String nodesResponseAsString = serviceContentBuilder.toString();
         assertNotNull(nodesResponseAsString);
 
         final List<UploadMetric> uploadMetrics = getUploadMetrics(nodeResponse);
@@ -46,7 +45,7 @@ public class UploadStatsResponseTests extends OpenSearchTestCase {
             XContentBuilder metricContent = XContentFactory.jsonBuilder().startObject();
             metric.toXContent(metricContent, ToXContent.EMPTY_PARAMS);
             metricContent.endObject();
-            final String metricAsString = Strings.toString(metricContent);
+            final String metricAsString = metricContent.toString();
             assertNotNull(metricAsString);
             assertTrue(nodesResponseAsString.contains(removeStartAndEndObject(metricAsString)));
         }
@@ -62,14 +61,14 @@ public class UploadStatsResponseTests extends OpenSearchTestCase {
         );
         final XContentBuilder serviceContentBuilder = jsonBuilder();
         uploadStatsResponse.toXContent(serviceContentBuilder, ToXContent.EMPTY_PARAMS);
-        String nodesResponseAsString = Strings.toString(serviceContentBuilder);
+        String nodesResponseAsString = serviceContentBuilder.toString();
         assertNotNull(nodesResponseAsString);
 
         TotalUploadStats totalUploadStats = new TotalUploadStats(getUploadStats(nodeResponse));
         XContentBuilder totalUploadStatsContent = XContentFactory.jsonBuilder().startObject();
         totalUploadStats.toXContent(totalUploadStatsContent, ToXContent.EMPTY_PARAMS);
         totalUploadStatsContent.endObject();
-        final String totalUploadStatsAsString = Strings.toString(totalUploadStatsContent);
+        final String totalUploadStatsAsString = totalUploadStatsContent.toString();
         assertNotNull(totalUploadStatsAsString);
         assertTrue(nodesResponseAsString.contains(removeStartAndEndObject(totalUploadStatsAsString)));
     }
