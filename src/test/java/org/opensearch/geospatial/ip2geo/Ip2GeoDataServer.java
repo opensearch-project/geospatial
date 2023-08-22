@@ -31,7 +31,7 @@ public class Ip2GeoDataServer {
     private static final String ROOT = "ip2geo/server";
     private static final int PORT = 8001;
     private static final String EXTERNAL_ENDPOINT_PREFIX =
-        "https://github.com/opensearch-project/geospatial/blob/main/src/test/resources/ip2geo/server";
+        "https://raw.githubusercontent.com/opensearch-project/geospatial/main/src/test/resources/ip2geo/server";
 
     private static HttpServer server;
     private static volatile int counter = 0;
