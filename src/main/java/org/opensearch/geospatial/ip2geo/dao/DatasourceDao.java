@@ -217,7 +217,7 @@ public class DatasourceDao {
      * @throws IOException exception
      */
     public Datasource getDatasource(final String name) throws IOException {
-        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name).preference(Preference.PRIMARY.type());
+        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
         GetResponse response;
         try {
             response = StashedThreadContext.run(client, () -> client.get(request).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT)));
@@ -244,7 +244,7 @@ public class DatasourceDao {
      * @param actionListener the action listener
      */
     public void getDatasource(final String name, final ActionListener<Datasource> actionListener) {
-        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name).preference(Preference.PRIMARY.type());
+        GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
         StashedThreadContext.run(client, () -> client.get(request, new ActionListener<>() {
             @Override
             public void onResponse(final GetResponse response) {
@@ -282,7 +282,6 @@ public class DatasourceDao {
             client,
             () -> client.prepareMultiGet()
                 .add(DatasourceExtension.JOB_INDEX_NAME, names)
-                .setPreference(Preference.PRIMARY.type())
                 .execute(createGetDataSourceQueryActionLister(MultiGetResponse.class, actionListener))
         );
     }
