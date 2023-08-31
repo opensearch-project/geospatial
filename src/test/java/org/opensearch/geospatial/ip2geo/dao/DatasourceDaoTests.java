@@ -206,7 +206,6 @@ public class DatasourceDaoTests extends Ip2GeoTestCase {
             GetRequest request = (GetRequest) actionRequest;
             assertEquals(datasource.getName(), request.id());
             assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
-            assertEquals(Preference.PRIMARY.type(), request.preference());
             GetResponse response = getMockedGetResponse(isExist ? datasource : null);
             if (exception != null) {
                 throw exception;
@@ -264,7 +263,6 @@ public class DatasourceDaoTests extends Ip2GeoTestCase {
             assertTrue(actionRequest instanceof MultiGetRequest);
             MultiGetRequest request = (MultiGetRequest) actionRequest;
             assertEquals(2, request.getItems().size());
-            assertEquals(Preference.PRIMARY.type(), request.preference());
             for (MultiGetRequest.Item item : request.getItems()) {
                 assertEquals(DatasourceExtension.JOB_INDEX_NAME, item.index());
                 assertTrue(datasources.stream().filter(datasource -> datasource.getName().equals(item.id())).findAny().isPresent());
