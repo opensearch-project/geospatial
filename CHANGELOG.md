@@ -28,4 +28,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Refactor LifecycleComponent package path ([#377](https://github.com/opensearch-project/geospatial/pull/377))
 * [Refactor] Strings utility methods to core library ([#379](https://github.com/opensearch-project/geospatial/pull/379))
 * Fixed compilation errors after refactoring in core foundation classes ([#380](https://github.com/opensearch-project/geospatial/pull/380))
+* Version bump for spotlss and apache commons([#400](https://github.com/opensearch-project/geospatial/pull/400))
 ### Refactoring
