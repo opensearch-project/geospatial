@@ -12,21 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Maintenance
 ### Refactoring
 
-## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.9...2.x)
+## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.10...2.x)
 ### Features
-* IP2Geo processor implementation ([#362](https://github.com/opensearch-project/geospatial/pull/362))
 ### Enhancements
 ### Bug Fixes
-* Revert datasource state when delete fails([#382](https://github.com/opensearch-project/geospatial/pull/382))
-* Update ip2geo test data url([#389](https://github.com/opensearch-project/geospatial/pull/389))
 ### Infrastructure
-* Make jacoco report to be generated faster in local ([#267](https://github.com/opensearch-project/geospatial/pull/267))
-* Exclude lombok generated code from jacoco coverage report ([#268](https://github.com/opensearch-project/geospatial/pull/268))
 ### Documentation
 ### Maintenance
-* Change package for Strings.hasText ([#314](https://github.com/opensearch-project/geospatial/pull/314))
-* Refactor LifecycleComponent package path ([#377](https://github.com/opensearch-project/geospatial/pull/377))
-* [Refactor] Strings utility methods to core library ([#379](https://github.com/opensearch-project/geospatial/pull/379))
-* Fixed compilation errors after refactoring in core foundation classes ([#380](https://github.com/opensearch-project/geospatial/pull/380))
-* Version bump for spotlss and apache commons([#400](https://github.com/opensearch-project/geospatial/pull/400))
 ### Refactoring
