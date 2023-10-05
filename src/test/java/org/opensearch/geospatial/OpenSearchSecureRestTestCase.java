@@ -47,6 +47,7 @@ public abstract class OpenSearchSecureRestTestCase extends OpenSearchRestTestCas
     private static final String SYS_PROPERTY_KEY_PASSWORD = "password";
     private static final String DEFAULT_SOCKET_TIMEOUT = "60s";
     private static final String INTERNAL_INDICES_PREFIX = ".";
+    private static final String SYSTEM_INDEX_PREFIX = "security-auditlog";
     private static String protocol;
 
     @Override
@@ -150,6 +151,10 @@ public abstract class OpenSearchSecureRestTestCase extends OpenSearchRestTestCas
                 .map(index -> (String) index.get("index"))
                 .filter(indexName -> indexName != null)
                 .filter(indexName -> !indexName.startsWith(INTERNAL_INDICES_PREFIX))
+                // This is hack to remove the security audit index from deletion. We will need a proper fix where
+                // we delete the indices after a test is completed.
+                // Issue: https://github.com/opensearch-project/geospatial/issues/428
+                .filter(indexName -> !indexName.startsWith(SYSTEM_INDEX_PREFIX))
                 .collect(Collectors.toList());
 
             for (String indexName : externalIndices) {
