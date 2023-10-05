@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Bug Fixes
 * Fix flaky test, testIndexingMultiPolygon ([#483](https://github.com/opensearch-project/geospatial/pull/483))
 ### Infrastructure
+* Add integration test against security enabled cluster ([#513](https://github.com/opensearch-project/geospatial/pull/513))
 ### Documentation
 ### Maintenance
 ### Refactoring
