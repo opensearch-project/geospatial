@@ -8,7 +8,9 @@ package org.opensearch.geospatial.ip2geo.common;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.unit.TimeValue;
@@ -74,11 +76,22 @@ public class Ip2GeoSettings {
     );
 
     /**
+     * A list of CIDR which will be blocked to be used as datasource endpoint
+     */
+    public static final Setting<List<String>> DATASOURCE_ENDPOINT_DENYLIST = Setting.listSetting(
+        "plugins.geospatial.ip2geo.datasource.endpoint.denylist",
+        Collections.emptyList(),
+        Function.identity(),
+        Setting.Property.NodeScope,
+        Setting.Property.Dynamic
+    );
+
+    /**
      * Return all settings of Ip2Geo feature
      * @return a list of all settings for Ip2Geo feature
      */
     public static final List<Setting<?>> settings() {
-        return List.of(DATASOURCE_ENDPOINT, DATASOURCE_UPDATE_INTERVAL, BATCH_SIZE, TIMEOUT, CACHE_SIZE);
+        return List.of(DATASOURCE_ENDPOINT, DATASOURCE_UPDATE_INTERVAL, BATCH_SIZE, TIMEOUT, CACHE_SIZE, DATASOURCE_ENDPOINT_DENYLIST);
     }
 
     /**

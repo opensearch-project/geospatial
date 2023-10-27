@@ -61,8 +61,8 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        noOpsGeoIpDataDao = new GeoIpDataDao(clusterService, client);
-        verifyingGeoIpDataDao = new GeoIpDataDao(clusterService, verifyingClient);
+        noOpsGeoIpDataDao = new GeoIpDataDao(clusterService, client, urlDenyListChecker);
+        verifyingGeoIpDataDao = new GeoIpDataDao(clusterService, verifyingClient, urlDenyListChecker);
     }
 
     public void testCreateIndexIfNotExistsWithExistingIndex() {
@@ -131,6 +131,7 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
         assertArrayEquals(expectedHeader, parser.iterator().next().values());
         String[] expectedValues = { "1.0.0.0/24", "Australia" };
         assertArrayEquals(expectedValues, parser.iterator().next().values());
+        verify(urlDenyListChecker).toUrlIfNotInDenyList(manifest.getUrl());
     }
 
     public void testGetDatabaseReaderNoFile() throws Exception {
@@ -145,6 +146,7 @@ public class GeoIpDataDaoTests extends Ip2GeoTestCase {
         );
         Exception exception = expectThrows(IllegalArgumentException.class, () -> noOpsGeoIpDataDao.getDatabaseReader(manifest));
         assertTrue(exception.getMessage().contains("does not exist"));
+        verify(urlDenyListChecker).toUrlIfNotInDenyList(manifest.getUrl());
     }
 
     @SneakyThrows
