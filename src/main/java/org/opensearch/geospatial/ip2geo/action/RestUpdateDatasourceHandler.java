@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
@@ -23,6 +24,12 @@ import org.opensearch.rest.action.RestToXContentListener;
  */
 public class RestUpdateDatasourceHandler extends BaseRestHandler {
     private static final String ACTION_NAME = "ip2geo_datasource_update";
+
+    private final URLDenyListChecker urlDenyListChecker;
+
+    public RestUpdateDatasourceHandler(final URLDenyListChecker urlDenyListChecker) {
+        this.urlDenyListChecker = urlDenyListChecker;
+    }
 
     @Override
     public String getName() {
@@ -36,6 +43,10 @@ public class RestUpdateDatasourceHandler extends BaseRestHandler {
             try (XContentParser parser = request.contentOrSourceParamParser()) {
                 UpdateDatasourceRequest.PARSER.parse(parser, updateDatasourceRequest, null);
             }
+        }
+        if (updateDatasourceRequest.getEndpoint() != null) {
+            // Call to validate if URL is in a deny-list or not.
+            urlDenyListChecker.toUrlIfNotInDenyList(updateDatasourceRequest.getEndpoint());
         }
         return channel -> client.executeLocally(
             UpdateDatasourceAction.INSTANCE,

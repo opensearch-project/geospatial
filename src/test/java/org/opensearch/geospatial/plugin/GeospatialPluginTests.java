@@ -40,6 +40,7 @@ import org.opensearch.geospatial.ip2geo.action.RestUpdateDatasourceHandler;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
@@ -63,12 +64,13 @@ import org.opensearch.watcher.ResourceWatcherService;
 
 public class GeospatialPluginTests extends OpenSearchTestCase {
     private final ClusterSettings clusterSettings = new ClusterSettings(Settings.EMPTY, new HashSet(Ip2GeoSettings.settings()));
+    private final URLDenyListChecker urlDenyListChecker = new URLDenyListChecker(clusterSettings);
     private final List<RestHandler> SUPPORTED_REST_HANDLERS = List.of(
         new RestUploadGeoJSONAction(),
         new RestUploadStatsAction(),
-        new RestPutDatasourceHandler(clusterSettings),
+        new RestPutDatasourceHandler(clusterSettings, urlDenyListChecker),
         new RestGetDatasourceHandler(),
-        new RestUpdateDatasourceHandler(),
+        new RestUpdateDatasourceHandler(urlDenyListChecker),
         new RestDeleteDatasourceHandler()
     );
 

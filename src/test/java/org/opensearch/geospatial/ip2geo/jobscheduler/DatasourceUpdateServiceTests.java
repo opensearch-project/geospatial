@@ -43,7 +43,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao);
+        datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
     }
 
     @SneakyThrows
@@ -64,6 +64,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         // Verify
         assertNotNull(datasource.getUpdateStats().getLastSkippedAt());
         verify(datasourceDao).updateDatasource(datasource);
+        verify(urlDenyListChecker).toUrlIfNotInDenyList(datasource.getEndpoint());
     }
 
     @SneakyThrows
@@ -87,6 +88,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
         // Verify
         verify(geoIpDataDao).putGeoIpData(eq(datasource.currentIndexName()), isA(String[].class), any(Iterator.class), any(Runnable.class));
+        verify(urlDenyListChecker).toUrlIfNotInDenyList(datasource.getEndpoint());
     }
 
     @SneakyThrows
@@ -108,6 +110,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
         // Run
         expectThrows(OpenSearchException.class, () -> datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class)));
+        verify(urlDenyListChecker).toUrlIfNotInDenyList(datasource.getEndpoint());
     }
 
     @SneakyThrows
@@ -127,6 +130,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
 
         // Run
         expectThrows(OpenSearchException.class, () -> datasourceUpdateService.updateOrCreateGeoIpData(datasource, mock(Runnable.class)));
+        verify(urlDenyListChecker).toUrlIfNotInDenyList(datasource.getEndpoint());
     }
 
     @SneakyThrows
@@ -161,6 +165,7 @@ public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {
         assertNotNull(datasource.getUpdateStats().getLastProcessingTimeInMillis());
         verify(datasourceDao, times(2)).updateDatasource(datasource);
         verify(geoIpDataDao).putGeoIpData(eq(datasource.currentIndexName()), isA(String[].class), any(Iterator.class), any(Runnable.class));
+        verify(urlDenyListChecker).toUrlIfNotInDenyList(datasource.getEndpoint());
     }
 
     public void testWaitUntilAllShardsStarted_whenTimedOut_thenThrowException() {

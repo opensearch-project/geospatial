@@ -15,6 +15,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 
 ## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.11...2.x)
 ### Features
+* Add denylist ip config for datasource endpoint ([#573](https://github.com/opensearch-project/geospatial/pull/573))
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
