@@ -54,6 +54,7 @@ import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
@@ -97,6 +98,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
     private Ip2GeoCachedDao ip2GeoCachedDao;
     private DatasourceDao datasourceDao;
     private GeoIpDataDao geoIpDataDao;
+    private URLDenyListChecker urlDenyListChecker;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -105,8 +107,9 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
+        this.urlDenyListChecker = new URLDenyListChecker(parameters.ingestService.getClusterService().getClusterSettings());
         this.datasourceDao = new DatasourceDao(parameters.client, parameters.ingestService.getClusterService());
-        this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client);
+        this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client, urlDenyListChecker);
         this.ip2GeoCachedDao = new Ip2GeoCachedDao(parameters.ingestService.getClusterService(), datasourceDao, geoIpDataDao);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
@@ -153,7 +156,12 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
-        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao);
+        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(
+            clusterService,
+            datasourceDao,
+            geoIpDataDao,
+            urlDenyListChecker
+        );
         Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         Ip2GeoLockService ip2GeoLockService = new Ip2GeoLockService(clusterService, client);
         /**
@@ -187,9 +195,9 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         List<RestHandler> geoJsonHandlers = List.of(new RestUploadStatsAction(), new RestUploadGeoJSONAction());
 
         List<RestHandler> ip2geoHandlers = List.of(
-            new RestPutDatasourceHandler(clusterSettings),
+            new RestPutDatasourceHandler(clusterSettings, urlDenyListChecker),
             new RestGetDatasourceHandler(),
-            new RestUpdateDatasourceHandler(),
+            new RestUpdateDatasourceHandler(urlDenyListChecker),
             new RestDeleteDatasourceHandler()
         );
 
