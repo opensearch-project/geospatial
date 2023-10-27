@@ -47,6 +47,7 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
@@ -98,6 +99,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     protected Ip2GeoProcessorDao ip2GeoProcessorDao;
     @Mock
     protected RoutingTable routingTable;
+    protected URLDenyListChecker urlDenyListChecker;
     protected IngestMetadata ingestMetadata;
     protected NoOpNodeClient client;
     protected VerifyingClient verifyingClient;
@@ -115,6 +117,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         clusterSettings = new ClusterSettings(settings, new HashSet<>(Ip2GeoSettings.settings()));
         lockService = new LockService(client, clusterService);
         ingestMetadata = new IngestMetadata(Collections.emptyMap());
+        urlDenyListChecker = spy(new URLDenyListChecker(clusterSettings));
         when(metadata.custom(IngestMetadata.TYPE)).thenReturn(ingestMetadata);
         when(clusterService.getSettings()).thenReturn(Settings.EMPTY);
         when(clusterService.getClusterSettings()).thenReturn(clusterSettings);
