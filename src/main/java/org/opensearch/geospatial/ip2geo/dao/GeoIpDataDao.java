@@ -61,6 +61,7 @@ import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.constants.IndexSetting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.query.QueryBuilders;
@@ -91,11 +92,13 @@ public class GeoIpDataDao {
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
     private final Client client;
+    private final URLDenyListChecker urlDenyListChecker;
 
-    public GeoIpDataDao(final ClusterService clusterService, final Client client) {
+    public GeoIpDataDao(final ClusterService clusterService, final Client client, final URLDenyListChecker urlDenyListChecker) {
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
         this.client = client;
+        this.urlDenyListChecker = urlDenyListChecker;
     }
 
     /**
@@ -172,7 +175,7 @@ public class GeoIpDataDao {
         SpecialPermission.check();
         return AccessController.doPrivileged((PrivilegedAction<CSVParser>) () -> {
             try {
-                URL zipUrl = new URL(manifest.getUrl());
+                URL zipUrl = urlDenyListChecker.toUrlIfNotInDenyList(manifest.getUrl());
                 return internalGetDatabaseReader(manifest, zipUrl.openConnection());
             } catch (IOException e) {
                 throw new OpenSearchException("failed to read geoip data from {}", manifest.getUrl(), e);
