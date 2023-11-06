@@ -193,6 +193,20 @@ public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCas
         return createParser(XContentType.JSON.xContent(), EntityUtils.toString(response.getEntity())).map();
     }
 
+    protected Response updateClusterSetting(final Map<String, Object> properties) throws IOException {
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
+        builder.startObject("transient");
+        for (Map.Entry<String, Object> config : properties.entrySet()) {
+            builder.field(config.getKey(), config.getValue());
+        }
+        builder.endObject();
+        builder.endObject();
+
+        Request request = new Request(PUT, "/_cluster/settings");
+        request.setJsonEntity(builder.toString());
+        return client().performRequest(request);
+    }
+
     protected static void createIndex(String name, Settings settings, Map<String, String> fieldMap) throws IOException {
         XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().startObject(MAPPING_PROPERTIES_KEY);
         for (Map.Entry<String, String> entry : fieldMap.entrySet()) {
