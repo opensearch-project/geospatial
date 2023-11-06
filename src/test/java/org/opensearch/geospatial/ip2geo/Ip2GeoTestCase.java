@@ -5,10 +5,12 @@
 
 package org.opensearch.geospatial.ip2geo;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -99,6 +101,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     protected Ip2GeoProcessorDao ip2GeoProcessorDao;
     @Mock
     protected RoutingTable routingTable;
+    @Mock
     protected URLDenyListChecker urlDenyListChecker;
     protected IngestMetadata ingestMetadata;
     protected NoOpNodeClient client;
@@ -117,7 +120,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         clusterSettings = new ClusterSettings(settings, new HashSet<>(Ip2GeoSettings.settings()));
         lockService = new LockService(client, clusterService);
         ingestMetadata = new IngestMetadata(Collections.emptyMap());
-        urlDenyListChecker = spy(new URLDenyListChecker(clusterSettings));
+        when(urlDenyListChecker.toUrlIfNotInDenyList(anyString())).thenAnswer(i -> new URL(i.getArgument(0)));
         when(metadata.custom(IngestMetadata.TYPE)).thenReturn(ingestMetadata);
         when(clusterService.getSettings()).thenReturn(Settings.EMPTY);
         when(clusterService.getClusterSettings()).thenReturn(clusterSettings);
