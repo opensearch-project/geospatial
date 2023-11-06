@@ -8,6 +8,7 @@ package org.opensearch.geospatial.ip2geo.processor;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -17,6 +18,8 @@ import java.util.stream.Collectors;
 
 import lombok.SneakyThrows;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.opensearch.client.Response;
 import org.opensearch.client.ResponseException;
 import org.opensearch.common.Randomness;
@@ -25,6 +28,7 @@ import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoDataServer;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceRequest;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 
 public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
     // Use this value in resource name to avoid name conflict among tests
@@ -34,9 +38,21 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
     private static final String IP = "ip";
     private static final String SOURCE = "_source";
 
+    @BeforeClass
+    public static void start() {
+        Ip2GeoDataServer.start();
+    }
+
+    @AfterClass
+    public static void stop() {
+        Ip2GeoDataServer.stop();
+    }
+
     @SneakyThrows
     public void testCreateIp2GeoProcessor_whenValidInput_thenAddData() {
-        Ip2GeoDataServer.start();
+        // Reset deny list to allow private network access during test
+        updateClusterSetting(Map.of(Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.getKey(), Collections.emptyList()));
+
         boolean isDatasourceCreated = false;
         boolean isProcessorCreated = false;
         String pipelineName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
@@ -109,11 +125,24 @@ public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
             } catch (Exception e) {
                 exception = e;
             }
-            Ip2GeoDataServer.stop();
             if (exception != null) {
                 throw exception;
             }
         }
+    }
+
+    @SneakyThrows
+    public void testCreateIp2GeoProcessor_whenPrivateAddress_thenBlocked() {
+        String datasourceName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
+        Map<String, Object> datasourceProperties = Map.of(
+            PutDatasourceRequest.ENDPOINT_FIELD.getPreferredName(),
+            "http://127.0.0.1:9200/city/manifest_local.json"
+        );
+
+        // Create datasource and wait for it to be available
+        ResponseException exception = expectThrows(ResponseException.class, () -> createDatasource(datasourceName, datasourceProperties));
+        assertEquals(400, exception.getResponse().getStatusLine().getStatusCode());
+        assertTrue(exception.getMessage().contains("blocked by deny list"));
     }
 
     private Response createIp2GeoProcessorPipeline(final String pipelineName, final Map<String, Object> properties) throws IOException {

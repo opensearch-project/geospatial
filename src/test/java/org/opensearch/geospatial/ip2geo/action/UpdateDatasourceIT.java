@@ -7,6 +7,7 @@ package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -16,10 +17,12 @@ import lombok.SneakyThrows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.opensearch.client.ResponseException;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.core.rest.RestStatus;
 import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoDataServer;
+import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 
 public class UpdateDatasourceIT extends GeospatialRestTestCase {
     // Use this value in resource name to avoid name conflict among tests
@@ -36,7 +39,49 @@ public class UpdateDatasourceIT extends GeospatialRestTestCase {
     }
 
     @SneakyThrows
+    public void testUpdateDatasource_whenPrivateNetwork_thenBlocked() {
+        // Reset deny list to allow private network access during test
+        updateClusterSetting(Map.of(Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.getKey(), Collections.emptyList()));
+
+        boolean isDatasourceCreated = false;
+        String datasourceName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
+        try {
+            Map<String, Object> datasourceProperties = Map.of(
+                PutDatasourceRequest.ENDPOINT_FIELD.getPreferredName(),
+                Ip2GeoDataServer.getEndpointCountry()
+            );
+
+            // Create datasource and wait for it to be available
+            createDatasource(datasourceName, datasourceProperties);
+            isDatasourceCreated = true;
+            waitForDatasourceToBeAvailable(datasourceName, Duration.ofSeconds(10));
+
+            // Revert deny list to its default value and private network ip should be blocked
+            updateClusterSetting(
+                Map.of(
+                    Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.getKey(),
+                    Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.get(Settings.EMPTY)
+                )
+            );
+            int updateIntervalInDays = 1;
+            ResponseException exception = expectThrows(
+                ResponseException.class,
+                () -> updateDatasourceEndpoint(datasourceName, "http://127.0.0.1:9200/city/manifest_local.json", updateIntervalInDays)
+            );
+            assertEquals(400, exception.getResponse().getStatusLine().getStatusCode());
+            assertTrue(exception.getMessage().contains("blocked by deny list"));
+        } finally {
+            if (isDatasourceCreated) {
+                deleteDatasource(datasourceName, 3);
+            }
+        }
+    }
+
+    @SneakyThrows
     public void testUpdateDatasource_whenValidInput_thenUpdated() {
+        // Reset deny list to allow private network access during test
+        updateClusterSetting(Map.of(Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.getKey(), Collections.emptyList()));
+
         boolean isDatasourceCreated = false;
         String datasourceName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
         try {
@@ -65,6 +110,9 @@ public class UpdateDatasourceIT extends GeospatialRestTestCase {
 
     @SneakyThrows
     public void testUpdateDatasource_whenIncompatibleFields_thenFails() {
+        // Reset deny list to allow private network access during test
+        updateClusterSetting(Map.of(Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.getKey(), Collections.emptyList()));
+
         boolean isDatasourceCreated = false;
         String datasourceName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
         try {
