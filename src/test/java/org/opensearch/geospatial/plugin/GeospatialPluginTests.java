@@ -203,6 +203,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
             null,
             ingestService,
             client,
+            null,
             null
         );
     }
