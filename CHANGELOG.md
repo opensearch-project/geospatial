@@ -21,4 +21,5 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Infrastructure
 ### Documentation
 ### Maintenance
+* Upgrade gradle to 8.4 ([#596](https://github.com/opensearch-project/geospatial/pull/596))
 ### Refactoring

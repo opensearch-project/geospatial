@@ -72,4 +72,5 @@ publishing {
     }
 }
 
-
+validatePluginZipPom.dependsOn(generatePomFileForNebulaPublication)
+validateNebulaPom.dependsOn(generatePomFileForPluginZipPublication)
