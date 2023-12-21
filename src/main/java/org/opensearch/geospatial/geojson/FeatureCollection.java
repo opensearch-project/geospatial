@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.opensearch.geospatial.GeospatialParser;
+
 import lombok.NonNull;
 import lombok.Value;
-
-import org.opensearch.geospatial.GeospatialParser;
 
 /**
  * FeatureCollection represents GEOJSON of type FeatureCollection. A FeatureCollection object has a member

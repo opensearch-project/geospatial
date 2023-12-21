@@ -9,14 +9,14 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.Randomness;
 import org.opensearch.geospatial.ClusterSettingHelper;
 import org.opensearch.node.Node;
 import org.opensearch.test.OpenSearchTestCase;
+
+import lombok.SneakyThrows;
 
 public class URLDenyListCheckerTests extends OpenSearchTestCase {
     private ClusterSettingHelper clusterSettingHelper;

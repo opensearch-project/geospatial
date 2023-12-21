@@ -15,8 +15,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.opensearch.common.network.NetworkAddress;
 import org.opensearch.common.xcontent.XContentFactory;
@@ -28,6 +26,8 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.engine.Engine;
+
+import lombok.SneakyThrows;
 
 public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
     private Ip2GeoCachedDao ip2GeoCachedDao;

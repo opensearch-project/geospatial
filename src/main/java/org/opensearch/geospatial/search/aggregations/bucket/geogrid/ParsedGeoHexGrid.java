@@ -7,11 +7,11 @@ package org.opensearch.geospatial.search.aggregations.bucket.geogrid;
 
 import java.io.IOException;
 
-import lombok.NoArgsConstructor;
-
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geo.search.aggregations.bucket.geogrid.ParsedGeoGrid;
+
+import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class ParsedGeoHexGrid extends ParsedGeoGrid {

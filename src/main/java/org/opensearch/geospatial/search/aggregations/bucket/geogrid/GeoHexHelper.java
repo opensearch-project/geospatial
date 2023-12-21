@@ -14,9 +14,9 @@ import static org.opensearch.geospatial.h3.H3.stringToH3;
 
 import java.util.Locale;
 
-import lombok.NonNull;
-
 import org.opensearch.common.geo.GeoPoint;
+
+import lombok.NonNull;
 
 /**
  * Helper class for H3 library

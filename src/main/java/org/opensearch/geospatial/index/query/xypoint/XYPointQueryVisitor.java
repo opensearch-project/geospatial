@@ -13,8 +13,6 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Objects;
 
-import lombok.AllArgsConstructor;
-
 import org.apache.lucene.document.XYDocValuesField;
 import org.apache.lucene.document.XYPointField;
 import org.apache.lucene.geo.XYCircle;
@@ -41,6 +39,8 @@ import org.opensearch.geometry.ShapeType;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.index.query.QueryShardException;
+
+import lombok.AllArgsConstructor;
 
 /**
  * Geometry Visitor to create a query to find all cartesian XYPoints

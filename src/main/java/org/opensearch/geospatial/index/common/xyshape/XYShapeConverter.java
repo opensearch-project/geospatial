@@ -11,10 +11,6 @@ import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-
 import org.apache.lucene.geo.XYCircle;
 import org.apache.lucene.geo.XYLine;
 import org.apache.lucene.geo.XYPoint;
@@ -25,6 +21,10 @@ import org.opensearch.geometry.Line;
 import org.opensearch.geometry.Point;
 import org.opensearch.geometry.Polygon;
 import org.opensearch.geometry.Rectangle;
+
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * Utility class to convert compatible shapes from opensearch to Lucene

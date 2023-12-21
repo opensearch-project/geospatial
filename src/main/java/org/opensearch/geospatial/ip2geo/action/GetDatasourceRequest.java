@@ -7,13 +7,13 @@ package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Ip2Geo datasource get request

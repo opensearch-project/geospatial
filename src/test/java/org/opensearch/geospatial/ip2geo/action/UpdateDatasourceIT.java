@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import lombok.SneakyThrows;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.opensearch.client.ResponseException;
@@ -23,6 +21,8 @@ import org.opensearch.geospatial.GeospatialRestTestCase;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoDataServer;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+
+import lombok.SneakyThrows;
 
 public class UpdateDatasourceIT extends GeospatialRestTestCase {
     // Use this value in resource name to avoid name conflict among tests

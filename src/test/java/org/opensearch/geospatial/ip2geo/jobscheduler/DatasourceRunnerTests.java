@@ -20,8 +20,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.geospatial.GeospatialTestHelper;
@@ -33,6 +31,8 @@ import org.opensearch.jobscheduler.spi.JobExecutionContext;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+
+import lombok.SneakyThrows;
 
 public class DatasourceRunnerTests extends Ip2GeoTestCase {
     @Before

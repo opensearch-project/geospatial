@@ -64,27 +64,17 @@ public class GeoHexGridAggregatorTests extends AggregatorTestCase {
     private static final double TOLERANCE = 1E-5D;
 
     public void testNoDocs() throws IOException {
-        testCase(
-            new MatchAllDocsQuery(),
-            GEO_POINT_FIELD_NAME,
-            randomPrecision(),
-            null,
-            geoGrid -> { assertEquals(0, geoGrid.getBuckets().size()); },
-            iw -> {
-                // Intentionally not writing any docs
-            }
-        );
+        testCase(new MatchAllDocsQuery(), GEO_POINT_FIELD_NAME, randomPrecision(), null, geoGrid -> {
+            assertEquals(0, geoGrid.getBuckets().size());
+        }, iw -> {
+            // Intentionally not writing any docs
+        });
     }
 
     public void testUnmapped() throws IOException {
-        testCase(
-            new MatchAllDocsQuery(),
-            randomLowerCaseString(),
-            randomPrecision(),
-            null,
-            geoGrid -> { assertEquals(0, geoGrid.getBuckets().size()); },
-            iw -> { iw.addDocument(Collections.singleton(new LatLonDocValuesField(GEO_POINT_FIELD_NAME, 10D, 10D))); }
-        );
+        testCase(new MatchAllDocsQuery(), randomLowerCaseString(), randomPrecision(), null, geoGrid -> {
+            assertEquals(0, geoGrid.getBuckets().size());
+        }, iw -> { iw.addDocument(Collections.singleton(new LatLonDocValuesField(GEO_POINT_FIELD_NAME, 10D, 10D))); });
     }
 
     public void testUnmappedMissing() throws IOException {

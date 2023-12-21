@@ -11,8 +11,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
@@ -24,6 +22,8 @@ import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.ScheduledJobRunner;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Datasource update task

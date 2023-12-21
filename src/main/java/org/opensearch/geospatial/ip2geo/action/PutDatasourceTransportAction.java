@@ -10,8 +10,6 @@ import static org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService.LOCK_DUR
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.index.IndexResponse;
@@ -32,6 +30,8 @@ import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.tasks.Task;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
+
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Transport action to create datasource
