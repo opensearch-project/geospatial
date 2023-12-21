@@ -75,7 +75,7 @@ buildscript {
     dependencies {
         classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
         classpath "com.diffplug.spotless:spotless-plugin-gradle:6.3.0"
-        classpath "io.freefair.gradle:lombok-plugin:6.4.3"
+        classpath "io.freefair.gradle:lombok-plugin:8.4"
     }
 }
 apply plugin: "com.diffplug.spotless"
@@ -315,8 +315,8 @@ spotless {
 jacocoTestReport {
     dependsOn test
     reports {
-        xml.enabled = true
-        html.enabled = true
+        xml.getRequired().set(true)
+        html.getRequired().set(true)
     }
 }
 
