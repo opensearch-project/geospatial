@@ -16,8 +16,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 
-import lombok.SneakyThrows;
-
 import org.apache.lucene.search.TotalHits;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
@@ -53,6 +51,8 @@ import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
+
+import lombok.SneakyThrows;
 
 public class DatasourceDaoTests extends Ip2GeoTestCase {
     private DatasourceDao datasourceDao;

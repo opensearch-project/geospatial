@@ -11,10 +11,6 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.core.xcontent.ToXContentFragment;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -24,6 +20,10 @@ import org.opensearch.geometry.ShapeType;
 import org.opensearch.geometry.utils.StandardValidator;
 import org.opensearch.geometry.utils.WellKnownText;
 import org.opensearch.index.mapper.AbstractPointGeometryFieldMapper;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * Represents a point in a 2-dimensional planar coordinate system with no range limitations.

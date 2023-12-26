@@ -20,8 +20,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -36,6 +34,8 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.tasks.Task;
+
+import lombok.SneakyThrows;
 
 public class DeleteDatasourceTransportActionTests extends Ip2GeoTestCase {
     private DeleteDatasourceTransportAction action;

@@ -19,7 +19,7 @@ jobs:
     needs: Get-CI-Image-Tag
     strategy:
       matrix:
-        java: [11, 17]
+        java: [11, 17, 21]
 
     name: Build and Test geospatial Plugin
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
   Build-windows-macos:
     strategy:
       matrix:
-        java: [11, 17]
+        java: [11, 17, 21]
         os: [windows-latest, macos-latest]
 
     name: Build and Test geospatial Plugin

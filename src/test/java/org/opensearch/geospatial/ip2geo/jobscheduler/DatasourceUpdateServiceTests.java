@@ -23,8 +23,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import lombok.SneakyThrows;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.junit.Before;
@@ -36,6 +34,8 @@ import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+
+import lombok.SneakyThrows;
 
 @SuppressForbidden(reason = "unit test")
 public class DatasourceUpdateServiceTests extends Ip2GeoTestCase {

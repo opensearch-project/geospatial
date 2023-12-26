@@ -15,8 +15,6 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.ResourceAlreadyExistsException;
@@ -32,6 +30,8 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.engine.VersionConflictEngineException;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.tasks.Task;
+
+import lombok.SneakyThrows;
 
 public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
     private PutDatasourceTransportAction action;

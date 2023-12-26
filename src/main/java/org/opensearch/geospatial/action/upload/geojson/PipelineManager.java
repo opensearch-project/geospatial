@@ -8,10 +8,6 @@ package org.opensearch.geospatial.action.upload.geojson;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.action.StepListener;
 import org.opensearch.action.ingest.DeletePipelineRequest;
 import org.opensearch.action.ingest.PutPipelineRequest;
@@ -24,6 +20,10 @@ import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.ingest.Pipeline;
+
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * PipelineManager is responsible for managing pipeline operations like create and delete
