@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import lombok.SneakyThrows;
-
 import org.apache.lucene.geo.Tessellator;
 import org.apache.lucene.geo.XYPoint;
 import org.apache.lucene.geo.XYPolygon;
@@ -41,6 +39,8 @@ import org.opensearch.geospatial.ShapeTestUtil;
 import org.opensearch.test.OpenSearchTestCase;
 
 import com.carrotsearch.randomizedtesting.generators.RandomPicks;
+
+import lombok.SneakyThrows;
 
 // Class to build various Geometry shapes for unit tests.
 public class ShapeObjectBuilder {

@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.opensearch.OpenSearchException;
@@ -29,6 +27,8 @@ import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class DatasourceUpdateService {

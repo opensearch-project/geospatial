@@ -14,8 +14,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.settings.ClusterSettings;
@@ -29,6 +27,8 @@ import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.test.rest.FakeRestRequest;
 import org.opensearch.test.rest.RestActionTestCase;
+
+import lombok.SneakyThrows;
 
 @SuppressForbidden(reason = "unit test")
 public class RestPutDatasourceHandlerTests extends RestActionTestCase {

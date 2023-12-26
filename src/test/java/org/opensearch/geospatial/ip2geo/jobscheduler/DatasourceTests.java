@@ -13,12 +13,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
-import lombok.SneakyThrows;
-
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+
+import lombok.SneakyThrows;
 
 public class DatasourceTests extends Ip2GeoTestCase {
 

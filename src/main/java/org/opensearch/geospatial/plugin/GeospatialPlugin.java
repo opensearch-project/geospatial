@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.action.ActionRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
@@ -88,6 +86,8 @@ import org.opensearch.script.ScriptService;
 import org.opensearch.threadpool.ExecutorBuilder;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
+
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Entry point for Geospatial features. It provides additional Processors, Actions

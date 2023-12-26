@@ -11,12 +11,11 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.settings.ClusterSettings;
 
 import inet.ipaddr.IPAddressString;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * A class to check url against a deny-list

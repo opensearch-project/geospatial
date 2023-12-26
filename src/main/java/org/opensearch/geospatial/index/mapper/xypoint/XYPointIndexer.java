@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import lombok.AllArgsConstructor;
-
 import org.apache.lucene.document.XYPointField;
 import org.apache.lucene.geo.XYPoint;
 import org.apache.lucene.index.IndexableField;
@@ -18,6 +16,8 @@ import org.opensearch.geometry.Point;
 import org.opensearch.geospatial.index.common.xyshape.XYShapeConverter;
 import org.opensearch.index.mapper.AbstractGeometryFieldMapper;
 import org.opensearch.index.mapper.ParseContext;
+
+import lombok.AllArgsConstructor;
 
 /**
  * Converts points into Lucene-compatible form{@link XYPoint} for indexing in a xy_point field.

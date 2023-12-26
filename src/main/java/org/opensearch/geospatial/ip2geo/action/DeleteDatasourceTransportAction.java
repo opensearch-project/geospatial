@@ -7,8 +7,6 @@ package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
@@ -28,6 +26,8 @@ import org.opensearch.ingest.IngestService;
 import org.opensearch.tasks.Task;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
+
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Transport action to delete datasource

@@ -8,8 +8,6 @@ package org.opensearch.geospatial.index.query.xyshape;
 import java.util.List;
 import java.util.Locale;
 
-import lombok.NonNull;
-
 import org.apache.lucene.document.ShapeField;
 import org.apache.lucene.document.XYShape;
 import org.apache.lucene.geo.XYGeometry;
@@ -22,6 +20,8 @@ import org.opensearch.geospatial.index.mapper.xyshape.XYShapeFieldMapper;
 import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.index.query.QueryShardException;
+
+import lombok.NonNull;
 
 /**
  * Query Processor to convert given Geometry into Lucene query

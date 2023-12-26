@@ -13,11 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.cache.Cache;
 import org.opensearch.common.cache.CacheBuilder;
@@ -33,6 +28,11 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.engine.Engine;
 import org.opensearch.index.shard.IndexingOperationListener;
+
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Data access object for Datasource and GeoIP data with added caching layer

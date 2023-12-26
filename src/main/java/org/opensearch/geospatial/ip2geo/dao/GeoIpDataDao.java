@@ -29,9 +29,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import lombok.NonNull;
-import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -65,6 +62,9 @@ import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.query.QueryBuilders;
+
+import lombok.NonNull;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Data access object  for GeoIp data

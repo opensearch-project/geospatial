@@ -19,8 +19,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.OpenSearchException;
@@ -35,6 +33,8 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.tasks.Task;
+
+import lombok.SneakyThrows;
 
 public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
     private UpdateDatasourceTransportAction action;
