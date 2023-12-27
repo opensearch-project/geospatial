@@ -18,9 +18,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.ParameterValidator;
@@ -31,6 +28,9 @@ import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.IngestService;
 import org.opensearch.ingest.Processor;
+
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Ip2Geo processor

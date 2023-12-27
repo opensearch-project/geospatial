@@ -12,12 +12,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.Strings;
 import org.opensearch.geospatial.GeospatialParser;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 /**
  * UploadGeoJSONRequestContent is the Data model for UploadGeoJSONRequest's body

@@ -16,8 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import lombok.SneakyThrows;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.opensearch.client.Response;
@@ -29,6 +27,8 @@ import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoDataServer;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceRequest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
+
+import lombok.SneakyThrows;
 
 public class Ip2GeoProcessorIT extends GeospatialRestTestCase {
     // Use this value in resource name to avoid name conflict among tests

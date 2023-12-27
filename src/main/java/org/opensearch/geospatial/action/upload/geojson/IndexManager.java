@@ -8,9 +8,6 @@ package org.opensearch.geospatial.action.upload.geojson;
 import java.io.IOException;
 import java.util.Map;
 
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.action.StepListener;
@@ -19,6 +16,9 @@ import org.opensearch.client.IndicesAdminClient;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.xcontent.XContentBuilder;
+
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 
 /**
  * IndexManager is responsible for managing index operations like create, delete, etc...

@@ -13,11 +13,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URLConnection;
 
-import lombok.SneakyThrows;
-
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.shared.Constants;
+
+import lombok.SneakyThrows;
 
 @SuppressForbidden(reason = "unit test")
 public class DatasourceManifestTests extends Ip2GeoTestCase {

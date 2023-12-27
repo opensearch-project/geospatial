@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
-import lombok.SneakyThrows;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -51,6 +49,8 @@ import org.opensearch.geospatial.shared.Constants;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
+
+import lombok.SneakyThrows;
 
 @SuppressForbidden(reason = "unit test")
 public class GeoIpDataDaoTests extends Ip2GeoTestCase {

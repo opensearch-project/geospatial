@@ -15,8 +15,6 @@ import static org.opensearch.geospatial.shared.URLBuilder.getPluginURLPrefix;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentType;
@@ -26,6 +24,8 @@ import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.test.rest.FakeRestRequest;
 import org.opensearch.test.rest.RestActionTestCase;
+
+import lombok.SneakyThrows;
 
 public class RestUpdateDatasourceHandlerTests extends RestActionTestCase {
     private String path;

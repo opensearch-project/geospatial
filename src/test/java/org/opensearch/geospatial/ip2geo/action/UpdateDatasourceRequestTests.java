@@ -7,8 +7,6 @@ package org.opensearch.geospatial.ip2geo.action;
 
 import java.util.Locale;
 
-import lombok.SneakyThrows;
-
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.io.stream.BytesStreamOutput;
@@ -16,6 +14,8 @@ import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.common.io.stream.BytesStreamInput;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
+
+import lombok.SneakyThrows;
 
 public class UpdateDatasourceRequestTests extends Ip2GeoTestCase {
 

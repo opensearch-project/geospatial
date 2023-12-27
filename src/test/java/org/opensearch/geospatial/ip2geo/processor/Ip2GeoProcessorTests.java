@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import lombok.SneakyThrows;
-
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.OpenSearchException;
@@ -32,6 +30,8 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.ParameterValidator;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.ingest.IngestDocument;
+
+import lombok.SneakyThrows;
 
 public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
     private static final String DEFAULT_TARGET_FIELD = "ip2geo";

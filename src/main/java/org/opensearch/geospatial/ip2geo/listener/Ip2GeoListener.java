@@ -13,9 +13,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.cluster.ClusterChangedEvent;
 import org.opensearch.cluster.ClusterStateListener;
@@ -32,6 +29,9 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceTask;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.threadpool.ThreadPool;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @AllArgsConstructor(onConstructor = @__(@Inject))

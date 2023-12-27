@@ -24,8 +24,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import lombok.SneakyThrows;
-
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -69,6 +67,8 @@ import org.opensearch.test.client.NoOpNodeClient;
 import org.opensearch.test.rest.RestActionTestCase;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
+
+import lombok.SneakyThrows;
 
 public abstract class Ip2GeoTestCase extends RestActionTestCase {
     @Mock

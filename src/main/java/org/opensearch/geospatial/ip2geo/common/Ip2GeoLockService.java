@@ -13,14 +13,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.OpenSearchException;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.jobscheduler.spi.LockModel;
 import org.opensearch.jobscheduler.spi.utils.LockService;
+
+import lombok.extern.log4j.Log4j2;
 
 /**
  * A wrapper of job scheduler's lock service for datasource

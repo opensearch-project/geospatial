@@ -14,16 +14,16 @@ package org.opensearch.geospatial.action.upload.geojson;
 import java.io.IOException;
 import java.util.Objects;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.rest.RestRequest;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NonNull;
 
 @AllArgsConstructor
 @Getter

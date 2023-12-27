@@ -10,9 +10,9 @@ import static org.opensearch.geospatial.geojson.Feature.TYPE;
 
 import java.util.Map;
 
-import lombok.NonNull;
-
 import org.opensearch.geospatial.geojson.Feature.FeatureBuilder;
+
+import lombok.NonNull;
 
 /**
  * FeatureFactory helps to create {@link Feature} instance based on user input

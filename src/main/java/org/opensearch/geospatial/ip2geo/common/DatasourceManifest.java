@@ -14,10 +14,6 @@ import java.nio.CharBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-
 import org.opensearch.SpecialPermission;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.xcontent.json.JsonXContent;
@@ -28,6 +24,10 @@ import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.shared.Constants;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Ip2Geo datasource manifest file object

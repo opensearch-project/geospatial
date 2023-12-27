@@ -11,14 +11,14 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.common.SuppressForbidden;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Simple http server to serve static files under test/java/resources/ip2geo/server for integration testing

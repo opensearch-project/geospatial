@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.ResourceNotFoundException;
@@ -56,6 +54,8 @@ import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
+
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Data access object for datasource
