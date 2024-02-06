@@ -22,4 +22,5 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Documentation
 ### Maintenance
 * Upgrade gradle to 8.4 ([#596](https://github.com/opensearch-project/geospatial/pull/596))
+* Update spotless and eclipse dependencies ([#620](https://github.com/opensearch-project/geospatial/pull/620))
 ### Refactoring
