@@ -13,14 +13,11 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Maintenance
 ### Refactoring
 
-## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.11...2.x)
+## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.12...2.x)
 ### Features
-* Add denylist ip config for datasource endpoint ([#573](https://github.com/opensearch-project/geospatial/pull/573))
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
 ### Documentation
 ### Maintenance
-* Upgrade gradle to 8.4 ([#596](https://github.com/opensearch-project/geospatial/pull/596))
-* Update spotless and eclipse dependencies ([#620](https://github.com/opensearch-project/geospatial/pull/620))
 ### Refactoring
