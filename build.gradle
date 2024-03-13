@@ -171,7 +171,7 @@ dependencies {
     implementation "org.apache.commons:commons-csv:1.10.0"
     zipArchive group: 'org.opensearch.plugin', name:'opensearch-job-scheduler', version: "${opensearch_build}"
     compileOnly "org.opensearch:opensearch-job-scheduler-spi:${opensearch_build}"
-    implementation "com.github.seancfoley:ipaddress:5.4.0"
+    implementation "com.github.seancfoley:ipaddress:5.4.2"
 }
 
 licenseHeaders.enabled = true
