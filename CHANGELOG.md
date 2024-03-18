@@ -17,7 +17,6 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Features
 ### Enhancements
 ### Bug Fixes
-* Adjusted dependency versions to address CVEs ([#635](https://github.com/opensearch-project/geospatial/pull/635))
 ### Infrastructure
 ### Documentation
 ### Maintenance
