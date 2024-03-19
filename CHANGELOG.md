@@ -13,11 +13,10 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Maintenance
 ### Refactoring
 
-## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.12...2.x)
+## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.13...2.x)
 ### Features
 ### Enhancements
 ### Bug Fixes
-* Adjusted dependency versions to address CVEs ([#635](https://github.com/opensearch-project/geospatial/pull/635))
 ### Infrastructure
 ### Documentation
 ### Maintenance
