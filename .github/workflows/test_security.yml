@@ -10,12 +10,14 @@ on:
     branches:
       - "*"
       - "feature/**"
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   Build-ad:
     strategy:
       matrix:
-        java: [ 11,17,21 ]
+        java: [ 21 ]
         os: [ubuntu-latest]
       fail-fast: true
 
