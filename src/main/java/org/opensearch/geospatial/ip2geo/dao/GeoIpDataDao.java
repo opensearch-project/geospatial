@@ -32,7 +32,6 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.logging.log4j.util.Strings;
 import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.action.DocWriteRequest;
@@ -53,6 +52,7 @@ import org.opensearch.common.unit.TimeValue;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentHelper;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.Strings;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.constants.IndexSetting;
@@ -230,7 +230,7 @@ public class GeoIpDataDao {
         builder.field(IP_RANGE_FIELD_NAME, values[0]);
         builder.startObject(DATA_FIELD_NAME);
         for (int i = 1; i < fields.length; i++) {
-            if (Strings.isBlank(values[i])) {
+            if (!Strings.hasText(values[i])) {
                 continue;
             }
             builder.field(fields[i], values[i]);
