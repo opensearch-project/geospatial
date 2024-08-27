@@ -9,17 +9,24 @@ import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DA
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.opensearch.action.ActionRequest;
+import org.opensearch.action.search.PitService;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
+import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.node.DiscoveryNodes;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.collect.MapBuilder;
+import org.opensearch.common.inject.Inject;
+import org.opensearch.common.lifecycle.Lifecycle;
 import org.opensearch.common.lifecycle.LifecycleComponent;
+import org.opensearch.common.lifecycle.LifecycleListener;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
 import org.opensearch.common.settings.Setting;
@@ -30,6 +37,7 @@ import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
+import org.opensearch.extensions.ExtensionsManager;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
 import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldMapper;
@@ -71,9 +79,12 @@ import org.opensearch.geospatial.stats.upload.UploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStatsTransportAction;
 import org.opensearch.index.IndexModule;
 import org.opensearch.index.mapper.Mapper;
+import org.opensearch.indices.IndicesService;
 import org.opensearch.indices.SystemIndexDescriptor;
 import org.opensearch.ingest.Processor;
+import org.opensearch.jobscheduler.spi.utils.LockService;
 import org.opensearch.plugins.ActionPlugin;
+import org.opensearch.plugins.ClusterPlugin;
 import org.opensearch.plugins.IngestPlugin;
 import org.opensearch.plugins.MapperPlugin;
 import org.opensearch.plugins.Plugin;
@@ -85,6 +96,8 @@ import org.opensearch.rest.RestHandler;
 import org.opensearch.script.ScriptService;
 import org.opensearch.threadpool.ExecutorBuilder;
 import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.transport.RemoteClusterService;
+import org.opensearch.transport.TransportService;
 import org.opensearch.watcher.ResourceWatcherService;
 
 import lombok.extern.log4j.Log4j2;
@@ -94,7 +107,7 @@ import lombok.extern.log4j.Log4j2;
  * to interact with Cluster.
  */
 @Log4j2
-public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin, SystemIndexPlugin {
+public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin, SystemIndexPlugin, ClusterPlugin {
     private Ip2GeoCachedDao ip2GeoCachedDao;
     private DatasourceDao datasourceDao;
     private GeoIpDataDao geoIpDataDao;
@@ -127,7 +140,10 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
 
     @Override
     public Collection<Class<? extends LifecycleComponent>> getGuiceServiceClasses() {
-        return List.of(Ip2GeoListener.class);
+        final List<Class<? extends LifecycleComponent>> services = new ArrayList<>(1);
+        services.add(GuiceHolder.class);
+        services.add(Ip2GeoListener.class);
+        return services;
     }
 
     @Override
@@ -164,6 +180,8 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         );
         Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         Ip2GeoLockService ip2GeoLockService = new Ip2GeoLockService(clusterService, client);
+        System.out.println("createComponents");
+        System.out.println("LockService: " + GuiceHolder.getLockService());
         /**
          * We don't need to return datasource runner because it is used only by job scheduler and job scheduler
          * does not use DI but it calls DatasourceExtension#getJobRunner to get DatasourceRunner instance.
@@ -256,5 +274,48 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         ).addResultReader(GeoHexGrid::new).setAggregatorRegistrar(GeoHexGridAggregationBuilder::registerAggregators);
 
         return List.of(geoHexGridSpec);
+    }
+
+    @Override
+    public void onNodeStarted(DiscoveryNode localNode) {
+        System.out.println("onNodeStarted");
+        System.out.println("LockService: " + GuiceHolder.getLockService());
+    }
+
+    public static class GuiceHolder implements LifecycleComponent {
+
+        private static LockService lockService;
+
+        @Inject
+        public GuiceHolder(
+                final LockService lockService
+        ) {
+            GuiceHolder.lockService = lockService;
+        }
+
+        public static LockService getLockService() {
+            return lockService;
+        }
+
+        @Override
+        public void close() {}
+
+        @Override
+        public Lifecycle.State lifecycleState() {
+            return null;
+        }
+
+        @Override
+        public void addLifecycleListener(LifecycleListener listener) {}
+
+        @Override
+        public void removeLifecycleListener(LifecycleListener listener) {}
+
+        @Override
+        public void start() {}
+
+        @Override
+        public void stop() {}
+
     }
 }
