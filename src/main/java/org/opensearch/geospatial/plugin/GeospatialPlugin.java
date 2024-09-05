@@ -144,9 +144,9 @@ public class GeospatialPlugin extends Plugin
 
     @Override
     public Collection<Class<? extends LifecycleComponent>> getGuiceServiceClasses() {
-        final List<Class<? extends LifecycleComponent>> services = new ArrayList<>(1);
-        services.add(GuiceHolder.class);
+        final List<Class<? extends LifecycleComponent>> services = new ArrayList<>(2);
         services.add(Ip2GeoListener.class);
+        services.add(GuiceHolder.class);
         return services;
     }
 
