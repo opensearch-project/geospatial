@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.opensearch.CommonMain;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
@@ -220,6 +221,7 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             new ActionHandler<>(UpdateDatasourceAction.INSTANCE, UpdateDatasourceTransportAction.class),
             new ActionHandler<>(DeleteDatasourceAction.INSTANCE, DeleteDatasourceTransportAction.class)
         );
+        String testStr = CommonMain.TEST_STR;
 
         List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> allHandlers = new ArrayList<>();
         allHandlers.addAll(geoJsonHandlers);
