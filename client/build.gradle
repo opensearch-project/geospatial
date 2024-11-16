@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     compileOnly "org.opensearch:opensearch:${opensearch_version}"
+    implementation(project(":${rootProject.name}-common"))
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
