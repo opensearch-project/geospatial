@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch.geospatial.action.model;
+package org.opensearch.geospatial.ip2geo.action;
 
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.support.ActionFilters;
