@@ -14,23 +14,34 @@ import org.opensearch.core.action.ActionResponse;
 import org.opensearch.geospatial.action.IpEnrichmentAction;
 import org.opensearch.geospatial.action.IpEnrichmentRequest;
 import org.opensearch.geospatial.action.IpEnrichmentResponse;
+import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
+
+import java.util.Map;
 
 public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRequest,
         ActionResponse> {
 
 
+    private Ip2GeoCachedDao ip2GeoCachedDao;
+
+
     @Inject
     public IpEnrichmentTransportAction(
             TransportService transportService,
-            ActionFilters actionFilters) {
+            ActionFilters actionFilters,
+            Ip2GeoCachedDao cachedDao) {
         super(IpEnrichmentAction.NAME, transportService, actionFilters, IpEnrichmentRequest::new);
+        this.ip2GeoCachedDao = cachedDao;
     }
 
     @Override
     protected void doExecute(Task task, ActionRequest request, ActionListener<ActionResponse> listener) {
         IpEnrichmentRequest enrichmentRequest = IpEnrichmentRequest.fromActionRequest(request);
+        String ipString = enrichmentRequest.getIpString();
+        Map<String, Object> testResult = ip2GeoCachedDao.getGeoData(".geospatial-ip2geo-data.my-datasource.ef3486f8-401b-4d77-b89b-3a4cd19eda04", ipString);
+        System.out.println(testResult);
         listener.onResponse(new IpEnrichmentResponse(enrichmentRequest.getIpString() + " Done!"));
     }
 
