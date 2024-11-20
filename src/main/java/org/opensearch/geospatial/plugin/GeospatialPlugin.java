@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.opensearch.CommonMain;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
@@ -32,7 +31,7 @@ import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.geospatial.action.IpEnrichmentAction;
-import org.opensearch.geospatial.action.model.IpEnrichmentTransportAction;
+import org.opensearch.geospatial.ip2geo.action.IpEnrichmentTransportAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
 import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldMapper;

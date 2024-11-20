@@ -3,14 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.opensearch;
+package org.opensearch.geospatial.action;
 
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
-import org.opensearch.geospatial.action.IpEnrichmentAction;
-import org.opensearch.geospatial.action.IpEnrichmentRequest;
-import org.opensearch.geospatial.action.IpEnrichmentResponse;
 
 import java.util.concurrent.ExecutionException;
 
