@@ -1,10 +1,19 @@
-plugins {
-    id 'java'
-    id 'maven-publish'
-}
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-group = 'org.opensearch'
-version = '3.0.0.0-SNAPSHOT'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'jacoco'
+apply plugin: 'io.freefair.lombok'
+
+allprojects {
+    group = opensearch_group
+    version = "${opensearch_build}"
+    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_11
+}
 
 repositories {
     mavenLocal()
@@ -13,12 +22,16 @@ repositories {
     maven { url "https://plugins.gradle.org/m2/" }
 }
 
+compileJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+compileTestJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+
+
 dependencies {
     compileOnly "org.opensearch:opensearch:${opensearch_version}"
-    implementation(project(":${rootProject.name}-common"))
-
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 publishing {
