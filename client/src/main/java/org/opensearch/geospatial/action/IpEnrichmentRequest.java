@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 
 /**
  * Wrapper for the IP 2 GeoLocation action request.
@@ -29,6 +30,8 @@ import java.io.UncheckedIOException;
 public class IpEnrichmentRequest extends ActionRequest {
 
     private String ipString;
+
+    private String datasourceName;
 
     /**
      * Constructor for TransportAction.
