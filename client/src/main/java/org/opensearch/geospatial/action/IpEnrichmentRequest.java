@@ -40,6 +40,7 @@ public class IpEnrichmentRequest extends ActionRequest {
     public IpEnrichmentRequest(StreamInput streamInput) throws IOException {
         super(streamInput);
         ipString = streamInput.readString();
+        datasourceName= streamInput.readOptionalString();
     }
 
     /**
@@ -65,6 +66,7 @@ public class IpEnrichmentRequest extends ActionRequest {
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeString(ipString);
+        out.writeOptionalString(datasourceName);
     }
 
     /**

@@ -15,11 +15,15 @@ import org.opensearch.core.action.ActionResponse;
 import org.opensearch.geospatial.action.IpEnrichmentAction;
 import org.opensearch.geospatial.action.IpEnrichmentRequest;
 import org.opensearch.geospatial.action.IpEnrichmentResponse;
+import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
+import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Transport action to convert provided IP address String into GeoLocation data.
@@ -29,6 +33,10 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
         ActionResponse> {
 
     private Ip2GeoCachedDao ip2GeoCachedDao;
+
+    private DatasourceDao datasourceDao;
+
+    private String defaultDataSourceName;
 
     /**
      * Constructor
@@ -40,9 +48,13 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
     public IpEnrichmentTransportAction(
             TransportService transportService,
             ActionFilters actionFilters,
-            Ip2GeoCachedDao cachedDao) {
+            Ip2GeoCachedDao cachedDao,
+            DatasourceDao datasourceDao) {
         super(IpEnrichmentAction.NAME, transportService, actionFilters, IpEnrichmentRequest::new);
         this.ip2GeoCachedDao = cachedDao;
+        this.datasourceDao = datasourceDao;
+        List<Datasource> allDatasources = datasourceDao.getAllDatasources();
+        this.defaultDataSourceName = (!allDatasources.isEmpty()) ? allDatasources.get(0).getName() : null;
     }
 
 
@@ -57,11 +69,18 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
     protected void doExecute(Task task, ActionRequest request, ActionListener<ActionResponse> listener) {
         IpEnrichmentRequest enrichmentRequest = IpEnrichmentRequest.fromActionRequest(request);
         String ipString = enrichmentRequest.getIpString();
-        String indexName = ip2GeoCachedDao.getIndexName(enrichmentRequest.getDatasourceName());
-        Map<String, Object> geoLocationData = ip2GeoCachedDao.getGeoData(indexName, ipString);
-        System.out.println(geoLocationData);
-        log.debug("GeoSpatial IP lookup on IP: [{}], and result [{}]", ipString, geoLocationData);
-        listener.onResponse(new IpEnrichmentResponse(geoLocationData));
+        if (enrichmentRequest.getDatasourceName() == null &&
+            defaultDataSourceName == null) {
+            log.error("No data source available, IpEnrichmentTransportAction aborted.");
+            listener.onFailure(new IllegalArgumentException());
+        } else {
+            String dataSourceName = Optional.ofNullable(enrichmentRequest.getDatasourceName())
+                    .orElse(defaultDataSourceName);
+            String indexName = ip2GeoCachedDao.getIndexName(dataSourceName);
+            Map<String, Object> geoLocationData = ip2GeoCachedDao.getGeoData(indexName, ipString);
+            log.debug("GeoSpatial IP lookup on IP: [{}], and result [{}]", ipString, geoLocationData);
+            listener.onResponse(new IpEnrichmentResponse(geoLocationData));
+        }
     }
 
 }
