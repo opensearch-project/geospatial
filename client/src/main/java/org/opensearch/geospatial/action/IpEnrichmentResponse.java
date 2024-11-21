@@ -5,6 +5,10 @@
 
 package org.opensearch.geospatial.action;
 
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.core.common.io.stream.InputStreamStreamInput;
 import org.opensearch.core.common.io.stream.OutputStreamStreamOutput;
@@ -16,15 +20,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-
+@Getter
+@Setter
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 public class IpEnrichmentResponse extends ActionResponse {
 
-
     private String answer;
-
-    public IpEnrichmentResponse(String answer) {
-        this.answer = answer;
-    }
 
     public IpEnrichmentResponse(StreamInput streamInput) throws IOException {
         super(streamInput);
@@ -34,10 +36,6 @@ public class IpEnrichmentResponse extends ActionResponse {
     @Override
     public void writeTo(StreamOutput streamOutput) throws IOException {
         streamOutput.writeString(answer);
-    }
-
-    public String getAnswer() {
-        return answer;
     }
 
     public static IpEnrichmentResponse fromActionResponse(ActionResponse actionResponse) {
