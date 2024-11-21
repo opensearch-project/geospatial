@@ -5,6 +5,9 @@
 
 package org.opensearch.geospatial.action;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.core.common.io.stream.InputStreamStreamInput;
@@ -17,16 +20,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+@Getter
+@Setter
+@AllArgsConstructor
 public class IpEnrichmentRequest extends ActionRequest {
 
     private String ipString;
 
 
     public IpEnrichmentRequest() {
-    }
-
-    public IpEnrichmentRequest(String ipString) {
-        this.ipString = ipString;
     }
 
     /**
@@ -52,10 +54,6 @@ public class IpEnrichmentRequest extends ActionRequest {
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeString(ipString);
-    }
-
-    public String getIpString() {
-        return ipString;
     }
 
     public static IpEnrichmentRequest fromActionRequest(ActionRequest actionRequest) {

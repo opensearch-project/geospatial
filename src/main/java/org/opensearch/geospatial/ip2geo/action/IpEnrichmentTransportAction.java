@@ -5,6 +5,7 @@
 
 package org.opensearch.geospatial.ip2geo.action;
 
+import lombok.extern.log4j.Log4j2;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
@@ -20,12 +21,11 @@ import org.opensearch.transport.TransportService;
 
 import java.util.Map;
 
+@Log4j2
 public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRequest,
         ActionResponse> {
 
-
     private Ip2GeoCachedDao ip2GeoCachedDao;
-
 
     @Inject
     public IpEnrichmentTransportAction(
