@@ -12,6 +12,7 @@ import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -23,13 +24,25 @@ public class IpEnrichmentActionClient {
 
     NodeClient nodeClient;
 
+
     /**
-     * Client facing method, which read an IP in String form and return a map instance which contain the associated GeoLocation data.
-     * @param ipString IP v4 || v6 address in String form.
+     * IpEnrichment with default datasource.
+     * @param ipString Ip String to resolve.
      * @return A map instance which contain GeoLocation data for the given Ip address.
      */
     public Map<String, Object> getGeoLocationData (String ipString) {
-        ActionFuture<ActionResponse> responseActionFuture = nodeClient.execute(IpEnrichmentAction.INSTANCE, new IpEnrichmentRequest(ipString));
+        return getGeoLocationData(ipString, "defaultDataSource");
+    }
+
+    /**
+     * Client facing method, which read an IP in String form and return a map instance which contain the associated GeoLocation data.
+     * @param ipString IP v4 || v6 address in String form.
+     * @param datasourceName datasourceName in String form.
+     * @return A map instance which contain GeoLocation data for the given Ip address.
+     */
+    public Map<String, Object> getGeoLocationData (String ipString, String datasourceName) {
+        ActionFuture<ActionResponse> responseActionFuture = nodeClient.execute(
+                IpEnrichmentAction.INSTANCE, new IpEnrichmentRequest(ipString, datasourceName));
         try {
             ActionResponse genericActionResponse = responseActionFuture.get();
             IpEnrichmentResponse enrichmentResponse = IpEnrichmentResponse.fromActionResponse(genericActionResponse);
