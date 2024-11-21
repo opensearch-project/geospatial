@@ -21,12 +21,21 @@ import org.opensearch.transport.TransportService;
 
 import java.util.Map;
 
+/**
+ * Transport action to convert provided IP address String into GeoLocation data.
+ */
 @Log4j2
 public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRequest,
         ActionResponse> {
 
     private Ip2GeoCachedDao ip2GeoCachedDao;
 
+    /**
+     * Constructor
+     * @param transportService the transport service
+     * @param actionFilters the action filters
+     * @param cachedDao the cached datasource facade
+     */
     @Inject
     public IpEnrichmentTransportAction(
             TransportService transportService,
@@ -46,11 +55,6 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
     }
 
 
-//    @Override
-//    protected void doExecute(Task task, ActionRequest request, ActionListener<IpEnrichmentResponse> listener) {
-//        IpEnrichmentRequest enrichmentRequest = IpEnrichmentRequest.fromActionRequest(request);
-//        listener.onResponse(new IpEnrichmentResponse(enrichmentRequest.getIpString() + " Done!"));
-//    }
 
 
 
