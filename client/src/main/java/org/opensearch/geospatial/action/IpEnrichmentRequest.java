@@ -20,6 +20,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+/**
+ * Wrapper for the IP 2 GeoLocation action request.
+ */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -27,19 +30,19 @@ public class IpEnrichmentRequest extends ActionRequest {
 
     private String ipString;
 
-
-    public IpEnrichmentRequest() {
-    }
-
     /**
      * Constructor for TransportAction.
-     * @param streamInput
+     * @param streamInput the streamInput.
      */
     public IpEnrichmentRequest(StreamInput streamInput) throws IOException {
         super(streamInput);
         ipString = streamInput.readString();
     }
 
+    /**
+     * Perform validation on the request, before GetSpatial processing it.
+     * @return Exception which contain validation errors, if any.
+     */
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException errors = null;
@@ -50,12 +53,22 @@ public class IpEnrichmentRequest extends ActionRequest {
         return errors;
     }
 
+    /**
+     * Overrided method to populate convert object's payload into StreamOutput form.
+     * @param out the StreamOutput object.
+     * @throws IOException If given StreamOutput is not compatible.
+     */
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeString(ipString);
     }
 
+    /**
+     * Static method get around the cast exception happen for cross plugin communication.
+     * @param actionRequest An casted-up version of IpEnrichmentRequest.
+     * @return IpEnrichmentRequest object which can be used within the scope of the caller.
+     */
     public static IpEnrichmentRequest fromActionRequest(ActionRequest actionRequest) {
         // From the same classloader
         if (actionRequest instanceof IpEnrichmentRequest) {

@@ -45,17 +45,22 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
         this.ip2GeoCachedDao = cachedDao;
     }
 
+
+    /**
+     * Overrided method to extract IP String from IpEnrichmentRequest object and return the enrichment result
+     * in the form of IpEnrichmentResponse which contains the GeoLocation data for given IP String.
+     * @param task the task.
+     * @param request request object in the form of IpEnrichmentRequest which contain the IP String to resolve
+     * @param listener a container which encapsulate IpEnrichmentResponse object with the GeoLocation data for given IP.
+     */
     @Override
     protected void doExecute(Task task, ActionRequest request, ActionListener<ActionResponse> listener) {
         IpEnrichmentRequest enrichmentRequest = IpEnrichmentRequest.fromActionRequest(request);
         String ipString = enrichmentRequest.getIpString();
         Map<String, Object> testResult = ip2GeoCachedDao.getGeoData(".geospatial-ip2geo-data.my-datasource.ef3486f8-401b-4d77-b89b-3a4cd19eda04", ipString);
         System.out.println(testResult);
-        listener.onResponse(new IpEnrichmentResponse(enrichmentRequest.getIpString() + " Done!"));
+        log.debug("GeoSpatial IP lookup on IP: [{}], and result [{}]", ipString, testResult);
+        listener.onResponse(new IpEnrichmentResponse(testResult));
     }
-
-
-
-
 
 }

@@ -5,28 +5,38 @@
 
 package org.opensearch.geospatial.action;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Proxy for the node client operations.
+ * Facade to provide GeoLocation enrichment for other plugin.
  */
+@Log4j2
+@AllArgsConstructor
 public class IpEnrichmentActionClient {
 
     NodeClient nodeClient;
 
-    public IpEnrichmentActionClient(NodeClient nodeClient) {
-        this.nodeClient = nodeClient;
-    }
-
-    public String enrichIp(String ipString) throws ExecutionException, InterruptedException {
+    /**
+     * Client facing method, which read an IP in String form and return a map instance which contain the associated GeoLocation data.
+     * @param ipString IP v4 || v6 address in String form.
+     * @return A map instance which contain GeoLocation data for the given Ip address.
+     */
+    public Map<String, Object> getGeoLocationData (String ipString) {
         ActionFuture<ActionResponse> responseActionFuture = nodeClient.execute(IpEnrichmentAction.INSTANCE, new IpEnrichmentRequest(ipString));
-        ActionResponse genericActionResponse = responseActionFuture.get();
-        IpEnrichmentResponse enrichmentResponse = IpEnrichmentResponse.fromActionResponse(genericActionResponse);
-        return enrichmentResponse.getAnswer();
+        try {
+            ActionResponse genericActionResponse = responseActionFuture.get();
+            IpEnrichmentResponse enrichmentResponse = IpEnrichmentResponse.fromActionResponse(genericActionResponse);
+            return enrichmentResponse.getGeoLocationData();
+        } catch (Exception e) {
+            log.error("GeoSpatial IP Enrichment call failure, with detail: ", e);
+            return null;
+        }
     }
-
 }
