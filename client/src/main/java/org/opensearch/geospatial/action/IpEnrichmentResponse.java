@@ -8,6 +8,7 @@ package org.opensearch.geospatial.action;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.core.common.io.stream.InputStreamStreamInput;
@@ -19,25 +20,47 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Map;
 
+/**
+ * Wrapper class to encapsulate the IP enrichment result for IpEnrichmentTransportAction.
+ */
 @Getter
 @Setter
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class IpEnrichmentResponse extends ActionResponse {
 
-    private String answer;
+    private Map<String, Object> geoLocationData;
 
+
+    /**
+     * Private method to be used by fromActionResponse call to populate this Response class.
+     * @param streamInput Stream object which contain the geoLocationData.
+     * @throws IOException Exception being thrown when given stremInput doesn't contain what IpEnrichmentResponse is expecting.
+     */
     public IpEnrichmentResponse(StreamInput streamInput) throws IOException {
         super(streamInput);
-        answer = streamInput.readString();
+        geoLocationData = streamInput.readMap();
     }
 
+    /**
+     * Overrided method used by OpenSearch runtime to write result into listener.
+     * @param streamOutput the streamOutput used to construct this response object.
+     * @throws IOException the IOException.
+     */
     @Override
     public void writeTo(StreamOutput streamOutput) throws IOException {
-        streamOutput.writeString(answer);
+        streamOutput.writeMap(geoLocationData);
     }
 
+    /**
+     * Static method to convert a given ActionResponse to IpEnrichmentResponse by serialisation with streamOuput.
+     * This will be required for cross plugin communication scenario, as multiple class definition will be loaded
+     * by respective Plugin's classloader.
+     * @param actionResponse An IpEnrichmentResponse in casted-up form.
+     * @return An IpEnrichmentResponse object which contain the same payload as the incoming object.
+     */
     public static IpEnrichmentResponse fromActionResponse(ActionResponse actionResponse) {
         // From the same classloader
         if (actionResponse instanceof IpEnrichmentResponse) {
@@ -53,14 +76,8 @@ public class IpEnrichmentResponse extends ActionResponse {
                 return new IpEnrichmentResponse(input);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("failed to parse ActionResponse into IpEnrichmentResponse", e);
+            throw new UncheckedIOException("Failed to parse ActionResponse into IpEnrichmentResponse", e);
         }
     }
 
-    @Override
-    public String toString() {
-        return "IpEnrichmentResponse{" +
-                "answer='" + answer + '\'' +
-                '}';
-    }
 }
