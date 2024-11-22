@@ -8,6 +8,7 @@ package org.opensearch.geospatial.action;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.core.common.io.stream.InputStreamStreamInput;
@@ -26,6 +27,7 @@ import java.util.Optional;
  */
 @Getter
 @Setter
+@Log4j2
 @AllArgsConstructor
 public class IpEnrichmentRequest extends ActionRequest {
 
@@ -41,6 +43,7 @@ public class IpEnrichmentRequest extends ActionRequest {
         super(streamInput);
         ipString = streamInput.readString();
         datasourceName= streamInput.readOptionalString();
+        log.trace("Constructing IP Enrichment request with values: [{}, {}]", ipString, datasourceName);
     }
 
     /**
@@ -58,7 +61,7 @@ public class IpEnrichmentRequest extends ActionRequest {
     }
 
     /**
-     * Overrided method to populate convert object's payload into StreamOutput form.
+     * Overridden method to populate object's payload into StreamOutput form.
      * @param out the StreamOutput object.
      * @throws IOException If given StreamOutput is not compatible.
      */
