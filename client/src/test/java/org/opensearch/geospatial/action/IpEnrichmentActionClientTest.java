@@ -51,7 +51,6 @@ class IpEnrichmentActionClientTest {
     @SneakyThrows
     @Test
     void testWithException() {
-        Map<String, Object> dummyPayload = Map.of("k1", "v1");
         String dummyIpString = "192.168.1.1";
         when(mockResult.get()).thenThrow(new ExecutionException(new Throwable()));
         when(mockNodeClient.execute(eq(IpEnrichmentAction.INSTANCE), any())).thenReturn(mockResult);
