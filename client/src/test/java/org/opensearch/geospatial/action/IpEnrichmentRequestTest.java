@@ -9,14 +9,10 @@ package org.opensearch.geospatial.action;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Test cases for IpEnrichmentRequest.
+ */
 public class IpEnrichmentRequestTest {
-
-
-    // Test Validate
-    // Success
-    // Missing IP String
-    // Missing DataSource is ok
-
 
     /**
      * Test validate() against a valid record.
@@ -51,20 +47,21 @@ public class IpEnrichmentRequestTest {
     }
 
 
-    // Test StreamInput
-        // Successful case
-        // Junk input
-        // Partial missing output
+    /**
+     * Test validate() against a valid record,
+     * no error expected, because dataSourceName is optional.
+     */
+    @Test
+    public void testFromActionRequestOnValidRecord() {
+        String ipString = "192.168.1.1";
+        String dsName = "demo";
+        IpEnrichmentRequest request = new IpEnrichmentRequest(
+                ipString, dsName);
 
+        IpEnrichmentRequest requestAfterStream = IpEnrichmentRequest.fromActionRequest(request);
 
-    // Test WriteTo
-        // Write a valid record
-        // Write with some junk data
-
-
-    // Test FromActionRequest
-        // Test valid record
-        // Test non IPEnrichment request
-        // Test with some junk.
+        Assertions.assertEquals(request.getIpString(), requestAfterStream.getIpString());
+        Assertions.assertEquals(request.getDatasourceName(), requestAfterStream.getDatasourceName());
+    }
 
 }
