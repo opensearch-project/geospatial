@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Optional;
 
 /**
  * Wrapper for the IP 2 GeoLocation action request.
@@ -74,7 +73,7 @@ public class IpEnrichmentRequest extends ActionRequest {
 
     /**
      * Static method get around the cast exception happen for cross plugin communication.
-     * @param actionRequest An casted-up version of IpEnrichmentRequest.
+     * @param actionRequest A casted-up version of IpEnrichmentRequest.
      * @return IpEnrichmentRequest object which can be used within the scope of the caller.
      */
     public static IpEnrichmentRequest fromActionRequest(ActionRequest actionRequest) {
