@@ -16,14 +16,13 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Facade to provide GeoLocation enrichment for other plugin.
+ * Facade to provide GeoLocation enrichment for other plugins.
  */
 @Log4j2
 @AllArgsConstructor
 public class IpEnrichmentActionClient {
 
     NodeClient nodeClient;
-
 
     /**
      * IpEnrichment with default datasource.
@@ -41,8 +40,10 @@ public class IpEnrichmentActionClient {
      * @return A map instance which contain GeoLocation data for the given Ip address.
      */
     public Map<String, Object> getGeoLocationData (String ipString, String datasourceName) {
+        // Composite the request object.
         ActionFuture<ActionResponse> responseActionFuture = nodeClient.execute(
                 IpEnrichmentAction.INSTANCE, new IpEnrichmentRequest(ipString, datasourceName));
+        // Send out the request and process the response.
         try {
             ActionResponse genericActionResponse = responseActionFuture.get();
             IpEnrichmentResponse enrichmentResponse = IpEnrichmentResponse.fromActionResponse(genericActionResponse);

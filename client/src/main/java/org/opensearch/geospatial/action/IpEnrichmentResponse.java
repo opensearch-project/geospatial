@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.core.common.io.stream.InputStreamStreamInput;
 import org.opensearch.core.common.io.stream.OutputStreamStreamOutput;
@@ -27,12 +28,12 @@ import java.util.Map;
  */
 @Getter
 @Setter
+@Log4j2
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class IpEnrichmentResponse extends ActionResponse {
 
     private Map<String, Object> geoLocationData;
-
 
     /**
      * Private method to be used by fromActionResponse call to populate this Response class.
@@ -45,13 +46,14 @@ public class IpEnrichmentResponse extends ActionResponse {
     }
 
     /**
-     * Overrided method used by OpenSearch runtime to write result into listener.
+     * Overridden method used by OpenSearch runtime to write result into listener.
      * @param streamOutput the streamOutput used to construct this response object.
      * @throws IOException the IOException.
      */
     @Override
     public void writeTo(StreamOutput streamOutput) throws IOException {
         streamOutput.writeMap(geoLocationData);
+        log.trace("Constructing IP Enrichment response with values: [{}]", geoLocationData);
     }
 
     /**

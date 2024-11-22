@@ -34,8 +34,6 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
 
     private Ip2GeoCachedDao ip2GeoCachedDao;
 
-    private DatasourceDao datasourceDao;
-
     private String defaultDataSourceName;
 
     /**
@@ -52,14 +50,13 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
             DatasourceDao datasourceDao) {
         super(IpEnrichmentAction.NAME, transportService, actionFilters, IpEnrichmentRequest::new);
         this.ip2GeoCachedDao = cachedDao;
-        this.datasourceDao = datasourceDao;
         List<Datasource> allDatasources = datasourceDao.getAllDatasources();
         this.defaultDataSourceName = (!allDatasources.isEmpty()) ? allDatasources.get(0).getName() : null;
     }
 
 
     /**
-     * Overrided method to extract IP String from IpEnrichmentRequest object and return the enrichment result
+     * Overridden method to extract IP String from IpEnrichmentRequest object and return the enrichment result
      * in the form of IpEnrichmentResponse which contains the GeoLocation data for given IP String.
      * @param task the task.
      * @param request request object in the form of IpEnrichmentRequest which contain the IP String to resolve
