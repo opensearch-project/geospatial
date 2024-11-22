@@ -32,6 +32,11 @@ compileTestJava {
 
 dependencies {
     compileOnly "${group}:opensearch:${opensearch_version}"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.3'
+
+    testImplementation "${group}:opensearch:${opensearch_version}"
 }
 
 publishing {
