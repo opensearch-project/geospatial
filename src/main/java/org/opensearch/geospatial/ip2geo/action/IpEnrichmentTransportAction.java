@@ -32,9 +32,11 @@ import java.util.Optional;
 public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRequest,
         ActionResponse> {
 
-    private Ip2GeoCachedDao ip2GeoCachedDao;
+    private final Ip2GeoCachedDao ip2GeoCachedDao;
 
-    private String defaultDataSourceName;
+//    private final String defaultDataSourceName;
+
+    private final DatasourceDao datasourceDao;
 
     /**
      * Constructor
@@ -50,8 +52,7 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
             DatasourceDao datasourceDao) {
         super(IpEnrichmentAction.NAME, transportService, actionFilters, IpEnrichmentRequest::new);
         this.ip2GeoCachedDao = cachedDao;
-        List<Datasource> allDatasources = datasourceDao.getAllDatasources();
-        this.defaultDataSourceName = (!allDatasources.isEmpty()) ? allDatasources.get(0).getName() : null;
+        this.datasourceDao = datasourceDao;
     }
 
 
@@ -66,6 +67,7 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
     protected void doExecute(Task task, ActionRequest request, ActionListener<ActionResponse> listener) {
         IpEnrichmentRequest enrichmentRequest = IpEnrichmentRequest.fromActionRequest(request);
         String ipString = enrichmentRequest.getIpString();
+        String defaultDataSourceName = getDefaultDataSourceName();
         if (enrichmentRequest.getDatasourceName() == null &&
             defaultDataSourceName == null) {
             log.error("No data source available, IpEnrichmentTransportAction aborted.");
@@ -78,6 +80,11 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
             log.debug("GeoSpatial IP lookup on IP: [{}], and result [{}]", ipString, geoLocationData);
             listener.onResponse(new IpEnrichmentResponse(geoLocationData));
         }
+    }
+
+    private String getDefaultDataSourceName() {
+        List<Datasource> allDatasources = datasourceDao.getAllDatasources();
+        return (!allDatasources.isEmpty()) ? allDatasources.get(0).getName() : null;
     }
 
 }

@@ -25,10 +25,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class IpEnrichmentActionClientTest {
 
-    // Test with happy path
-
-    // Test with exception path
-
     @Mock
     private NodeClient mockNodeClient;
 
