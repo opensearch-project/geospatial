@@ -36,24 +36,24 @@ public class IpEnrichmentResponse extends ActionResponse {
     private Map<String, Object> geoLocationData;
 
     /**
-     * Private method to be used by fromActionResponse call to populate this Response class.
+     * Public method to be called by fromActionResponse( ) to populate this Response class.
      * @param streamInput Stream object which contain the geoLocationData.
      * @throws IOException Exception being thrown when given stremInput doesn't contain what IpEnrichmentResponse is expecting.
      */
     public IpEnrichmentResponse(StreamInput streamInput) throws IOException {
         super(streamInput);
         geoLocationData = streamInput.readMap();
+        log.trace("Constructing IP Enrichment response with values: [{}]", geoLocationData);
     }
 
     /**
-     * Overridden method used by OpenSearch runtime to write result into listener.
+     * Overridden method used by OpenSearch runtime to serialise this class content into stream.
      * @param streamOutput the streamOutput used to construct this response object.
      * @throws IOException the IOException.
      */
     @Override
     public void writeTo(StreamOutput streamOutput) throws IOException {
         streamOutput.writeMap(geoLocationData);
-        log.trace("Constructing IP Enrichment response with values: [{}]", geoLocationData);
     }
 
     /**

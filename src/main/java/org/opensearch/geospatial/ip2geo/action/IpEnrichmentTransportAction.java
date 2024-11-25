@@ -34,8 +34,6 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
 
     private final Ip2GeoCachedDao ip2GeoCachedDao;
 
-    // private final String defaultDataSourceName;
-
     private final DatasourceDao datasourceDao;
 
     /**
@@ -43,6 +41,7 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
      * @param transportService the transport service
      * @param actionFilters the action filters
      * @param cachedDao the cached datasource facade
+     * @param datasourceDao the datasourceDao to read the default datasource from
      */
     @Inject
     public IpEnrichmentTransportAction(
