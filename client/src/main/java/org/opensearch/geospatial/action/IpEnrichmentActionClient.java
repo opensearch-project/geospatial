@@ -28,7 +28,7 @@ public class IpEnrichmentActionClient {
      * @param ipString Ip String to resolve.
      * @return A map instance which contain GeoLocation data for the given Ip address.
      */
-    public Map<String, Object> getGeoLocationData (String ipString) {
+    public Map<String, Object> getGeoLocationData(String ipString) {
         return getGeoLocationData(ipString, null);
     }
 
