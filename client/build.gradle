@@ -36,8 +36,6 @@ dependencies {
 
 }
 
-
-
 licenseFile = "LICENSE.txt"
 noticeFile = "NOTICE.txt"
 
