@@ -40,7 +40,7 @@ public class IpEnrichmentTransportActionTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        action = new IpEnrichmentTransportAction(transportService, actionFilters, ip2GeoCachedDao, datasourceDao);
+        action = new IpEnrichmentTransportAction(transportService, actionFilters, ip2GeoCachedDao);
     }
 
     /**

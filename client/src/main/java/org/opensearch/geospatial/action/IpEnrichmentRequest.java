@@ -90,7 +90,7 @@ public class IpEnrichmentRequest extends ActionRequest {
                 return new IpEnrichmentRequest(input);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("failed to parse ActionRequest into IpEnrichmentRequest", e);
+            throw new UncheckedIOException("Failed to parse ActionRequest into IpEnrichmentRequest", e);
         }
     }
 }

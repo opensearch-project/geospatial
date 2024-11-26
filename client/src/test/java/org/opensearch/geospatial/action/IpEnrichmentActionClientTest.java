@@ -29,27 +29,28 @@ public class IpEnrichmentActionClientTest {
     @Mock
     private ActionFuture<ActionResponse> mockResult;
 
+    String dummyIpString = "192.168.1.1";
+
+    String dummyDataSourceName = "testDataSource";
+
+    Map<String, Object> dummyPayload = Map.of("k1", "v1");
+
     @SneakyThrows
     @Test
     public void testWithValidResponse() {
-        Map<String, Object> dummyPayload = Map.of("k1", "v1");
-        String dummyIpString = "192.168.1.1";
         when(mockResult.get()).thenReturn(new IpEnrichmentResponse(dummyPayload));
         when(mockNodeClient.execute(eq(IpEnrichmentAction.INSTANCE), any())).thenReturn(mockResult);
-
         IpEnrichmentActionClient ipClient = new IpEnrichmentActionClient(mockNodeClient);
-        Map<String, Object> actualPayload = ipClient.getGeoLocationData(dummyIpString);
+        Map<String, Object> actualPayload = ipClient.getGeoLocationData(dummyIpString, dummyDataSourceName);
         Assert.assertEquals(dummyPayload, actualPayload);
     }
 
-    @Test
     @SneakyThrows
+    @Test(expected = ExecutionException.class)
     public void testWithException() {
-        String dummyIpString = "192.168.1.1";
         when(mockResult.get()).thenThrow(new ExecutionException(new Throwable()));
         when(mockNodeClient.execute(eq(IpEnrichmentAction.INSTANCE), any())).thenReturn(mockResult);
-
         IpEnrichmentActionClient ipClient = new IpEnrichmentActionClient(mockNodeClient);
-        Assert.assertNull(ipClient.getGeoLocationData(dummyIpString));
+        ipClient.getGeoLocationData(dummyIpString, dummyDataSourceName);
     }
 }
