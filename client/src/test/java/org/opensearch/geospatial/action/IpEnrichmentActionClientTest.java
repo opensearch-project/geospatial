@@ -5,7 +5,13 @@
 
 package org.opensearch.geospatial.action;
 
-import lombok.SneakyThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -13,13 +19,7 @@ import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
 
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
+import lombok.SneakyThrows;
 
 public class IpEnrichmentActionClientTest {
 

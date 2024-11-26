@@ -5,15 +5,14 @@
 
 package org.opensearch.geospatial.action;
 
-import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import java.util.Map;
+
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Facade to provide GeoLocation enrichment for other plugins.
@@ -22,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 @AllArgsConstructor
 public class IpEnrichmentActionClient {
 
-    NodeClient nodeClient;
+    final private NodeClient nodeClient;
 
     /**
      * IpEnrichment with default datasource.
@@ -39,10 +38,12 @@ public class IpEnrichmentActionClient {
      * @param datasourceName datasourceName in String form.
      * @return A map instance which contain GeoLocation data for the given Ip address.
      */
-    public Map<String, Object> getGeoLocationData (String ipString, String datasourceName) {
+    public Map<String, Object> getGeoLocationData(String ipString, String datasourceName) {
         // Composite the request object.
         ActionFuture<ActionResponse> responseActionFuture = nodeClient.execute(
-                IpEnrichmentAction.INSTANCE, new IpEnrichmentRequest(ipString, datasourceName));
+            IpEnrichmentAction.INSTANCE,
+            new IpEnrichmentRequest(ipString, datasourceName)
+        );
         // Send out the request and process the response.
         try {
             ActionResponse genericActionResponse = responseActionFuture.get();
