@@ -3,16 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-apply plugin: 'java'
-apply plugin: 'maven-publish'
-apply plugin: 'jacoco'
+//apply plugin: 'java'
+apply plugin: 'opensearch.build'
 apply plugin: 'io.freefair.lombok'
 
 allprojects {
     group = opensearch_group
     version = "${opensearch_build}"
-    targetCompatibility = JavaVersion.VERSION_11
-    sourceCompatibility = JavaVersion.VERSION_11
 }
 
 repositories {
@@ -33,14 +30,14 @@ compileTestJava {
 dependencies {
     compileOnly "${group}:opensearch:${opensearch_version}"
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.3'
-    testImplementation 'org.mockito:mockito-core:5.14.2'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
-
+    testImplementation "junit:junit:${versions.junit}"
+    testImplementation "org.mockito:mockito-core:${versions.mockito}"
     testImplementation "${group}:opensearch:${opensearch_version}"
 
 }
+
+licenseFile = "LICENSE.txt"
+noticeFile = "NOTICE.txt"
 
 publishing {
     publications {

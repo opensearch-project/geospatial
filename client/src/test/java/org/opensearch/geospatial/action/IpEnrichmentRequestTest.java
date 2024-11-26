@@ -6,8 +6,8 @@
 package org.opensearch.geospatial.action;
 
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test cases for IpEnrichmentRequest.
@@ -21,7 +21,7 @@ public class IpEnrichmentRequestTest {
     public void testValidateValidRequest() {
         IpEnrichmentRequest request = new IpEnrichmentRequest(
                 "192.168.1.1", "ValidDataSourceName");
-        Assertions.assertNull(request.validate());
+        Assert.assertNull(request.validate());
     }
 
     /**
@@ -32,7 +32,7 @@ public class IpEnrichmentRequestTest {
     public void testValidateNullDataSourceName() {
         IpEnrichmentRequest request = new IpEnrichmentRequest(
                 "192.168.1.1", null);
-        Assertions.assertNull(request.validate());
+        Assert.assertNull(request.validate());
     }
 
     /**
@@ -43,7 +43,7 @@ public class IpEnrichmentRequestTest {
     public void testValidateNullIpStringAndDataSourceName() {
         IpEnrichmentRequest request = new IpEnrichmentRequest(
                 null, null);
-        Assertions.assertEquals(1, request.validate().validationErrors().size());
+        Assert.assertEquals(1, request.validate().validationErrors().size());
     }
 
 
@@ -60,8 +60,8 @@ public class IpEnrichmentRequestTest {
 
         IpEnrichmentRequest requestAfterStream = IpEnrichmentRequest.fromActionRequest(request);
 
-        Assertions.assertEquals(request.getIpString(), requestAfterStream.getIpString());
-        Assertions.assertEquals(request.getDatasourceName(), requestAfterStream.getDatasourceName());
+        Assert.assertEquals(request.getIpString(), requestAfterStream.getIpString());
+        Assert.assertEquals(request.getDatasourceName(), requestAfterStream.getDatasourceName());
     }
 
 }

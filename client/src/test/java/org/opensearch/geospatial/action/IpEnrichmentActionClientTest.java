@@ -6,11 +6,9 @@
 package org.opensearch.geospatial.action;
 
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Assert;
+import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
@@ -22,8 +20,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class IpEnrichmentActionClientTest {
+
+public class IpEnrichmentActionClientTest {
 
     @Mock
     private NodeClient mockNodeClient;
@@ -33,7 +31,7 @@ class IpEnrichmentActionClientTest {
 
     @SneakyThrows
     @Test
-    void testWithValidResponse() {
+    public void testWithValidResponse() {
         Map<String, Object> dummyPayload = Map.of("k1", "v1");
         String dummyIpString = "192.168.1.1";
         when(mockResult.get()).thenReturn(new IpEnrichmentResponse(dummyPayload));
@@ -41,17 +39,17 @@ class IpEnrichmentActionClientTest {
 
         IpEnrichmentActionClient ipClient = new IpEnrichmentActionClient(mockNodeClient);
         Map<String, Object> actualPayload = ipClient.getGeoLocationData(dummyIpString);
-        Assertions.assertEquals(dummyPayload, actualPayload);
+        Assert.assertEquals(dummyPayload, actualPayload);
     }
 
-    @SneakyThrows
     @Test
-    void testWithException() {
+    @SneakyThrows
+    public void testWithException() {
         String dummyIpString = "192.168.1.1";
         when(mockResult.get()).thenThrow(new ExecutionException(new Throwable()));
         when(mockNodeClient.execute(eq(IpEnrichmentAction.INSTANCE), any())).thenReturn(mockResult);
 
         IpEnrichmentActionClient ipClient = new IpEnrichmentActionClient(mockNodeClient);
-        Assertions.assertNull(ipClient.getGeoLocationData(dummyIpString));
+        Assert.assertNull(ipClient.getGeoLocationData(dummyIpString));
     }
 }
