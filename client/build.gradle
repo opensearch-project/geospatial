@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-//apply plugin: 'java'
 apply plugin: 'opensearch.build'
 apply plugin: 'io.freefair.lombok'
+apply plugin: "com.diffplug.spotless"
 
 allprojects {
     group = opensearch_group
@@ -36,8 +36,20 @@ dependencies {
 
 }
 
+
+
 licenseFile = "LICENSE.txt"
 noticeFile = "NOTICE.txt"
+
+spotless {
+    java {
+        removeUnusedImports()
+        importOrder 'java', 'javax', 'org', 'com'
+        eclipse().configFile rootProject.file('formatterConfig.xml')
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
 
 publishing {
     publications {

@@ -5,10 +5,11 @@
 
 package org.opensearch.geospatial.action;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.log4j.Log4j2;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.core.common.io.stream.InputStreamStreamInput;
@@ -16,10 +17,10 @@ import org.opensearch.core.common.io.stream.OutputStreamStreamOutput;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * Wrapper for the IP 2 GeoLocation action request.
@@ -41,7 +42,7 @@ public class IpEnrichmentRequest extends ActionRequest {
     public IpEnrichmentRequest(StreamInput streamInput) throws IOException {
         super(streamInput);
         ipString = streamInput.readString();
-        datasourceName= streamInput.readOptionalString();
+        datasourceName = streamInput.readOptionalString();
         log.trace("Constructing IP Enrichment request with values: [{}, {}]", ipString, datasourceName);
     }
 
@@ -83,11 +84,9 @@ public class IpEnrichmentRequest extends ActionRequest {
         }
 
         // Or else convert it
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             OutputStreamStreamOutput osso = new OutputStreamStreamOutput(baos)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); OutputStreamStreamOutput osso = new OutputStreamStreamOutput(baos)) {
             actionRequest.writeTo(osso);
-            try (StreamInput input =
-                         new InputStreamStreamInput(new ByteArrayInputStream(baos.toByteArray()))) {
+            try (StreamInput input = new InputStreamStreamInput(new ByteArrayInputStream(baos.toByteArray()))) {
                 return new IpEnrichmentRequest(input);
             }
         } catch (IOException e) {

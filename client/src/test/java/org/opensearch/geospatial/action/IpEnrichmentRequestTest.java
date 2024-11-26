@@ -5,7 +5,6 @@
 
 package org.opensearch.geospatial.action;
 
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,8 +18,7 @@ public class IpEnrichmentRequestTest {
      */
     @Test
     public void testValidateValidRequest() {
-        IpEnrichmentRequest request = new IpEnrichmentRequest(
-                "192.168.1.1", "ValidDataSourceName");
+        IpEnrichmentRequest request = new IpEnrichmentRequest("192.168.1.1", "ValidDataSourceName");
         Assert.assertNull(request.validate());
     }
 
@@ -30,8 +28,7 @@ public class IpEnrichmentRequestTest {
      */
     @Test
     public void testValidateNullDataSourceName() {
-        IpEnrichmentRequest request = new IpEnrichmentRequest(
-                "192.168.1.1", null);
+        IpEnrichmentRequest request = new IpEnrichmentRequest("192.168.1.1", null);
         Assert.assertNull(request.validate());
     }
 
@@ -41,11 +38,9 @@ public class IpEnrichmentRequestTest {
      */
     @Test
     public void testValidateNullIpStringAndDataSourceName() {
-        IpEnrichmentRequest request = new IpEnrichmentRequest(
-                null, null);
+        IpEnrichmentRequest request = new IpEnrichmentRequest(null, null);
         Assert.assertEquals(1, request.validate().validationErrors().size());
     }
-
 
     /**
      * Test validate() against a valid record,
@@ -55,8 +50,7 @@ public class IpEnrichmentRequestTest {
     public void testFromActionRequestOnValidRecord() {
         String ipString = "192.168.1.1";
         String dsName = "demo";
-        IpEnrichmentRequest request = new IpEnrichmentRequest(
-                ipString, dsName);
+        IpEnrichmentRequest request = new IpEnrichmentRequest(ipString, dsName);
 
         IpEnrichmentRequest requestAfterStream = IpEnrichmentRequest.fromActionRequest(request);
 
