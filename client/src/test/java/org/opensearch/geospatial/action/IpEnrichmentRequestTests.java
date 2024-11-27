@@ -33,7 +33,6 @@ public class IpEnrichmentRequestTests {
         Assert.assertEquals(1, request.validate().validationErrors().size());
     }
 
-
     /**
      * Test validate() against an invalid record,
      * Expecting an error being thrown as ipString being null.
@@ -43,7 +42,6 @@ public class IpEnrichmentRequestTests {
         IpEnrichmentRequest request = new IpEnrichmentRequest(null, "dataSource");
         Assert.assertEquals(1, request.validate().validationErrors().size());
     }
-
 
     /**
      * Test validate() against an invalid record,
