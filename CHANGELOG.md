@@ -11,6 +11,8 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Infrastructure
 ### Documentation
 ### Maintenance
+- Set geospatial plugin 3.0.0 baseline JDK version to JDK-21 ([#695](https://github.com/opensearch-project/geospatial/pull/695))
+
 ### Refactoring
 
 ## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.17...2.x)
