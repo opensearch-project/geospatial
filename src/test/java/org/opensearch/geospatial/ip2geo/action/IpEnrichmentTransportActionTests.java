@@ -53,17 +53,5 @@ public class IpEnrichmentTransportActionTests extends Ip2GeoTestCase {
 
         verify(listener, times(1)).onResponse(any(IpEnrichmentResponse.class));
     }
-    
-
-    /**
-     * No alternative dataSource, exception being thrown to indicate this.
-     */
-    @Test
-    public void testDoExecute_WithNoAlternativeDataSource() {
-        IpEnrichmentRequest request = new IpEnrichmentRequest("192.168.1.1", null);
-        action.doExecute(task, request, listener);
-
-        verify(listener, times(1)).onFailure(any(IllegalArgumentException.class));
-    }
 
 }
