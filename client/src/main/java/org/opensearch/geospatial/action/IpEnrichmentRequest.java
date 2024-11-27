@@ -42,7 +42,7 @@ public class IpEnrichmentRequest extends ActionRequest {
     public IpEnrichmentRequest(StreamInput streamInput) throws IOException {
         super(streamInput);
         ipString = streamInput.readString();
-        datasourceName = streamInput.readOptionalString();
+        datasourceName = streamInput.readString();
         log.trace("Constructing IP Enrichment request with values: [{}, {}]", ipString, datasourceName);
     }
 
