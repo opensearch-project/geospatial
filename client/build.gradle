@@ -32,6 +32,9 @@ dependencies {
 
     testImplementation "junit:junit:${versions.junit}"
     testImplementation "org.mockito:mockito-core:${versions.mockito}"
+    testImplementation "org.hamcrest:hamcrest:${versions.hamcrest}"
+    testImplementation "net.bytebuddy:byte-buddy:${versions.bytebuddy}"
+    testImplementation "net.bytebuddy:byte-buddy-agent:${versions.bytebuddy}"
     testImplementation "${group}:opensearch:${opensearch_version}"
 
 }
@@ -58,8 +61,4 @@ publishing {
     repositories {
         mavenLocal()
     }
-}
-
-test {
-    useJUnitPlatform()
 }

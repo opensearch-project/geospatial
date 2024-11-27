@@ -52,12 +52,14 @@ public class IpEnrichmentRequest extends ActionRequest {
      */
     @Override
     public ActionRequestValidationException validate() {
-        ActionRequestValidationException errors = null;
+        ActionRequestValidationException errors = new ActionRequestValidationException();
         if (ipString == null) {
-            errors = new ActionRequestValidationException();
             errors.addValidationError("ip string should not be null");
         }
-        return errors;
+        if (datasourceName == null) {
+            errors.addValidationError("DateSource should not be null");
+        }
+        return errors.validationErrors().isEmpty() ? null : errors;
     }
 
     /**
@@ -69,7 +71,7 @@ public class IpEnrichmentRequest extends ActionRequest {
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeString(ipString);
-        out.writeOptionalString(datasourceName);
+        out.writeString(datasourceName);
     }
 
     /**
