@@ -6,16 +6,10 @@
 package org.opensearch.geospatial.ip2geo.action;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Collections;
-import java.util.List;
 
 import org.junit.Before;
-import org.junit.Test;
 import org.mockito.Mock;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.action.ActionResponse;
@@ -46,8 +40,7 @@ public class IpEnrichmentTransportActionTests extends Ip2GeoTestCase {
     /**
      * When dataSource is provided.
      */
-    @Test
-    public void testDoExecute_All_Succeed() {
+    public void testDoExecuteAllSucceed() {
         IpEnrichmentRequest request = new IpEnrichmentRequest("192.168.1.1", "testSource");
         action.doExecute(task, request, listener);
 
