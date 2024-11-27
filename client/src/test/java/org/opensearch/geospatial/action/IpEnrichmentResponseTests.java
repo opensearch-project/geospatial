@@ -10,7 +10,7 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class IpEnrichmentResponseTest {
+public class IpEnrichmentResponseTests {
 
     /**
      * To simulate when Response class being passed from one plugin to the other.

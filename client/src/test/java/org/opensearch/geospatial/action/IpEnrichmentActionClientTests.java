@@ -13,15 +13,21 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.opensearch.action.support.PlainActionFuture;
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
 
 import lombok.SneakyThrows;
 
-public class IpEnrichmentActionClientTest {
+@RunWith(MockitoJUnitRunner.class)
+public class IpEnrichmentActionClientTests {
 
     @Mock
     private NodeClient mockNodeClient;
