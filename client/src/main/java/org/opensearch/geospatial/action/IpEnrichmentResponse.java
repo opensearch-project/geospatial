@@ -33,6 +33,8 @@ import lombok.extern.log4j.Log4j2;
 @EqualsAndHashCode(callSuper = false)
 public class IpEnrichmentResponse extends ActionResponse {
 
+    private static final String VERSION = "2.18.0.0";
+
     private Map<String, Object> geoLocationData;
 
     /**
@@ -72,8 +74,15 @@ public class IpEnrichmentResponse extends ActionResponse {
         // Or else convert it
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); OutputStreamStreamOutput osso = new OutputStreamStreamOutput(baos)) {
             actionResponse.writeTo(osso);
+
+
             try (StreamInput input = new InputStreamStreamInput(new ByteArrayInputStream(baos.toByteArray()))) {
-                return new IpEnrichmentResponse(input);
+                String objectVersion = input.readString();
+                if (VERSION.equals(objectVersion)) {
+                    return new IpEnrichmentResponse(input);
+                } else {
+                    throw new IllegalArgumentException("Fail to serialise IpEnrichmentResponse due to version mismatch");
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to parse ActionResponse into IpEnrichmentResponse", e);

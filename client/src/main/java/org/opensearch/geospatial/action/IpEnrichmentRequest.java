@@ -31,6 +31,8 @@ import lombok.extern.log4j.Log4j2;
 @AllArgsConstructor
 public class IpEnrichmentRequest extends ActionRequest {
 
+    private static final String VERSION = "2.18.0.0";
+
     private String ipString;
 
     private String datasourceName;
@@ -87,7 +89,12 @@ public class IpEnrichmentRequest extends ActionRequest {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); OutputStreamStreamOutput osso = new OutputStreamStreamOutput(baos)) {
             actionRequest.writeTo(osso);
             try (StreamInput input = new InputStreamStreamInput(new ByteArrayInputStream(baos.toByteArray()))) {
-                return new IpEnrichmentRequest(input);
+                String objectVersion = input.readString();
+                if (VERSION.equals(objectVersion)) {
+                    return new IpEnrichmentRequest(input);
+                } else {
+                    throw new IllegalArgumentException("Fail to serialise IpEnrichmentRequest due to version mismatch");
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to parse ActionRequest into IpEnrichmentRequest", e);

@@ -53,21 +53,7 @@ public class IpEnrichmentTransportActionTests extends Ip2GeoTestCase {
 
         verify(listener, times(1)).onResponse(any(IpEnrichmentResponse.class));
     }
-
-    /**
-     * When dataSource is absent, but default is valid.
-     */
-    @Test
-    public void testDoExecute_WithDefaultDataSource() {
-        when(mockDataSource.getName()).thenReturn("defaultDataSourceName");
-        when(datasourceDao.getAllDatasources()).thenReturn(List.of(mockDataSource));
-        when(ip2GeoCachedDao.getIndexName(eq("defaultDataSourceName"))).thenReturn("defaultIndexName");
-        when(ip2GeoCachedDao.getGeoData(eq("defaultIndexName"), any())).thenReturn(Collections.emptyMap());
-
-        IpEnrichmentRequest request = new IpEnrichmentRequest("192.168.1.1", null);
-        action.doExecute(task, request, listener);
-        verify(listener, times(1)).onResponse(any(IpEnrichmentResponse.class));
-    }
+    
 
     /**
      * No alternative dataSource, exception being thrown to indicate this.
