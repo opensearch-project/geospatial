@@ -29,9 +29,6 @@ public class IpEnrichmentTransportActionTests extends Ip2GeoTestCase {
     @Mock
     ActionListener<ActionResponse> listener;
 
-    @Mock
-    Datasource mockDataSource;
-
     @Before
     public void init() {
         action = new IpEnrichmentTransportAction(transportService, actionFilters, ip2GeoCachedDao);
