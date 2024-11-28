@@ -69,7 +69,7 @@ publishing {
                 developers {
                     developer {
                         name = "OpenSearch"
-                        url = "https://github.com/opensearch-project/geospatial/libs/h3"
+                        url = "https://github.com/opensearch-project/geospatial"
                     }
                 }
             }
