@@ -17,6 +17,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 
 ## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.17...2.x)
 ### Features
+- Introduce new Java artifact geospatial-client to facilitate cross plugin communication. 
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
