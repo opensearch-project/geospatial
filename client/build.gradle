@@ -12,10 +12,7 @@ group = opensearch_group
 version = "${opensearch_build}"
 description = 'OpenSearch Geospatial client'
 
-project.dependencyLicenses.enabled = false
-project.thirdPartyAudit.enabled = false
 project.loggerUsageCheck.enabled = false
-project.forbiddenApis.ignoreFailures = true
 project.testingConventions.enabled = false
 project.forbiddenApisTest.enabled = false
 
@@ -42,7 +39,6 @@ dependencies {
     testImplementation "org.hamcrest:hamcrest:${versions.hamcrest}"
     testImplementation "net.bytebuddy:byte-buddy:${versions.bytebuddy}"
     testImplementation "net.bytebuddy:byte-buddy-agent:${versions.bytebuddy}"
-
 }
 
 licenseFile = "LICENSE.txt"
