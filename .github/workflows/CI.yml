@@ -8,9 +8,6 @@ on:
     branches:
       - "*"
       - "feature/**"
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
 jobs:
   Get-CI-Image-Tag:
     uses: opensearch-project/opensearch-build/.github/workflows/get-ci-image-tag.yml@main
@@ -32,6 +29,9 @@ jobs:
       options: ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-options }}
 
     steps:
+      - name: Run start commands
+        run: ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-command }}
+
       - name: Checkout geospatial
         uses: actions/checkout@v4
 
