@@ -24,7 +24,6 @@ import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.network.NetworkModule;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.env.Environment;
-import org.opensearch.geospatial.plugin.GeospatialPlugin;
 import org.opensearch.node.MockNode;
 import org.opensearch.node.Node;
 import org.opensearch.plugins.Plugin;
@@ -49,7 +48,7 @@ public class ClusterSettingHelper {
         List<Class<? extends Plugin>> plugins = new ArrayList<>();
         plugins.add(getTestTransportPlugin());
         plugins.add(MockHttpTransport.TestPlugin.class);
-        plugins.add(GeospatialPlugin.class);
+        plugins.add(TestGeospatialPlugin.class);
         return plugins;
     }
 

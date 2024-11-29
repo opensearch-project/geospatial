@@ -30,7 +30,7 @@ public class Ip2GeoLockService {
     public static final long LOCK_DURATION_IN_SECONDS = 300l;
     public static final long RENEW_AFTER_IN_SECONDS = 120l;
     private final ClusterService clusterService;
-    private final LockService lockService;
+    private LockService lockService;
 
     /**
      * Constructor
@@ -41,6 +41,19 @@ public class Ip2GeoLockService {
     public Ip2GeoLockService(final ClusterService clusterService, final Client client) {
         this.clusterService = clusterService;
         this.lockService = new LockService(client, clusterService);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param clusterService the cluster service
+     */
+    public Ip2GeoLockService(final ClusterService clusterService) {
+        this.clusterService = clusterService;
+    }
+
+    public void initialize(final LockService lockService) {
+        this.lockService = lockService;
     }
 
     /**
