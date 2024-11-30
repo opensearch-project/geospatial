@@ -16,7 +16,6 @@ import org.opensearch.core.action.ActionResponse;
 import org.opensearch.geospatial.action.IpEnrichmentRequest;
 import org.opensearch.geospatial.action.IpEnrichmentResponse;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
-import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.tasks.Task;
 
 public class IpEnrichmentTransportActionTests extends Ip2GeoTestCase {
