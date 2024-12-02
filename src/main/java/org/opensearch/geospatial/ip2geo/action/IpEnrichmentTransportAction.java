@@ -53,15 +53,10 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
     protected void doExecute(Task task, ActionRequest request, ActionListener<ActionResponse> listener) {
         IpEnrichmentRequest enrichmentRequest = IpEnrichmentRequest.fromActionRequest(request);
         String ipString = enrichmentRequest.getIpString();
-        if (enrichmentRequest.getDatasourceName() == null) {
-            log.error("No data source available, IpEnrichmentTransportAction aborted.");
-            listener.onFailure(new IllegalArgumentException());
-        } else {
-            String dataSourceName = enrichmentRequest.getDatasourceName();
-            String indexName = ip2GeoCachedDao.getIndexName(dataSourceName);
-            Map<String, Object> geoLocationData = ip2GeoCachedDao.getGeoData(indexName, ipString);
-            log.debug("GeoSpatial IP lookup on IP: [{}], and result [{}]", ipString, geoLocationData);
-            listener.onResponse(new IpEnrichmentResponse(geoLocationData));
-        }
+        String dataSourceName = enrichmentRequest.getDatasourceName();
+        String indexName = ip2GeoCachedDao.getIndexName(dataSourceName);
+        Map<String, Object> geoLocationData = ip2GeoCachedDao.getGeoData(indexName, ipString);
+        log.debug("GeoSpatial IP lookup on IP: [{}], and result [{}]", ipString, geoLocationData);
+        listener.onResponse(new IpEnrichmentResponse(geoLocationData));
     }
 }
