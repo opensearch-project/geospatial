@@ -11,3 +11,6 @@ rootProject.name = 'geospatial'
 
 include ":libs"
 include ":libs:h3"
+
+include 'client'
+project(":client").name = rootProject.name + "-client"

@@ -30,6 +30,7 @@ import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
+import org.opensearch.geospatial.action.IpEnrichmentAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
 import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldMapper;
@@ -41,6 +42,7 @@ import org.opensearch.geospatial.ip2geo.action.DeleteDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.DeleteDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.GetDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.GetDatasourceTransportAction;
+import org.opensearch.geospatial.ip2geo.action.IpEnrichmentTransportAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceAction;
 import org.opensearch.geospatial.ip2geo.action.PutDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.action.RestDeleteDatasourceHandler;
@@ -221,9 +223,15 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
             new ActionHandler<>(DeleteDatasourceAction.INSTANCE, DeleteDatasourceTransportAction.class)
         );
 
+        // Inter-cluster IP enrichment request
+        List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> ipEnrichmentHandlers = List.of(
+            new ActionHandler<>(IpEnrichmentAction.INSTANCE, IpEnrichmentTransportAction.class)
+        );
+
         List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> allHandlers = new ArrayList<>();
         allHandlers.addAll(geoJsonHandlers);
         allHandlers.addAll(ip2geoHandlers);
+        allHandlers.addAll(ipEnrichmentHandlers);
         return allHandlers;
     }
 
