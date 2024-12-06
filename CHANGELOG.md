@@ -20,6 +20,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
+- Github ci-runner Node.js issue fix ([#701](https://github.com/opensearch-project/geospatial/pull/701))
 ### Documentation
 ### Maintenance
 ### Refactoring
