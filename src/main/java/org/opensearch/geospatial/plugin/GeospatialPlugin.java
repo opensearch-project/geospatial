@@ -281,10 +281,6 @@ public class GeospatialPlugin extends Plugin
         LockService lockService = GuiceHolder.getLockService();
         ip2GeoLockService.initialize(lockService);
 
-        /**
-         * We don't need to return datasource runner because it is used only by job scheduler and job scheduler
-         * does not use DI but it calls DatasourceExtension#getJobRunner to get DatasourceRunner instance.
-         */
         DatasourceRunner.getJobRunnerInstance()
             .initialize(this.clusterService, this.datasourceUpdateService, this.ip2GeoExecutor, this.datasourceDao, this.ip2GeoLockService);
     }
