@@ -294,7 +294,7 @@ public class GeospatialPlugin extends Plugin
             GuiceHolder.lockService = lockService;
         }
 
-        public static LockService getLockService() {
+        static LockService getLockService() {
             return lockService;
         }
 
