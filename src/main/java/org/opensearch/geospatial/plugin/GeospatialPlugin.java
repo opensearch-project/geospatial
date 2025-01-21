@@ -285,7 +285,7 @@ public class GeospatialPlugin extends Plugin
             .initialize(this.clusterService, this.datasourceUpdateService, this.ip2GeoExecutor, this.datasourceDao, this.ip2GeoLockService);
     }
 
-    static class GuiceHolder implements LifecycleComponent {
+    public static class GuiceHolder implements LifecycleComponent {
 
         private static LockService lockService;
 
