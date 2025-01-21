@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.opensearch.OpenSearchException;
-import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.jobscheduler.spi.LockModel;
@@ -30,17 +29,19 @@ public class Ip2GeoLockService {
     public static final long LOCK_DURATION_IN_SECONDS = 300l;
     public static final long RENEW_AFTER_IN_SECONDS = 120l;
     private final ClusterService clusterService;
-    private final LockService lockService;
+    private LockService lockService;
 
     /**
      * Constructor
      *
      * @param clusterService the cluster service
-     * @param client the client
      */
-    public Ip2GeoLockService(final ClusterService clusterService, final Client client) {
+    public Ip2GeoLockService(final ClusterService clusterService) {
         this.clusterService = clusterService;
-        this.lockService = new LockService(client, clusterService);
+    }
+
+    public void initialize(final LockService lockService) {
+        this.lockService = lockService;
     }
 
     /**
@@ -54,6 +55,9 @@ public class Ip2GeoLockService {
      * @param listener the listener
      */
     public void acquireLock(final String datasourceName, final Long lockDurationSeconds, final ActionListener<LockModel> listener) {
+        if (lockService == null) {
+            throw new OpenSearchException("Ip2GeoLockService is not initialized");
+        }
         lockService.acquireLockWithId(JOB_INDEX_NAME, lockDurationSeconds, datasourceName, listener);
     }
 
@@ -65,6 +69,9 @@ public class Ip2GeoLockService {
      * @return lock model
      */
     public Optional<LockModel> acquireLock(final String datasourceName, final Long lockDurationSeconds) {
+        if (lockService == null) {
+            throw new OpenSearchException("Ip2GeoLockService is not initialized");
+        }
         AtomicReference<LockModel> lockReference = new AtomicReference();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         lockService.acquireLockWithId(JOB_INDEX_NAME, lockDurationSeconds, datasourceName, new ActionListener<>() {
@@ -95,6 +102,9 @@ public class Ip2GeoLockService {
      * @param lockModel the lock model
      */
     public void releaseLock(final LockModel lockModel) {
+        if (lockService == null) {
+            throw new OpenSearchException("Ip2GeoLockService is not initialized");
+        }
         lockService.release(
             lockModel,
             ActionListener.wrap(released -> {}, exception -> log.error("Failed to release the lock", exception))
@@ -108,6 +118,9 @@ public class Ip2GeoLockService {
      * @return renewed lock if renew succeed and null otherwise
      */
     public LockModel renewLock(final LockModel lockModel) {
+        if (lockService == null) {
+            throw new OpenSearchException("Ip2GeoLockService is not initialized");
+        }
         AtomicReference<LockModel> lockReference = new AtomicReference();
         CountDownLatch countDownLatch = new CountDownLatch(1);
         lockService.renewLock(lockModel, new ActionListener<>() {
