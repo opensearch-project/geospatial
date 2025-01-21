@@ -16,10 +16,14 @@ import java.util.function.Supplier;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
+import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.cluster.node.DiscoveryNodes;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.collect.MapBuilder;
+import org.opensearch.common.inject.Inject;
+import org.opensearch.common.lifecycle.Lifecycle;
 import org.opensearch.common.lifecycle.LifecycleComponent;
+import org.opensearch.common.lifecycle.LifecycleListener;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
 import org.opensearch.common.settings.Setting;
@@ -75,7 +79,9 @@ import org.opensearch.index.IndexModule;
 import org.opensearch.index.mapper.Mapper;
 import org.opensearch.indices.SystemIndexDescriptor;
 import org.opensearch.ingest.Processor;
+import org.opensearch.jobscheduler.spi.utils.LockService;
 import org.opensearch.plugins.ActionPlugin;
+import org.opensearch.plugins.ClusterPlugin;
 import org.opensearch.plugins.IngestPlugin;
 import org.opensearch.plugins.MapperPlugin;
 import org.opensearch.plugins.Plugin;
@@ -96,11 +102,22 @@ import lombok.extern.log4j.Log4j2;
  * to interact with Cluster.
  */
 @Log4j2
-public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlugin, MapperPlugin, SearchPlugin, SystemIndexPlugin {
+public class GeospatialPlugin extends Plugin
+    implements
+        IngestPlugin,
+        ActionPlugin,
+        MapperPlugin,
+        SearchPlugin,
+        SystemIndexPlugin,
+        ClusterPlugin {
     private Ip2GeoCachedDao ip2GeoCachedDao;
     private DatasourceDao datasourceDao;
     private GeoIpDataDao geoIpDataDao;
     private URLDenyListChecker urlDenyListChecker;
+    private ClusterService clusterService;
+    private Ip2GeoLockService ip2GeoLockService;
+    private Ip2GeoExecutor ip2GeoExecutor;
+    private DatasourceUpdateService datasourceUpdateService;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -129,7 +146,10 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
 
     @Override
     public Collection<Class<? extends LifecycleComponent>> getGuiceServiceClasses() {
-        return List.of(Ip2GeoListener.class);
+        final List<Class<? extends LifecycleComponent>> services = new ArrayList<>(2);
+        services.add(Ip2GeoListener.class);
+        services.add(GuiceHolder.class);
+        return services;
     }
 
     @Override
@@ -158,20 +178,10 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         IndexNameExpressionResolver indexNameExpressionResolver,
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
-        DatasourceUpdateService datasourceUpdateService = new DatasourceUpdateService(
-            clusterService,
-            datasourceDao,
-            geoIpDataDao,
-            urlDenyListChecker
-        );
-        Ip2GeoExecutor ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
-        Ip2GeoLockService ip2GeoLockService = new Ip2GeoLockService(clusterService, client);
-        /**
-         * We don't need to return datasource runner because it is used only by job scheduler and job scheduler
-         * does not use DI but it calls DatasourceExtension#getJobRunner to get DatasourceRunner instance.
-         */
-        DatasourceRunner.getJobRunnerInstance()
-            .initialize(clusterService, datasourceUpdateService, ip2GeoExecutor, datasourceDao, ip2GeoLockService);
+        this.clusterService = clusterService;
+        this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
+        this.ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
+        this.ip2GeoLockService = new Ip2GeoLockService(clusterService);
 
         return List.of(
             UploadStats.getInstance(),
@@ -264,5 +274,49 @@ public class GeospatialPlugin extends Plugin implements IngestPlugin, ActionPlug
         ).addResultReader(GeoHexGrid::new).setAggregatorRegistrar(GeoHexGridAggregationBuilder::registerAggregators);
 
         return List.of(geoHexGridSpec);
+    }
+
+    @Override
+    public void onNodeStarted(DiscoveryNode localNode) {
+        LockService lockService = GuiceHolder.getLockService();
+        ip2GeoLockService.initialize(lockService);
+
+        DatasourceRunner.getJobRunnerInstance()
+            .initialize(this.clusterService, this.datasourceUpdateService, this.ip2GeoExecutor, this.datasourceDao, this.ip2GeoLockService);
+    }
+
+    public static class GuiceHolder implements LifecycleComponent {
+
+        private static LockService lockService;
+
+        @Inject
+        public GuiceHolder(final LockService lockService) {
+            GuiceHolder.lockService = lockService;
+        }
+
+        static LockService getLockService() {
+            return lockService;
+        }
+
+        @Override
+        public void close() {}
+
+        @Override
+        public Lifecycle.State lifecycleState() {
+            return null;
+        }
+
+        @Override
+        public void addLifecycleListener(LifecycleListener listener) {}
+
+        @Override
+        public void removeLifecycleListener(LifecycleListener listener) {}
+
+        @Override
+        public void start() {}
+
+        @Override
+        public void stop() {}
+
     }
 }
