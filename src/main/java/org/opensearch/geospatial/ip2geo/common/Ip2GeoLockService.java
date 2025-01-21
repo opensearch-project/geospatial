@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.opensearch.OpenSearchException;
-import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.jobscheduler.spi.LockModel;
@@ -31,17 +30,6 @@ public class Ip2GeoLockService {
     public static final long RENEW_AFTER_IN_SECONDS = 120l;
     private final ClusterService clusterService;
     private LockService lockService;
-
-    /**
-     * Constructor
-     *
-     * @param clusterService the cluster service
-     * @param client the client
-     */
-    public Ip2GeoLockService(final ClusterService clusterService, final Client client) {
-        this.clusterService = clusterService;
-        this.lockService = new LockService(client, clusterService);
-    }
 
     /**
      * Constructor
