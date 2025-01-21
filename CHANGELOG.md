@@ -11,13 +11,18 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Infrastructure
 ### Documentation
 ### Maintenance
+- Set geospatial plugin 3.0.0 baseline JDK version to JDK-21 ([#695](https://github.com/opensearch-project/geospatial/pull/695))
+
 ### Refactoring
 
-## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.16...2.x)
+## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.17...2.x)
 ### Features
+- Introduce new Java artifact geospatial-client to facilitate cross plugin communication. ([#700](https://github.com/opensearch-project/geospatial/pull/700))
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
+- Github ci-runner Node.js issue fix ([#701](https://github.com/opensearch-project/geospatial/pull/701))
+- Github CI pipeline update to publish geospatial-client Jar ([#706](https://github.com/opensearch-project/geospatial/pull/706))
 ### Documentation
 ### Maintenance
 ### Refactoring

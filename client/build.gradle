@@ -1,0 +1,90 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+apply plugin: 'opensearch.build'
+apply plugin: 'io.freefair.lombok'
+apply plugin: "com.diffplug.spotless"
+
+
+group = opensearch_group
+version = "${opensearch_build}"
+description = 'OpenSearch Geospatial client'
+
+project.loggerUsageCheck.enabled = false
+project.testingConventions.enabled = false
+project.forbiddenApisTest.enabled = false
+
+repositories {
+    mavenLocal()
+    maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
+    mavenCentral()
+    maven { url "https://plugins.gradle.org/m2/" }
+}
+
+compileJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+compileTestJava {
+    options.compilerArgs.addAll(["-processor", 'lombok.launch.AnnotationProcessorHider$AnnotationProcessor'])
+}
+
+
+dependencies {
+    compileOnly "${group}:opensearch:${opensearch_version}"
+
+    testImplementation "junit:junit:${versions.junit}"
+    testImplementation "org.mockito:mockito-core:${versions.mockito}"
+    testImplementation "org.hamcrest:hamcrest:${versions.hamcrest}"
+    testImplementation "net.bytebuddy:byte-buddy:${versions.bytebuddy}"
+    testImplementation "net.bytebuddy:byte-buddy-agent:${versions.bytebuddy}"
+}
+
+licenseFile = "LICENSE.txt"
+noticeFile = "NOTICE.txt"
+
+spotless {
+    java {
+        removeUnusedImports()
+        importOrder 'java', 'javax', 'org', 'com'
+        eclipse().configFile rootProject.file('formatterConfig.xml')
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "Snapshots"
+            url = "https://aws.oss.sonatype.org/content/repositories/snapshots"
+            credentials {
+                username "$System.env.SONATYPE_USERNAME"
+                password "$System.env.SONATYPE_PASSWORD"
+            }
+        }
+    }
+    publications {
+        pluginZip(MavenPublication) { publication ->
+            pom {
+                name = "opensearch-geospatial-client"
+                description = 'OpenSearch Geospatial client'
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        name = "OpenSearch"
+                        url = "https://github.com/opensearch-project/geospatial"
+                    }
+                }
+            }
+        }
+    }
+}
+
+
