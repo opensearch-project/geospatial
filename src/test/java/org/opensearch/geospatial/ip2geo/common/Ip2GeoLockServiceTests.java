@@ -21,6 +21,7 @@ import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.jobscheduler.spi.LockModel;
+import org.opensearch.jobscheduler.spi.utils.LockService;
 
 public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
     private Ip2GeoLockService ip2GeoLockService;
@@ -28,8 +29,11 @@ public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        ip2GeoLockService = new Ip2GeoLockService(clusterService, verifyingClient);
-        noOpsLockService = new Ip2GeoLockService(clusterService, client);
+        ip2GeoLockService = new Ip2GeoLockService(clusterService);
+        noOpsLockService = new Ip2GeoLockService(clusterService);
+        // TODO Remove direct instantiation and offer a TestLockService class to plugins
+        ip2GeoLockService.initialize(new LockService(verifyingClient, clusterService));
+        noOpsLockService.initialize(new LockService(client, clusterService));
     }
 
     public void testAcquireLock_whenValidInput_thenSucceed() {

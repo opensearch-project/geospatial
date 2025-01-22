@@ -167,7 +167,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
     }
 
     public void testGetGuiceServiceClasses() {
-        Collection<Class<? extends LifecycleComponent>> classes = List.of(Ip2GeoListener.class);
+        Collection<Class<? extends LifecycleComponent>> classes = List.of(Ip2GeoListener.class, GeospatialPlugin.GuiceHolder.class);
         assertEquals(classes, plugin.getGuiceServiceClasses());
     }
 
