@@ -75,7 +75,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         new RestDeleteDatasourceHandler()
     );
 
-    private final Set<String> SUPPORTED_SYSTEM_INDEX_PATTERN = Set.of(IP2GEO_DATA_INDEX_NAME_PREFIX, JOB_INDEX_NAME);
+    private final Set<String> SUPPORTED_SYSTEM_INDEX_PATTERN = Set.of(IP2GEO_DATA_INDEX_NAME_PREFIX + "*", JOB_INDEX_NAME);
 
     private final Set<Class> SUPPORTED_COMPONENTS = Set.of(
         UploadStats.class,
