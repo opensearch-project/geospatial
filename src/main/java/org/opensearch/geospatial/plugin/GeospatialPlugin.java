@@ -71,10 +71,12 @@ import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGrid;
 import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGridAggregationBuilder;
+import org.opensearch.geospatial.shared.RunAsSubjectClient;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.geospatial.stats.upload.UploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStatsTransportAction;
+import org.opensearch.identity.PluginSubject;
 import org.opensearch.index.IndexModule;
 import org.opensearch.index.mapper.Mapper;
 import org.opensearch.indices.SystemIndexDescriptor;
@@ -82,6 +84,7 @@ import org.opensearch.ingest.Processor;
 import org.opensearch.jobscheduler.spi.utils.LockService;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.ClusterPlugin;
+import org.opensearch.plugins.IdentityAwarePlugin;
 import org.opensearch.plugins.IngestPlugin;
 import org.opensearch.plugins.MapperPlugin;
 import org.opensearch.plugins.Plugin;
@@ -109,7 +112,8 @@ public class GeospatialPlugin extends Plugin
         MapperPlugin,
         SearchPlugin,
         SystemIndexPlugin,
-        ClusterPlugin {
+        ClusterPlugin,
+        IdentityAwarePlugin {
     private Ip2GeoCachedDao ip2GeoCachedDao;
     private DatasourceDao datasourceDao;
     private GeoIpDataDao geoIpDataDao;
@@ -118,6 +122,7 @@ public class GeospatialPlugin extends Plugin
     private Ip2GeoLockService ip2GeoLockService;
     private Ip2GeoExecutor ip2GeoExecutor;
     private DatasourceUpdateService datasourceUpdateService;
+    private RunAsSubjectClient pluginClient;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -126,10 +131,6 @@ public class GeospatialPlugin extends Plugin
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
-        this.urlDenyListChecker = new URLDenyListChecker(parameters.ingestService.getClusterService().getClusterSettings());
-        this.datasourceDao = new DatasourceDao(parameters.client, parameters.ingestService.getClusterService());
-        this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client, urlDenyListChecker);
-        this.ip2GeoCachedDao = new Ip2GeoCachedDao(parameters.ingestService.getClusterService(), datasourceDao, geoIpDataDao);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
             .put(Ip2GeoProcessor.TYPE, new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceDao, geoIpDataDao, ip2GeoCachedDao))
@@ -182,6 +183,11 @@ public class GeospatialPlugin extends Plugin
         this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
         this.ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         this.ip2GeoLockService = new Ip2GeoLockService(clusterService);
+        this.pluginClient = new RunAsSubjectClient(client);
+        this.urlDenyListChecker = new URLDenyListChecker(clusterService.getClusterSettings());
+        this.datasourceDao = new DatasourceDao(pluginClient, clusterService);
+        this.geoIpDataDao = new GeoIpDataDao(clusterService, pluginClient, urlDenyListChecker);
+        this.ip2GeoCachedDao = new Ip2GeoCachedDao(clusterService, datasourceDao, geoIpDataDao);
 
         return List.of(
             UploadStats.getInstance(),
@@ -283,6 +289,13 @@ public class GeospatialPlugin extends Plugin
 
         DatasourceRunner.getJobRunnerInstance()
             .initialize(this.clusterService, this.datasourceUpdateService, this.ip2GeoExecutor, this.datasourceDao, this.ip2GeoLockService);
+    }
+
+    @Override
+    public void assignSubject(PluginSubject pluginSubject) {
+        if (this.pluginClient != null) {
+            this.pluginClient.setSubject(pluginSubject);
+        }
     }
 
     public static class GuiceHolder implements LifecycleComponent {
