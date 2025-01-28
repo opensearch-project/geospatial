@@ -117,6 +117,7 @@ public class GeospatialPlugin extends Plugin
     private Ip2GeoCachedDao ip2GeoCachedDao;
     private DatasourceDao datasourceDao;
     private GeoIpDataDao geoIpDataDao;
+    private Ip2GeoProcessor.Factory ip2geoProcessor;
     private URLDenyListChecker urlDenyListChecker;
     private ClusterService clusterService;
     private Ip2GeoLockService ip2GeoLockService;
@@ -131,9 +132,10 @@ public class GeospatialPlugin extends Plugin
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
+        this.ip2geoProcessor = new Ip2GeoProcessor.Factory(parameters.ingestService);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
-            .put(Ip2GeoProcessor.TYPE, new Ip2GeoProcessor.Factory(parameters.ingestService, datasourceDao, geoIpDataDao, ip2GeoCachedDao))
+            .put(Ip2GeoProcessor.TYPE, ip2geoProcessor)
             .immutableMap();
     }
 
@@ -185,6 +187,9 @@ public class GeospatialPlugin extends Plugin
         this.datasourceDao = new DatasourceDao(pluginClient, clusterService);
         this.geoIpDataDao = new GeoIpDataDao(clusterService, pluginClient, urlDenyListChecker);
         this.ip2GeoCachedDao = new Ip2GeoCachedDao(clusterService, datasourceDao, geoIpDataDao);
+        if (this.ip2geoProcessor != null) {
+            this.ip2geoProcessor.initialize(datasourceDao, geoIpDataDao, ip2GeoCachedDao);
+        }
         this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
         this.ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         this.ip2GeoLockService = new Ip2GeoLockService(clusterService);

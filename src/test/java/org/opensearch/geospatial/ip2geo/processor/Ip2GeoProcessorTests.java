@@ -41,7 +41,8 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
 
     @Before
     public void init() {
-        factory = new Ip2GeoProcessor.Factory(ingestService, datasourceDao, geoIpDataDao, ip2GeoCachedDao);
+        factory = new Ip2GeoProcessor.Factory(ingestService);
+        factory.initialize(datasourceDao, geoIpDataDao, ip2GeoCachedDao);
     }
 
     public void testExecuteWithNoIpAndIgnoreMissing() throws Exception {
