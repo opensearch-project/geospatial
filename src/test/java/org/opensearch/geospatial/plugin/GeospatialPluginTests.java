@@ -8,6 +8,7 @@ package org.opensearch.geospatial.plugin;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.opensearch.geospatial.ip2geo.jobscheduler.Datasource.IP2GEO_DATA_INDEX_NAME_PREFIX;
+import static org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension.JOB_INDEX_NAME;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -74,7 +75,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         new RestDeleteDatasourceHandler()
     );
 
-    private final Set<String> SUPPORTED_SYSTEM_INDEX_PATTERN = Set.of(IP2GEO_DATA_INDEX_NAME_PREFIX);
+    private final Set<String> SUPPORTED_SYSTEM_INDEX_PATTERN = Set.of(IP2GEO_DATA_INDEX_NAME_PREFIX, JOB_INDEX_NAME);
 
     private final Set<Class> SUPPORTED_COMPONENTS = Set.of(
         UploadStats.class,
