@@ -127,7 +127,10 @@ public class GeospatialPlugin extends Plugin
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
-        return List.of(new SystemIndexDescriptor(IP2GEO_DATA_INDEX_NAME_PREFIX, "System index used for Ip2Geo data"));
+        return List.of(
+            new SystemIndexDescriptor(IP2GEO_DATA_INDEX_NAME_PREFIX, "System index used for Ip2Geo data"),
+            new SystemIndexDescriptor(DatasourceExtension.JOB_INDEX_NAME, "System index used for Ip2Geo job")
+        );
     }
 
     @Override
