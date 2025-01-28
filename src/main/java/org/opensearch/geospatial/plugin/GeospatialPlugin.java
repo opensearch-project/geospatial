@@ -180,14 +180,14 @@ public class GeospatialPlugin extends Plugin
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
         this.clusterService = clusterService;
-        this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
-        this.ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
-        this.ip2GeoLockService = new Ip2GeoLockService(clusterService);
         this.pluginClient = new RunAsSubjectClient(client);
         this.urlDenyListChecker = new URLDenyListChecker(clusterService.getClusterSettings());
         this.datasourceDao = new DatasourceDao(pluginClient, clusterService);
         this.geoIpDataDao = new GeoIpDataDao(clusterService, pluginClient, urlDenyListChecker);
         this.ip2GeoCachedDao = new Ip2GeoCachedDao(clusterService, datasourceDao, geoIpDataDao);
+        this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
+        this.ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
+        this.ip2GeoLockService = new Ip2GeoLockService(clusterService);
 
         return List.of(
             UploadStats.getInstance(),
