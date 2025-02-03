@@ -15,16 +15,12 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 
 ### Refactoring
 
-## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.17...2.x)
+## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.19...2.x)
 ### Features
-- Introduce new Java artifact geospatial-client to facilitate cross plugin communication. ([#700](https://github.com/opensearch-project/geospatial/pull/700))
 ### Enhancements
 ### Bug Fixes
 ### Infrastructure
-- Github ci-runner Node.js issue fix ([#701](https://github.com/opensearch-project/geospatial/pull/701))
-- Github CI pipeline update to publish geospatial-client Jar ([#706](https://github.com/opensearch-project/geospatial/pull/706))
 ### Documentation
 ### Maintenance
 ### Refactoring
-- Use instance of LockService instantiated in JobScheduler through Guice ([#677](https://github.com/opensearch-project/geospatial/pull/677))
 - Replace usages of ThreadContext.stashContext with pluginSubject.runAs ([#715](https://github.com/opensearch-project/geospatial/pull/715))
