@@ -16,7 +16,6 @@ import java.util.Map;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.HandledTransportAction;
-import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.core.action.ActionListener;
@@ -25,6 +24,7 @@ import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
+import org.opensearch.transport.client.Client;
 
 /**
  * TransportAction to handle import operation

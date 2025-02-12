@@ -20,10 +20,10 @@ import org.opensearch.action.bulk.BulkRequestBuilder;
 import org.opensearch.action.index.IndexAction;
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.support.WriteRequest;
-import org.opensearch.client.Client;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.client.NoOpClient;
+import org.opensearch.transport.client.Client;
 
 public class ContentBuilderTests extends OpenSearchTestCase {
 

@@ -26,7 +26,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.opensearch.OpenSearchException;
 import org.opensearch.ResourceNotFoundException;
-import org.opensearch.action.support.master.AcknowledgedResponse;
+import org.opensearch.action.support.clustermanager.AcknowledgedResponse;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
