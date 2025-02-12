@@ -12,12 +12,12 @@ import static org.opensearch.rest.RestRequest.Method.PUT;
 import java.io.IOException;
 import java.util.List;
 
-import org.opensearch.client.node.NodeClient;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
+import org.opensearch.transport.client.node.NodeClient;
 
 /**
  * Rest handler for Ip2Geo datasource update request

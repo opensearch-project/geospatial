@@ -21,7 +21,6 @@ import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opensearch.action.ActionRequest;
-import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.lifecycle.LifecycleComponent;
@@ -60,6 +59,7 @@ import org.opensearch.rest.RestHandler;
 import org.opensearch.script.ScriptService;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.transport.client.Client;
 import org.opensearch.watcher.ResourceWatcherService;
 
 public class GeospatialPluginTests extends OpenSearchTestCase {

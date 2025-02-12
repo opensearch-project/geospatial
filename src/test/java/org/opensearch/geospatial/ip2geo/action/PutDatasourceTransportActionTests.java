@@ -19,7 +19,7 @@ import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.StepListener;
-import org.opensearch.action.support.master.AcknowledgedResponse;
+import org.opensearch.action.support.clustermanager.AcknowledgedResponse;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.geospatial.GeospatialTestHelper;
