@@ -81,6 +81,7 @@ cp ${distributions}/*.zip ./$OUTPUT/plugins
 
 # Publish plugin jars to maven
 ./gradlew publishNebulaPublicationToMavenLocal -Dopensearch.version=$VERSION -Dbuild.snapshot=$SNAPSHOT -Dbuild.version_qualifier=$QUALIFIER
+./gradlew publishNebulaPublicationToStagingRepository -Dopensearch.version=$VERSION -Dbuild.snapshot=$SNAPSHOT -Dbuild.version_qualifier=$QUALIFIER
 
 # Publish plugin zips to maven
 ./gradlew publishPluginZipPublicationToMavenLocal -Dopensearch.version=$VERSION -Dbuild.snapshot=$SNAPSHOT -Dbuild.version_qualifier=$QUALIFIER
