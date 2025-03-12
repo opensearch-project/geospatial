@@ -120,6 +120,10 @@ test {
 publishing {
     repositories {
         maven {
+            name = 'staging'
+            url = "${rootProject.buildDir}/local-staging-repo"
+        }
+        maven {
             name = "Snapshots"
             url = "https://aws.oss.sonatype.org/content/repositories/snapshots"
             credentials {
