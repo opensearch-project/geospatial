@@ -11,6 +11,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Infrastructure
 ### Documentation
 ### Maintenance
+* Persist necessary license and developer information in maven pom ([#732](https://github.com/opensearch-project/geospatial/pull/732))
 ### Refactoring
 
 ## [Unreleased 2.x](https://github.com/opensearch-project/geospatial/compare/2.19...2.x)
