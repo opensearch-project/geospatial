@@ -116,7 +116,6 @@ test {
     include '**/*Tests.class'
     systemProperty 'tests.security.manager', 'false'
 }
-
 publishing {
     repositories {
         maven {
@@ -138,22 +137,29 @@ publishing {
                 name = pluginName
                 description = pluginDescription
                 groupId = "org.opensearch.plugin"
-                licenses {
-                    license {
-                        name = "The Apache License, Version 2.0"
-                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
-                    }
-                }
-                developers {
-                    developer {
-                        name = "OpenSearch"
-                        url = "https://github.com/opensearch-project/geospatial"
-                    }
-                }
+            }
+        }
+        all {
+            pom {
+                name = pluginName
+                description = pluginDescription
+            }
+            pom.withXml { XmlProvider xml ->
+                Node node = xml.asNode()
+                node.appendNode('inceptionYear', '2021')
+
+                Node license = node.appendNode('licenses').appendNode('license')
+                license.appendNode('name',  "The Apache License, Version 2.0")
+                license.appendNode('url', "http://www.apache.org/licenses/LICENSE-2.0.txt")
+
+                Node developer = node.appendNode('developers').appendNode('developer')
+                developer.appendNode('name', 'OpenSearch')
+                developer.appendNode('url', 'https://github.com/opensearch-project/geospatial')
             }
         }
     }
 }
+
 
 
 configurations {
