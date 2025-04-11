@@ -34,6 +34,10 @@ repositories {
     maven { url "https://plugins.gradle.org/m2/" }
 }
 
+configurations {
+    agent
+}
+
 dependencies {
     api "org.apache.logging.log4j:log4j-api:${versions.log4j}"
     api "org.apache.logging.log4j:log4j-core:${versions.log4j}"
@@ -41,7 +45,22 @@ dependencies {
     testImplementation 'commons-io:commons-io:2.15.1'
     testImplementation "org.apache.commons:commons-compress:1.26.0"
     testImplementation "org.apache.lucene:lucene-spatial3d:${versions.lucene}"
+
+    agent "org.opensearch:opensearch-agent-bootstrap:${opensearch_version}"
+    agent "org.opensearch:opensearch-agent:${opensearch_version}"
+    agent "net.bytebuddy:byte-buddy:${versions.bytebuddy}"
 }
+
+task prepareAgent(type: Copy) {
+    from(configurations.agent)
+    into "$buildDir/agent"
+}
+
+tasks.withType(Test) {
+    dependsOn prepareAgent
+    jvmArgs += ["-javaagent:" + project.layout.buildDirectory.file("agent/opensearch-agent-${opensearch_version}.jar").get()]
+}
+
 licenseFile = "LICENSE.txt"
 noticeFile = "NOTICE.txt"
 
