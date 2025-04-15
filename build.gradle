@@ -14,6 +14,7 @@ apply plugin: 'opensearch.pluginzip'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'jacoco'
 apply plugin: 'io.freefair.lombok'
+apply plugin: 'opensearch.java-agent'
 
 def pluginName = 'opensearch-geospatial'
 def pluginDescription = 'OpenSearch Geospatial plugin to host geospatial features'
