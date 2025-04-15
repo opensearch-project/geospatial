@@ -14,6 +14,7 @@ apply plugin: 'opensearch.pluginzip'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'jacoco'
 apply plugin: 'io.freefair.lombok'
+apply plugin: 'opensearch.java-agent'
 
 def pluginName = 'opensearch-geospatial'
 def pluginDescription = 'OpenSearch Geospatial plugin to host geospatial features'
@@ -164,7 +165,6 @@ publishing {
 
 configurations {
     zipArchive
-    agent
 }
 
 //****************************************************************************/
@@ -184,9 +184,6 @@ dependencies {
     zipArchive group: 'org.opensearch.plugin', name:'opensearch-job-scheduler', version: "${opensearch_build}"
     compileOnly "org.opensearch:opensearch-job-scheduler-spi:${opensearch_build}"
     implementation "com.github.seancfoley:ipaddress:5.4.2"
-    agent "org.opensearch:opensearch-agent-bootstrap:${opensearch_version}"
-    agent "org.opensearch:opensearch-agent:${opensearch_version}"
-    agent "net.bytebuddy:byte-buddy:${versions.bytebuddy}"
 }
 
 licenseHeaders.enabled = true
@@ -354,14 +351,4 @@ task updateVersion {
          // String tokenization to support -SNAPSHOT
         ant.replaceregexp(file:'build.gradle', match: '"opensearch.version", "\\d.*"', replace: '"opensearch.version", "' + newVersion.tokenize('-')[0] + '-SNAPSHOT"', flags:'g', byline:true)
     }
-}
-
-task prepareAgent(type: Copy) {
-  from(configurations.agent)
-  into "$buildDir/agent"
-}
-
-tasks.withType(Test) {
-  dependsOn prepareAgent
-  jvmArgs += ["-javaagent:" + project.layout.buildDirectory.file("agent/opensearch-agent-${opensearch_version}.jar").get()]
 }
