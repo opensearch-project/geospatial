@@ -148,6 +148,9 @@ publishing {
             pom.withXml { XmlProvider xml ->
                 Node node = xml.asNode()
                 node.appendNode('inceptionYear', '2021')
+                if (!node.'description') {
+                    node.appendNode('description', description)
+                }
 
                 Node license = node.appendNode('licenses').appendNode('license')
                 license.appendNode('name',  "The Apache License, Version 2.0")
