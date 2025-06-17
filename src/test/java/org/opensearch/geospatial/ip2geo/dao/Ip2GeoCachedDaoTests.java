@@ -132,9 +132,16 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
     }
 
     @SneakyThrows
-    public void testPostIndex_whenFailed_thenNoUpdate() {
-        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
+    public void testPostIndex_whenFailed_thenResetMetadataToForcePullDataFromIndex() {
         Datasource datasource = randomDatasource();
+
+        // At the beginning we don't have the new datasource in the system index and the cache metadata
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
+        // Verify we don't have the new datasource
+        assertFalse(ip2GeoCachedDao.has(datasource.getName()));
+
+        // Mock the new datasource is added to the system index
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         ShardId shardId = mock(ShardId.class);
         Engine.Index index = mock(Engine.Index.class);
@@ -147,10 +154,35 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
         ip2GeoCachedDao.postIndex(shardId, index, result);
 
         // Verify
+        assertTrue(ip2GeoCachedDao.has(datasource.getName()));
+        assertEquals(datasource.currentIndexName(), ip2GeoCachedDao.getIndexName(datasource.getName()));
+        assertEquals(datasource.getState(), ip2GeoCachedDao.getState(datasource.getName()));
+    }
+
+    @SneakyThrows
+    public void testPostIndex_whenException_thenResetMetadataToForcePullDataFromIndex() {
+        Datasource datasource = randomDatasource();
+
+        // At the beginning we don't have the new datasource in the system index and the cache metadata
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
+        // Verify we don't have the new datasource
         assertFalse(ip2GeoCachedDao.has(datasource.getName()));
-        assertTrue(ip2GeoCachedDao.isExpired(datasource.getName()));
-        assertNull(ip2GeoCachedDao.getIndexName(datasource.getName()));
-        assertNull(ip2GeoCachedDao.getState(datasource.getName()));
+
+        // Mock the new datasource is added to the system index
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+
+        ShardId shardId = mock(ShardId.class);
+        Engine.Index index = mock(Engine.Index.class);
+        BytesReference bytesReference = BytesReference.bytes(datasource.toXContent(XContentFactory.jsonBuilder(), null));
+        when(index.source()).thenReturn(bytesReference);
+
+        // Run
+        ip2GeoCachedDao.postIndex(shardId, index, new Exception());
+
+        // Verify
+        assertTrue(ip2GeoCachedDao.has(datasource.getName()));
+        assertEquals(datasource.currentIndexName(), ip2GeoCachedDao.getIndexName(datasource.getName()));
+        assertEquals(datasource.getState(), ip2GeoCachedDao.getState(datasource.getName()));
     }
 
     @SneakyThrows
@@ -175,8 +207,38 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
         assertEquals(datasource.getState(), ip2GeoCachedDao.getState(datasource.getName()));
     }
 
-    public void testPostDelete_whenFailed_thenNoUpdate() {
+    public void testPostDelete_whenFailed_thenResetMetadataToForcePullDataFromIndex() {
         Datasource datasource = randomDatasource();
+
+        // At the beginning we don't have the new datasource in the system index and the cache metadata
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
+        // Verify we don't have the new datasource
+        assertFalse(ip2GeoCachedDao.has(datasource.getName()));
+
+        // Mock the new datasource is added to the system index
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+
+        ShardId shardId = mock(ShardId.class);
+        Engine.Delete index = mock(Engine.Delete.class);
+        Engine.DeleteResult result = mock(Engine.DeleteResult.class);
+        when(result.getResultType()).thenReturn(Engine.Result.Type.FAILURE);
+
+        // Run
+        ip2GeoCachedDao.postDelete(shardId, index, result);
+
+        // Verify
+        assertTrue(ip2GeoCachedDao.has(datasource.getName()));
+    }
+
+    public void testPostDelete_whenException_thenResetMetadataToForcePullDataFromIndex() {
+        Datasource datasource = randomDatasource();
+
+        // At the beginning we don't have the new datasource in the system index and the cache metadata
+        when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
+        // Verify we don't have the new datasource
+        assertFalse(ip2GeoCachedDao.has(datasource.getName()));
+
+        // Mock the new datasource is added to the system index
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         ShardId shardId = mock(ShardId.class);
