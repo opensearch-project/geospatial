@@ -178,8 +178,16 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             throw new IllegalStateException("datasource does not exist");
         }
 
-        if (DatasourceState.AVAILABLE.equals(ip2GeoCachedDao.getState(datasourceName)) == false) {
-            throw new IllegalStateException("datasource is not in an available state");
+        final DatasourceState currentState = ip2GeoCachedDao.getState(datasourceName);
+        if (DatasourceState.AVAILABLE.equals(currentState) == false) {
+            throw new IllegalStateException(
+                String.format(
+                    Locale.ROOT,
+                    "datasource %s is not in an available state, current state is %s.",
+                    datasourceName,
+                    currentState.name()
+                )
+            );
         }
     }
 
