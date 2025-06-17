@@ -63,7 +63,13 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
     }
 
     public boolean isExpired(final String datasourceName) {
-        return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getExpirationDate().isBefore(Instant.now());
+        final Instant expirationDate = getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getExpirationDate();
+        final Instant now = Instant.now();
+        final boolean isExpired = expirationDate.isBefore(now);
+        if (isExpired) {
+            log.warn("Datasource {} is expired. Expiration date is {} and now is {}.", datasourceName, expirationDate, now);
+        }
+        return isExpired;
     }
 
     public boolean has(final String datasourceName) {
@@ -83,23 +89,27 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
     }
 
     private Map<String, DatasourceMetadata> getMetadata() {
-        if (metadata != null) {
-            return metadata;
+        // Use a local variable to hold the reference of the metadata in case another thread set the metadata as null,
+        // and we unexpectedly return the null. Using this local variable we ensure we return a non-null value.
+        Map<String, DatasourceMetadata> currentMetadata = metadata;
+        if (currentMetadata != null) {
+            return currentMetadata;
         }
         synchronized (this) {
-            if (metadata != null) {
-                return metadata;
+            currentMetadata = metadata;
+            if (currentMetadata != null) {
+                return currentMetadata;
             }
-            Map<String, DatasourceMetadata> tempData = new ConcurrentHashMap<>();
+            currentMetadata = new ConcurrentHashMap<>();
             try {
-                datasourceDao.getAllDatasources()
-                    .stream()
-                    .forEach(datasource -> tempData.put(datasource.getName(), new DatasourceMetadata(datasource)));
+                for (Datasource datasource : datasourceDao.getAllDatasources()) {
+                    currentMetadata.put(datasource.getName(), new DatasourceMetadata(datasource));
+                }
             } catch (IndexNotFoundException e) {
                 log.debug("Datasource has never been created");
             }
-            metadata = tempData;
-            return metadata;
+            metadata = currentMetadata;
+            return currentMetadata;
         }
     }
 
@@ -112,9 +122,26 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
         getMetadata().remove(datasourceName);
     }
 
+    private void clearMetadata() {
+        log.info("Resetting all datasource metadata to force a refresh from the primary index shard.");
+        metadata = null;
+    }
+
+    @Override
+    public void postIndex(ShardId shardId, Engine.Index index, Exception ex) {
+        log.error("Skipped updating datasource metadata for datasource {} due to an indexing exception.", index.id(), ex);
+        clearMetadata();
+    }
+
     @Override
     public void postIndex(ShardId shardId, Engine.Index index, Engine.IndexResult result) {
         if (Engine.Result.Type.FAILURE.equals(result.getResultType())) {
+            log.error(
+                "Skipped updating datasource metadata for datasource {} because the indexing result was a failure.",
+                index.id(),
+                result.getFailure()
+            );
+            clearMetadata();
             return;
         }
 
@@ -124,14 +151,28 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
             parser.nextToken();
             Datasource datasource = Datasource.PARSER.parse(parser, null);
             put(datasource);
+            log.info("Updated datasource metadata for datasource {} successfully.", index.id());
         } catch (IOException e) {
             log.error("IOException occurred updating datasource metadata for datasource {} ", index.id(), e);
+            clearMetadata();
         }
+    }
+
+    @Override
+    public void postDelete(ShardId shardId, Engine.Delete delete, Exception ex) {
+        log.error("Skipped updating datasource metadata for datasource {} due to an exception.", delete.id(), ex);
+        clearMetadata();
     }
 
     @Override
     public void postDelete(ShardId shardId, Engine.Delete delete, Engine.DeleteResult result) {
         if (result.getResultType().equals(Engine.Result.Type.FAILURE)) {
+            log.error(
+                "Skipped updating datasource metadata for datasource {} because the delete result was a failure.",
+                delete.id(),
+                result.getFailure()
+            );
+            clearMetadata();
             return;
         }
         remove(delete.id());
