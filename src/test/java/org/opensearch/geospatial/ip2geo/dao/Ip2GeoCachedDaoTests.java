@@ -5,9 +5,13 @@
 
 package org.opensearch.geospatial.ip2geo.dao;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +41,7 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
         ip2GeoCachedDao = new Ip2GeoCachedDao(clusterService, datasourceDao, geoIpDataDao);
     }
 
-    public void testGetIndexName_whenCalled_thenReturnIndexName() {
+    public void testGetIndexName_whenCalled_thenReturnIndexName() throws IOException {
         Datasource datasource = randomDatasource();
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
@@ -46,9 +50,11 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertEquals(datasource.currentIndexName(), indexName);
+        // Verify datasource refresh is not triggered
+        verify(datasourceDao, times(0)).getDatasource(any());
     }
 
-    public void testGetIndexName_whenIndexNotFound_thenReturnNull() {
+    public void testGetIndexName_whenIndexNotFound_thenReturnNull() throws IOException {
         when(datasourceDao.getAllDatasources()).thenThrow(new IndexNotFoundException("not found"));
 
         // Run
@@ -56,9 +62,25 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertNull(indexName);
+        // Verify datasource refresh is triggered
+        verify(datasourceDao, times(1)).getDatasource(any());
     }
 
-    public void testIsExpired_whenExpired_thenReturnTrue() {
+    public void testGetIndexName_whenIndexNotFoundAndFoundAfterRefresh_thenReturnNull() throws IOException {
+        Datasource datasource = randomDatasource();
+        when(datasourceDao.getAllDatasources()).thenThrow(new IndexNotFoundException("not found"));
+        when(datasourceDao.getDatasource(any())).thenReturn(datasource);
+
+        // Run
+        String indexName = ip2GeoCachedDao.getIndexName(GeospatialTestHelper.randomLowerCaseString());
+
+        // Verify
+        assertEquals(datasource.currentIndexName(), indexName);
+        // Verify datasource refresh is triggered
+        verify(datasourceDao, times(1)).getDatasource(any());
+    }
+
+    public void testIsExpired_whenExpired_thenReturnTrue() throws IOException {
         Datasource datasource = randomDatasource();
         datasource.getUpdateStats().setLastSucceededAt(Instant.MIN);
         datasource.getUpdateStats().setLastSkippedAt(null);
@@ -69,9 +91,11 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertTrue(isExpired);
+        // Verify datasource refresh is triggered
+        verify(datasourceDao, times(1)).getDatasource(any());
     }
 
-    public void testIsExpired_whenNotExpired_thenReturnFalse() {
+    public void testIsExpired_whenNotExpired_thenReturnFalse() throws IOException {
         Datasource datasource = randomDatasource();
         datasource.getUpdateStats().setLastSucceededAt(Instant.now());
         datasource.getUpdateStats().setLastSkippedAt(null);
@@ -82,9 +106,11 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertFalse(isExpired);
+        // Verify datasource refresh is not triggered
+        verify(datasourceDao, times(0)).getDatasource(any());
     }
 
-    public void testHas_whenHasDatasource_thenReturnTrue() {
+    public void testHas_whenHasDatasource_thenReturnTrue() throws IOException {
         Datasource datasource = randomDatasource();
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
@@ -93,9 +119,11 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertTrue(hasDatasource);
+        // Verify datasource refresh is not triggered
+        verify(datasourceDao, times(0)).getDatasource(any());
     }
 
-    public void testHas_whenNoDatasource_thenReturnFalse() {
+    public void testHas_whenNoDatasource_thenReturnFalse() throws IOException {
         Datasource datasource = randomDatasource();
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
@@ -105,10 +133,13 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertFalse(hasDatasource);
+        // Verify datasource refresh is triggered
+        verify(datasourceDao, times(1)).getDatasource(any());
     }
 
-    public void testGetState_whenCalled_thenReturnState() {
+    public void testGetState_whenCalled_thenReturnState() throws IOException {
         Datasource datasource = randomDatasource();
+        datasource.setState(DatasourceState.AVAILABLE);
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
 
         // Run
@@ -116,19 +147,35 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Verify
         assertEquals(datasource.getState(), state);
+        // Verify datasource refresh is not triggered
+        verify(datasourceDao, times(0)).getDatasource(any());
     }
 
-    public void testGetGeoData_whenCalled_thenReturnGeoData() {
+    public void testGetGeoData_whenCalled_thenReturnGeoData() throws IOException {
         Datasource datasource = randomDatasource();
         String ip = NetworkAddress.format(randomIp(false));
         Map<String, Object> expectedGeoData = Map.of("city", "Seattle");
         when(geoIpDataDao.getGeoIpData(datasource.currentIndexName(), ip)).thenReturn(expectedGeoData);
 
         // Run
-        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(datasource.currentIndexName(), ip);
+        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(datasource.currentIndexName(), ip, datasource.getName());
 
         // Verify
         assertEquals(expectedGeoData, geoData);
+        // Verify datasource refresh is not triggered
+        verify(datasourceDao, times(0)).getDatasource(any());
+    }
+
+    public void testGetGeoData_whenFailed_thenException() throws IOException {
+        Datasource datasource = randomDatasource();
+        String ip = NetworkAddress.format(randomIp(false));
+        when(geoIpDataDao.getGeoIpData(datasource.currentIndexName(), ip)).thenThrow(new RuntimeException("error"));
+
+        // Run
+        assertThrows(RuntimeException.class, () -> ip2GeoCachedDao.getGeoData(datasource.currentIndexName(), ip, datasource.getName()));
+
+        // Verify datasource refresh is triggered
+        verify(datasourceDao, times(1)).getDatasource(any());
     }
 
     @SneakyThrows
@@ -142,6 +189,7 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Mock the new datasource is added to the system index
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
 
         ShardId shardId = mock(ShardId.class);
         Engine.Index index = mock(Engine.Index.class);
@@ -170,6 +218,7 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
 
         // Mock the new datasource is added to the system index
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList(datasource));
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
 
         ShardId shardId = mock(ShardId.class);
         Engine.Index index = mock(Engine.Index.class);
@@ -189,6 +238,7 @@ public class Ip2GeoCachedDaoTests extends Ip2GeoTestCase {
     public void testPostIndex_whenSucceed_thenUpdate() {
         when(datasourceDao.getAllDatasources()).thenReturn(Arrays.asList());
         Datasource datasource = randomDatasource();
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
 
         ShardId shardId = mock(ShardId.class);
         Engine.Index index = mock(Engine.Index.class);

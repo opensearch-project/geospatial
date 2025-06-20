@@ -158,7 +158,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             return;
         }
 
-        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(indexName, ip);
+        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(indexName, ip, datasourceName);
         if (geoData.isEmpty() == false) {
             ingestDocument.setFieldValue(targetField, filteredGeoData(geoData));
         }
@@ -222,7 +222,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         }
 
         List<Map<String, Object>> geoDataList = ips.stream()
-            .map(ip -> ip2GeoCachedDao.getGeoData(indexName, (String) ip))
+            .map(ip -> ip2GeoCachedDao.getGeoData(indexName, (String) ip, datasourceName))
             .filter(geoData -> geoData.isEmpty() == false)
             .map(this::filteredGeoData)
             .collect(Collectors.toList());

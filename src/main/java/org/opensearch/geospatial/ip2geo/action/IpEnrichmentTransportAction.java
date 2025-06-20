@@ -55,7 +55,7 @@ public class IpEnrichmentTransportAction extends HandledTransportAction<ActionRe
         String ipString = enrichmentRequest.getIpString();
         String dataSourceName = enrichmentRequest.getDatasourceName();
         String indexName = ip2GeoCachedDao.getIndexName(dataSourceName);
-        Map<String, Object> geoLocationData = ip2GeoCachedDao.getGeoData(indexName, ipString);
+        Map<String, Object> geoLocationData = ip2GeoCachedDao.getGeoData(indexName, ipString, dataSourceName);
         log.debug("GeoSpatial IP lookup on IP: [{}], and result [{}]", ipString, geoLocationData);
         listener.onResponse(new IpEnrichmentResponse(geoLocationData));
     }
