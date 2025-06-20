@@ -58,11 +58,20 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
             .addSettingsUpdateConsumer(Ip2GeoSettings.CACHE_SIZE, setting -> this.geoDataCache.updateMaxSize(setting.longValue()));
     }
 
-    public String getIndexName(final String datasourceName) {
+    private String doGetIndexName(final String datasourceName) {
         return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getIndexName();
     }
 
-    public boolean isExpired(final String datasourceName) {
+    public String getIndexName(final String datasourceName) {
+        String indexName = doGetIndexName(datasourceName);
+        if (indexName == null) {
+            refreshDatasource(datasourceName);
+            indexName = doGetIndexName(datasourceName);
+        }
+        return indexName;
+    }
+
+    private boolean doIsExpired(final String datasourceName) {
         final Instant expirationDate = getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getExpirationDate();
         final Instant now = Instant.now();
         final boolean isExpired = expirationDate.isBefore(now);
@@ -72,20 +81,60 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
         return isExpired;
     }
 
-    public boolean has(final String datasourceName) {
+    public boolean isExpired(final String datasourceName) {
+        boolean isExpired = doIsExpired(datasourceName);
+        if (isExpired) {
+            refreshDatasource(datasourceName);
+            isExpired = doIsExpired(datasourceName);
+        }
+        return isExpired;
+    }
+
+    private boolean doHas(final String datasourceName) {
         return getMetadata().containsKey(datasourceName);
     }
 
-    public DatasourceState getState(final String datasourceName) {
+    public boolean has(final String datasourceName) {
+        boolean isExist = doHas(datasourceName);
+        if (isExist == false) {
+            refreshDatasource(datasourceName);
+            isExist = doHas(datasourceName);
+        }
+        return isExist;
+    }
+
+    private DatasourceState doGetState(final String datasourceName) {
         return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getState();
     }
 
-    public Map<String, Object> getGeoData(final String indexName, final String ip) {
-        try {
-            return geoDataCache.putIfAbsent(indexName, ip, addr -> geoIpDataDao.getGeoIpData(indexName, ip));
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+    public DatasourceState getState(final String datasourceName) {
+        DatasourceState state = doGetState(datasourceName);
+        if (DatasourceState.AVAILABLE.equals(state) == false) {
+            refreshDatasource(datasourceName);
+            state = doGetState(datasourceName);
         }
+        return state;
+    }
+
+    private Map<String, Object> doGetGeoData(final String indexName, final String ip) throws ExecutionException {
+        return geoDataCache.putIfAbsent(indexName, ip, addr -> geoIpDataDao.getGeoIpData(indexName, ip));
+    }
+
+    public Map<String, Object> getGeoData(final String indexName, final String ip, final String datasourceName) {
+        Map<String, Object> geoData;
+        try {
+            geoData = doGetGeoData(indexName, ip);
+        } catch (Exception e) {
+            refreshDatasource(datasourceName);
+            try {
+                geoData = doGetGeoData(indexName, ip);
+            } catch (Exception ex) {
+                log.error("Fail to get geo data.", e);
+                throw new RuntimeException(ex);
+            }
+        }
+
+        return geoData;
     }
 
     private Map<String, DatasourceMetadata> getMetadata() {
@@ -120,6 +169,21 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
 
     private void remove(final String datasourceName) {
         getMetadata().remove(datasourceName);
+    }
+
+    private void refreshDatasource(final String datasourceName) {
+        try {
+            log.info("Refresh datasource.");
+            Datasource datasource = datasourceDao.getDatasource(datasourceName);
+            if (datasource != null) {
+                getMetadata().put(datasourceName, new DatasourceMetadata(datasource));
+            } else {
+                getMetadata().remove(datasourceName);
+            }
+        } catch (Exception e) {
+            log.error("Fail to refresh the datasource.", e);
+            clearMetadata();
+        }
     }
 
     private void clearMetadata() {
