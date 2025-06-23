@@ -58,48 +58,107 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
             .addSettingsUpdateConsumer(Ip2GeoSettings.CACHE_SIZE, setting -> this.geoDataCache.updateMaxSize(setting.longValue()));
     }
 
-    public String getIndexName(final String datasourceName) {
+    private String doGetIndexName(final String datasourceName) {
         return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getIndexName();
     }
 
-    public boolean isExpired(final String datasourceName) {
-        return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getExpirationDate().isBefore(Instant.now());
+    public String getIndexName(final String datasourceName) {
+        String indexName = doGetIndexName(datasourceName);
+        if (indexName == null) {
+            refreshDatasource(datasourceName);
+            indexName = doGetIndexName(datasourceName);
+        }
+        return indexName;
     }
 
-    public boolean has(final String datasourceName) {
+    private boolean doIsExpired(final String datasourceName) {
+        final Instant expirationDate = getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getExpirationDate();
+        final Instant now = Instant.now();
+        final boolean isExpired = expirationDate.isBefore(now);
+        if (isExpired) {
+            log.warn("Datasource {} is expired. Expiration date is {} and now is {}.", datasourceName, expirationDate, now);
+        }
+        return isExpired;
+    }
+
+    public boolean isExpired(final String datasourceName) {
+        boolean isExpired = doIsExpired(datasourceName);
+        if (isExpired) {
+            refreshDatasource(datasourceName);
+            isExpired = doIsExpired(datasourceName);
+        }
+        return isExpired;
+    }
+
+    private boolean doHas(final String datasourceName) {
         return getMetadata().containsKey(datasourceName);
     }
 
-    public DatasourceState getState(final String datasourceName) {
+    public boolean has(final String datasourceName) {
+        boolean isExist = doHas(datasourceName);
+        if (isExist == false) {
+            refreshDatasource(datasourceName);
+            isExist = doHas(datasourceName);
+        }
+        return isExist;
+    }
+
+    private DatasourceState doGetState(final String datasourceName) {
         return getMetadata().getOrDefault(datasourceName, DatasourceMetadata.EMPTY_METADATA).getState();
     }
 
-    public Map<String, Object> getGeoData(final String indexName, final String ip) {
-        try {
-            return geoDataCache.putIfAbsent(indexName, ip, addr -> geoIpDataDao.getGeoIpData(indexName, ip));
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+    public DatasourceState getState(final String datasourceName) {
+        DatasourceState state = doGetState(datasourceName);
+        if (DatasourceState.AVAILABLE.equals(state) == false) {
+            refreshDatasource(datasourceName);
+            state = doGetState(datasourceName);
         }
+        return state;
+    }
+
+    private Map<String, Object> doGetGeoData(final String indexName, final String ip) throws ExecutionException {
+        return geoDataCache.putIfAbsent(indexName, ip, addr -> geoIpDataDao.getGeoIpData(indexName, ip));
+    }
+
+    public Map<String, Object> getGeoData(final String indexName, final String ip, final String datasourceName) {
+        Map<String, Object> geoData;
+        try {
+            geoData = doGetGeoData(indexName, ip);
+        } catch (Exception e) {
+            refreshDatasource(datasourceName);
+            try {
+                geoData = doGetGeoData(indexName, ip);
+            } catch (Exception ex) {
+                log.error("Fail to get geo data.", e);
+                throw new RuntimeException(ex);
+            }
+        }
+
+        return geoData;
     }
 
     private Map<String, DatasourceMetadata> getMetadata() {
-        if (metadata != null) {
-            return metadata;
+        // Use a local variable to hold the reference of the metadata in case another thread set the metadata as null,
+        // and we unexpectedly return the null. Using this local variable we ensure we return a non-null value.
+        Map<String, DatasourceMetadata> currentMetadata = metadata;
+        if (currentMetadata != null) {
+            return currentMetadata;
         }
         synchronized (this) {
-            if (metadata != null) {
-                return metadata;
+            currentMetadata = metadata;
+            if (currentMetadata != null) {
+                return currentMetadata;
             }
-            Map<String, DatasourceMetadata> tempData = new ConcurrentHashMap<>();
+            currentMetadata = new ConcurrentHashMap<>();
             try {
-                datasourceDao.getAllDatasources()
-                    .stream()
-                    .forEach(datasource -> tempData.put(datasource.getName(), new DatasourceMetadata(datasource)));
+                for (Datasource datasource : datasourceDao.getAllDatasources()) {
+                    currentMetadata.put(datasource.getName(), new DatasourceMetadata(datasource));
+                }
             } catch (IndexNotFoundException e) {
                 log.debug("Datasource has never been created");
             }
-            metadata = tempData;
-            return metadata;
+            metadata = currentMetadata;
+            return currentMetadata;
         }
     }
 
@@ -112,9 +171,41 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
         getMetadata().remove(datasourceName);
     }
 
+    private void refreshDatasource(final String datasourceName) {
+        try {
+            log.info("Refresh datasource.");
+            Datasource datasource = datasourceDao.getDatasource(datasourceName);
+            if (datasource != null) {
+                getMetadata().put(datasourceName, new DatasourceMetadata(datasource));
+            } else {
+                getMetadata().remove(datasourceName);
+            }
+        } catch (Exception e) {
+            log.error("Fail to refresh the datasource.", e);
+            clearMetadata();
+        }
+    }
+
+    private void clearMetadata() {
+        log.info("Resetting all datasource metadata to force a refresh from the primary index shard.");
+        metadata = null;
+    }
+
+    @Override
+    public void postIndex(ShardId shardId, Engine.Index index, Exception ex) {
+        log.error("Skipped updating datasource metadata for datasource {} due to an indexing exception.", index.id(), ex);
+        clearMetadata();
+    }
+
     @Override
     public void postIndex(ShardId shardId, Engine.Index index, Engine.IndexResult result) {
         if (Engine.Result.Type.FAILURE.equals(result.getResultType())) {
+            log.error(
+                "Skipped updating datasource metadata for datasource {} because the indexing result was a failure.",
+                index.id(),
+                result.getFailure()
+            );
+            clearMetadata();
             return;
         }
 
@@ -124,14 +215,28 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
             parser.nextToken();
             Datasource datasource = Datasource.PARSER.parse(parser, null);
             put(datasource);
+            log.info("Updated datasource metadata for datasource {} successfully.", index.id());
         } catch (IOException e) {
             log.error("IOException occurred updating datasource metadata for datasource {} ", index.id(), e);
+            clearMetadata();
         }
+    }
+
+    @Override
+    public void postDelete(ShardId shardId, Engine.Delete delete, Exception ex) {
+        log.error("Skipped updating datasource metadata for datasource {} due to an exception.", delete.id(), ex);
+        clearMetadata();
     }
 
     @Override
     public void postDelete(ShardId shardId, Engine.Delete delete, Engine.DeleteResult result) {
         if (result.getResultType().equals(Engine.Result.Type.FAILURE)) {
+            log.error(
+                "Skipped updating datasource metadata for datasource {} because the delete result was a failure.",
+                delete.id(),
+                result.getFailure()
+            );
+            clearMetadata();
             return;
         }
         remove(delete.id());

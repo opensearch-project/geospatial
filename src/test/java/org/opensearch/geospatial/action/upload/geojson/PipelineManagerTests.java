@@ -14,10 +14,10 @@ import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseStri
 import org.opensearch.action.StepListener;
 import org.opensearch.action.ingest.DeletePipelineRequest;
 import org.opensearch.action.ingest.PutPipelineRequest;
-import org.opensearch.action.support.master.AcknowledgedResponse;
-import org.opensearch.client.ClusterAdminClient;
+import org.opensearch.action.support.clustermanager.AcknowledgedResponse;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.transport.client.ClusterAdminClient;
 
 public class PipelineManagerTests extends OpenSearchTestCase {
 

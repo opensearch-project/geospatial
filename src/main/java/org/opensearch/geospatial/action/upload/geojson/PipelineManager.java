@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.ingest.DeletePipelineRequest;
 import org.opensearch.action.ingest.PutPipelineRequest;
-import org.opensearch.client.ClusterAdminClient;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.xcontent.XContentFactory;
 import org.opensearch.common.xcontent.XContentType;
@@ -20,6 +19,7 @@ import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.ingest.Pipeline;
+import org.opensearch.transport.client.ClusterAdminClient;
 
 import lombok.AllArgsConstructor;
 import lombok.NonNull;

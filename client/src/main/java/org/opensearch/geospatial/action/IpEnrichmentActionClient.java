@@ -8,9 +8,9 @@ package org.opensearch.geospatial.action;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.action.ActionFuture;
 import org.opensearch.core.action.ActionResponse;
+import org.opensearch.transport.client.node.NodeClient;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;

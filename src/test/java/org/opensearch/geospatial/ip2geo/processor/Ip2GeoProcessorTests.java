@@ -121,7 +121,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         when(ip2GeoCachedDao.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
         when(ip2GeoCachedDao.isExpired(datasourceName)).thenReturn(true);
         Map<String, Object> geoData = Map.of("city", "Seattle", "country", "USA");
-        when(ip2GeoCachedDao.getGeoData(eq(indexName), any())).thenReturn(geoData);
+        when(ip2GeoCachedDao.getGeoData(eq(indexName), any(), any())).thenReturn(geoData);
 
         // Run for single ip
         String ip = randomIpAddress();
@@ -154,7 +154,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         when(ip2GeoCachedDao.getState(datasourceName)).thenReturn(DatasourceState.CREATE_FAILED);
         when(ip2GeoCachedDao.isExpired(datasourceName)).thenReturn(false);
         Map<String, Object> geoData = Map.of("city", "Seattle", "country", "USA");
-        when(ip2GeoCachedDao.getGeoData(eq(indexName), any())).thenReturn(geoData);
+        when(ip2GeoCachedDao.getGeoData(eq(indexName), any(), any())).thenReturn(geoData);
 
         // Run for single ip
         String ip = randomIpAddress();
@@ -184,7 +184,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         when(ip2GeoCachedDao.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
         when(ip2GeoCachedDao.isExpired(datasourceName)).thenReturn(false);
         Map<String, Object> geoData = Map.of("city", "Seattle", "country", "USA");
-        when(ip2GeoCachedDao.getGeoData(eq(indexName), any())).thenReturn(geoData);
+        when(ip2GeoCachedDao.getGeoData(eq(indexName), any(), any())).thenReturn(geoData);
 
         // Run for single ip
         String ip = randomIpAddress();
@@ -219,7 +219,7 @@ public class Ip2GeoProcessorTests extends Ip2GeoTestCase {
         when(ip2GeoCachedDao.getState(datasourceName)).thenReturn(DatasourceState.AVAILABLE);
         when(ip2GeoCachedDao.isExpired(datasourceName)).thenReturn(false);
         Map<String, Object> geoData = Map.of("city", "Seattle", "country", "USA");
-        when(ip2GeoCachedDao.getGeoData(eq(indexName), any())).thenReturn(geoData);
+        when(ip2GeoCachedDao.getGeoData(eq(indexName), any(), any())).thenReturn(geoData);
 
         // Run for single ip
         String ip = randomIpAddress();

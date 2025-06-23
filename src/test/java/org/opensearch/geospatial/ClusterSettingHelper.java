@@ -16,9 +16,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.opensearch.Version;
 import org.opensearch.cluster.ClusterName;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.network.NetworkModule;
@@ -27,6 +31,7 @@ import org.opensearch.env.Environment;
 import org.opensearch.node.MockNode;
 import org.opensearch.node.Node;
 import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.PluginInfo;
 import org.opensearch.test.InternalTestCluster;
 import org.opensearch.test.MockHttpTransport;
 
@@ -44,12 +49,28 @@ public class ClusterSettingHelper {
         return new MockNode(baseSettings().build(), basePlugins(), configDir, true);
     }
 
-    private List<Class<? extends Plugin>> basePlugins() {
+    private Collection<PluginInfo> basePlugins() {
         List<Class<? extends Plugin>> plugins = new ArrayList<>();
         plugins.add(getTestTransportPlugin());
         plugins.add(MockHttpTransport.TestPlugin.class);
         plugins.add(TestGeospatialPlugin.class);
-        return plugins;
+
+        Collection<PluginInfo> pluginInfos = plugins.stream()
+            .map(
+                p -> new PluginInfo(
+                    p.getName(),
+                    "classpath plugin",
+                    "NA",
+                    Version.CURRENT,
+                    "1.8",
+                    p.getName(),
+                    null,
+                    Collections.emptyList(),
+                    false
+                )
+            )
+            .collect(Collectors.toList());
+        return pluginInfos;
     }
 
     private static Settings.Builder baseSettings() {

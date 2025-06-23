@@ -158,7 +158,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             return;
         }
 
-        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(indexName, ip);
+        Map<String, Object> geoData = ip2GeoCachedDao.getGeoData(indexName, ip, datasourceName);
         if (geoData.isEmpty() == false) {
             ingestDocument.setFieldValue(targetField, filteredGeoData(geoData));
         }
@@ -178,8 +178,16 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
             throw new IllegalStateException("datasource does not exist");
         }
 
-        if (DatasourceState.AVAILABLE.equals(ip2GeoCachedDao.getState(datasourceName)) == false) {
-            throw new IllegalStateException("datasource is not in an available state");
+        final DatasourceState currentState = ip2GeoCachedDao.getState(datasourceName);
+        if (DatasourceState.AVAILABLE.equals(currentState) == false) {
+            throw new IllegalStateException(
+                String.format(
+                    Locale.ROOT,
+                    "datasource %s is not in an available state, current state is %s.",
+                    datasourceName,
+                    currentState.name()
+                )
+            );
         }
     }
 
@@ -214,7 +222,7 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
         }
 
         List<Map<String, Object>> geoDataList = ips.stream()
-            .map(ip -> ip2GeoCachedDao.getGeoData(indexName, (String) ip))
+            .map(ip -> ip2GeoCachedDao.getGeoData(indexName, (String) ip, datasourceName))
             .filter(geoData -> geoData.isEmpty() == false)
             .map(this::filteredGeoData)
             .collect(Collectors.toList());

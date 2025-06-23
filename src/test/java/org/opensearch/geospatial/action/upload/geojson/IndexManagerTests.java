@@ -19,9 +19,9 @@ import org.opensearch.ResourceAlreadyExistsException;
 import org.opensearch.action.StepListener;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.create.CreateIndexResponse;
-import org.opensearch.client.IndicesAdminClient;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.test.OpenSearchTestCase;
+import org.opensearch.transport.client.IndicesAdminClient;
 
 public class IndexManagerTests extends OpenSearchTestCase {
 

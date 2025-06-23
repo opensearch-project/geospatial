@@ -57,6 +57,10 @@ spotless {
 publishing {
     repositories {
         maven {
+            name = 'staging'
+            url = "${rootProject.buildDir}/local-staging-repo"
+        }
+        maven {
             name = "Snapshots"
             url = "https://aws.oss.sonatype.org/content/repositories/snapshots"
             credentials {
@@ -66,22 +70,22 @@ publishing {
         }
     }
     publications {
-        pluginZip(MavenPublication) { publication ->
+        all {
             pom {
                 name = "opensearch-geospatial-client"
                 description = 'OpenSearch Geospatial client'
-                licenses {
-                    license {
-                        name = "The Apache License, Version 2.0"
-                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
-                    }
-                }
-                developers {
-                    developer {
-                        name = "OpenSearch"
-                        url = "https://github.com/opensearch-project/geospatial"
-                    }
-                }
+            }
+            pom.withXml { XmlProvider xml ->
+                Node node = xml.asNode()
+                node.appendNode('inceptionYear', '2021')
+
+                Node license = node.appendNode('licenses').appendNode('license')
+                license.appendNode('name',  "The Apache License, Version 2.0")
+                license.appendNode('url', "http://www.apache.org/licenses/LICENSE-2.0.txt")
+
+                Node developer = node.appendNode('developers').appendNode('developer')
+                developer.appendNode('name', 'OpenSearch')
+                developer.appendNode('url', 'https://github.com/opensearch-project/geospatial')
             }
         }
     }
