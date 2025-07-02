@@ -70,7 +70,7 @@ import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGrid;
 import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGridAggregationBuilder;
-import org.opensearch.geospatial.shared.RunAsSubjectClient;
+import org.opensearch.geospatial.shared.PluginClient;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.geospatial.stats.upload.UploadStatsAction;
@@ -123,7 +123,7 @@ public class GeospatialPlugin extends Plugin
     private Ip2GeoLockService ip2GeoLockService;
     private Ip2GeoExecutor ip2GeoExecutor;
     private DatasourceUpdateService datasourceUpdateService;
-    private RunAsSubjectClient pluginClient;
+    private PluginClient pluginClient;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -185,7 +185,7 @@ public class GeospatialPlugin extends Plugin
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
         this.clusterService = clusterService;
-        this.pluginClient = new RunAsSubjectClient(client);
+        this.pluginClient = new PluginClient(client);
         this.urlDenyListChecker = new URLDenyListChecker(clusterService.getClusterSettings());
         this.datasourceDao = new DatasourceDao(pluginClient, clusterService);
         this.geoIpDataDao = new GeoIpDataDao(clusterService, pluginClient, urlDenyListChecker);
