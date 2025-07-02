@@ -301,9 +301,9 @@ public class GeospatialPlugin extends Plugin
 
     @Override
     public void assignSubject(PluginSubject pluginSubject) {
-        if (this.pluginClient != null) {
-            this.pluginClient.setSubject(pluginSubject);
-        }
+        // When security is not installed, the pluginSubject will still be assigned.
+        assert pluginSubject != null;
+        this.pluginClient.setSubject(pluginSubject);
     }
 
     public static class GuiceHolder implements LifecycleComponent {

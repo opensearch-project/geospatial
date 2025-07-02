@@ -12,12 +12,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionType;
-import org.opensearch.transport.client.Client;
-import org.opensearch.transport.client.FilterClient;
 import org.opensearch.common.util.concurrent.ThreadContext;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.identity.Subject;
+import org.opensearch.transport.client.Client;
+import org.opensearch.transport.client.FilterClient;
 
 /**
  * A special client for executing transport actions as this plugin's system subject.
@@ -48,7 +48,7 @@ public class PluginClient extends FilterClient {
         ActionListener<Response> listener
     ) {
         if (subject == null) {
-            throw new IllegalStateException("RunAsSubjectClient is not initialized.");
+            throw new IllegalStateException("PluginClient is not initialized.");
         }
         try (ThreadContext.StoredContext ctx = threadPool().getThreadContext().newStoredContext(false)) {
             subject.runAs(() -> {
