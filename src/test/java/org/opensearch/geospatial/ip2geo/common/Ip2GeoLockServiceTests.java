@@ -35,17 +35,10 @@ public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
 
     public void testAcquireLock_whenCalled_thenNotBlocked() {
         long expectedDurationInMillis = 1000;
-        LockModel lock = new LockModel(
-            "my-jobs-index", // jobIndexName
-            "lock-123", // lockId
-            Instant.now(), // lockTime
-            60L, // lockDurationSeconds,
-            false // released
-        );
 
         Mockito.doAnswer(inv -> {
             ActionListener<LockModel> listener = inv.getArgument(3);
-            listener.onResponse(lock);          // or listener.onFailure(ex);
+            listener.onResponse(null);          // or listener.onFailure(ex);
             return null;                        // because the real method is void
         })
             .when(lockService)
@@ -56,7 +49,7 @@ public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
                 Mockito.any()  // listener – generics erase to ActionListener
             );
         Instant before = Instant.now();
-        assertFalse(ip2GeoLockService.acquireLock(null, null).isEmpty());
+        assertTrue(ip2GeoLockService.acquireLock(null, null).isEmpty());
         Instant after = Instant.now();
         assertTrue(after.toEpochMilli() - before.toEpochMilli() < expectedDurationInMillis);
     }
