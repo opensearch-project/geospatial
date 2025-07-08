@@ -56,6 +56,17 @@ public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
 
     public void testRenewLock_whenCalled_thenNotBlocked() {
         long expectedDurationInMillis = 1000;
+
+        Mockito.doAnswer(inv -> {
+            ActionListener<LockModel> listener = inv.getArgument(1);
+            listener.onResponse(null);          // or listener.onFailure(ex);
+            return null;                        // because the real method is void
+        })
+            .when(lockService)
+            .renewLock(
+                Mockito.any(), // lockModel
+                Mockito.any()  // listener – generics erase to ActionListener
+            );
         Instant before = Instant.now();
         assertNull(ip2GeoLockService.renewLock(null));
         Instant after = Instant.now();
