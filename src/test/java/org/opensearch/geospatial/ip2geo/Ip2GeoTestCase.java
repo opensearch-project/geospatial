@@ -102,11 +102,12 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
     @Mock
     protected RoutingTable routingTable;
     @Mock
+    protected LockService lockService;
+    @Mock
     protected URLDenyListChecker urlDenyListChecker;
     protected IngestMetadata ingestMetadata;
     protected NoOpNodeClient client;
     protected VerifyingClient verifyingClient;
-    protected LockService lockService;
     protected ClusterSettings clusterSettings;
     protected Settings settings;
     private AutoCloseable openMocks;
@@ -118,7 +119,6 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         client = new NoOpNodeClient(this.getTestName());
         verifyingClient = spy(new VerifyingClient(this.getTestName()));
         clusterSettings = new ClusterSettings(settings, new HashSet<>(Ip2GeoSettings.settings()));
-        lockService = new LockService(client, clusterService);
         ingestMetadata = new IngestMetadata(Collections.emptyMap());
         when(urlDenyListChecker.toUrlIfNotInDenyList(anyString())).thenAnswer(i -> new URL(i.getArgument(0)));
         when(metadata.custom(IngestMetadata.TYPE)).thenReturn(ingestMetadata);
