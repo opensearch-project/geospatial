@@ -8,6 +8,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Features
 ### Enhancements
 ### Bug Fixes
+* Disable HTTP redirects in ip2geo datasource API ([#775](https://github.com/opensearch-project/geospatial/pull/775))
 ### Infrastructure
 ### Documentation
 ### Maintenance
