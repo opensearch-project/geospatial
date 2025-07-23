@@ -16,7 +16,7 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
-import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
+import org.opensearch.geospatial.ip2geo.common.URLChecker;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.action.RestToXContentListener;
@@ -39,11 +39,11 @@ import org.opensearch.transport.client.node.NodeClient;
 public class RestPutDatasourceHandler extends BaseRestHandler {
     private static final String ACTION_NAME = "ip2geo_datasource_put";
     private final ClusterSettings clusterSettings;
-    private final URLDenyListChecker urlDenyListChecker;
+    private final URLChecker urlChecker;
 
-    public RestPutDatasourceHandler(final ClusterSettings clusterSettings, final URLDenyListChecker urlDenyListChecker) {
+    public RestPutDatasourceHandler(final ClusterSettings clusterSettings, final URLChecker urlChecker) {
         this.clusterSettings = clusterSettings;
-        this.urlDenyListChecker = urlDenyListChecker;
+        this.urlChecker = urlChecker;
     }
 
     @Override
@@ -67,7 +67,7 @@ public class RestPutDatasourceHandler extends BaseRestHandler {
         }
 
         // Call to validate if URL is in a deny-list or not.
-        urlDenyListChecker.toUrlIfNotInDenyList(putDatasourceRequest.getEndpoint());
+        urlChecker.toUrlIfAllowed(putDatasourceRequest.getEndpoint());
         return channel -> client.executeLocally(PutDatasourceAction.INSTANCE, putDatasourceRequest, new RestToXContentListener<>(channel));
     }
 

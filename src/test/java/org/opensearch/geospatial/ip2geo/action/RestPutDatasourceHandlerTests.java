@@ -23,7 +23,7 @@ import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.common.bytes.BytesArray;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
-import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
+import org.opensearch.geospatial.ip2geo.common.URLChecker;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.test.rest.FakeRestRequest;
 import org.opensearch.test.rest.RestActionTestCase;
@@ -34,13 +34,13 @@ import lombok.SneakyThrows;
 public class RestPutDatasourceHandlerTests extends RestActionTestCase {
     private String path;
     private RestPutDatasourceHandler action;
-    private URLDenyListChecker urlDenyListChecker;
+    private URLChecker urlChecker;
 
     @Before
     public void setupAction() {
         ClusterSettings clusterSettings = new ClusterSettings(Settings.EMPTY, new HashSet(Ip2GeoSettings.settings()));
-        urlDenyListChecker = mock(URLDenyListChecker.class);
-        action = new RestPutDatasourceHandler(clusterSettings, urlDenyListChecker);
+        urlChecker = mock(URLChecker.class);
+        action = new RestPutDatasourceHandler(clusterSettings, urlChecker);
         controller().registerHandler(action);
         path = String.join(URL_DELIMITER, getPluginURLPrefix(), "ip2geo/datasource/%s");
     }
@@ -68,7 +68,7 @@ public class RestPutDatasourceHandlerTests extends RestActionTestCase {
 
         dispatchRequest(request);
         assertTrue(isExecuted.get());
-        verify(urlDenyListChecker).toUrlIfNotInDenyList(endpoint);
+        verify(urlChecker).toUrlIfAllowed(endpoint);
     }
 
     @SneakyThrows
@@ -92,6 +92,6 @@ public class RestPutDatasourceHandlerTests extends RestActionTestCase {
 
         dispatchRequest(request);
         assertTrue(isExecuted.get());
-        verify(urlDenyListChecker).toUrlIfNotInDenyList(endpoint);
+        verify(urlChecker).toUrlIfAllowed(endpoint);
     }
 }

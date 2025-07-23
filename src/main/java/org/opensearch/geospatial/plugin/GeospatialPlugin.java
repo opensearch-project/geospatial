@@ -57,7 +57,7 @@ import org.opensearch.geospatial.ip2geo.action.UpdateDatasourceTransportAction;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoExecutor;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
-import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
+import org.opensearch.geospatial.ip2geo.common.URLChecker;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.geospatial.ip2geo.dao.Ip2GeoCachedDao;
@@ -113,7 +113,7 @@ public class GeospatialPlugin extends Plugin
     private Ip2GeoCachedDao ip2GeoCachedDao;
     private DatasourceDao datasourceDao;
     private GeoIpDataDao geoIpDataDao;
-    private URLDenyListChecker urlDenyListChecker;
+    private URLChecker urlChecker;
     private ClusterService clusterService;
     private Ip2GeoLockService ip2GeoLockService;
     private Ip2GeoExecutor ip2GeoExecutor;
@@ -126,9 +126,9 @@ public class GeospatialPlugin extends Plugin
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
-        this.urlDenyListChecker = new URLDenyListChecker(parameters.ingestService.getClusterService().getClusterSettings());
+        this.urlChecker = new URLChecker(parameters.ingestService.getClusterService().getClusterSettings());
         this.datasourceDao = new DatasourceDao(parameters.client, parameters.ingestService.getClusterService());
-        this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client, urlDenyListChecker);
+        this.geoIpDataDao = new GeoIpDataDao(parameters.ingestService.getClusterService(), parameters.client, urlChecker);
         this.ip2GeoCachedDao = new Ip2GeoCachedDao(parameters.ingestService.getClusterService(), datasourceDao, geoIpDataDao);
         return MapBuilder.<String, Processor.Factory>newMapBuilder()
             .put(FeatureProcessor.TYPE, new FeatureProcessor.Factory())
@@ -179,7 +179,7 @@ public class GeospatialPlugin extends Plugin
         Supplier<RepositoriesService> repositoriesServiceSupplier
     ) {
         this.clusterService = clusterService;
-        this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
+        this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlChecker);
         this.ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         this.ip2GeoLockService = new Ip2GeoLockService(clusterService);
 
@@ -207,9 +207,9 @@ public class GeospatialPlugin extends Plugin
         List<RestHandler> geoJsonHandlers = List.of(new RestUploadStatsAction(), new RestUploadGeoJSONAction());
 
         List<RestHandler> ip2geoHandlers = List.of(
-            new RestPutDatasourceHandler(clusterSettings, urlDenyListChecker),
+            new RestPutDatasourceHandler(clusterSettings, urlChecker),
             new RestGetDatasourceHandler(),
-            new RestUpdateDatasourceHandler(urlDenyListChecker),
+            new RestUpdateDatasourceHandler(urlChecker),
             new RestDeleteDatasourceHandler()
         );
 

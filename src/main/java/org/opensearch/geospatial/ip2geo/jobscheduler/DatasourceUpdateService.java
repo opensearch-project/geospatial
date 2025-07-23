@@ -23,7 +23,7 @@ import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
-import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
+import org.opensearch.geospatial.ip2geo.common.URLChecker;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
 import org.opensearch.geospatial.ip2geo.dao.GeoIpDataDao;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
@@ -38,19 +38,19 @@ public class DatasourceUpdateService {
     private final ClusterSettings clusterSettings;
     private final DatasourceDao datasourceDao;
     private final GeoIpDataDao geoIpDataDao;
-    private final URLDenyListChecker urlDenyListChecker;
+    private final URLChecker urlChecker;
 
     public DatasourceUpdateService(
         final ClusterService clusterService,
         final DatasourceDao datasourceDao,
         final GeoIpDataDao geoIpDataDao,
-        final URLDenyListChecker urlDenyListChecker
+        final URLChecker urlChecker
     ) {
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
         this.datasourceDao = datasourceDao;
         this.geoIpDataDao = geoIpDataDao;
-        this.urlDenyListChecker = urlDenyListChecker;
+        this.urlChecker = urlChecker;
     }
 
     /**
@@ -65,7 +65,7 @@ public class DatasourceUpdateService {
      * @throws IOException
      */
     public void updateOrCreateGeoIpData(final Datasource datasource, final Runnable renewLock) throws IOException {
-        URL url = urlDenyListChecker.toUrlIfNotInDenyList(datasource.getEndpoint());
+        URL url = urlChecker.toUrlIfAllowed(datasource.getEndpoint());
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
 
         if (shouldUpdate(datasource, manifest) == false) {

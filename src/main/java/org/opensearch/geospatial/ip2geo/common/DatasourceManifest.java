@@ -133,7 +133,7 @@ public class DatasourceManifest {
             connection.addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
 
             if (connection instanceof HttpURLConnection) {
-                HttpRedirectValidator.validateNoRedirects((HttpURLConnection) connection);
+                URLChecker.validateNoRedirects((HttpURLConnection) connection);
             }
 
             InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
