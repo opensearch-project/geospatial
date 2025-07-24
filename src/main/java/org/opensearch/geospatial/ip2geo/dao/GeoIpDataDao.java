@@ -56,9 +56,9 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.shared.Constants;
-import org.opensearch.geospatial.shared.PluginClient;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.secure_sm.AccessController;
+import org.opensearch.transport.client.Client;
 import org.opensearch.transport.client.Requests;
 
 import lombok.NonNull;
@@ -89,10 +89,10 @@ public class GeoIpDataDao {
     );
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
-    private final PluginClient pluginClient;
+    private final Client pluginClient;
     private final URLDenyListChecker urlDenyListChecker;
 
-    public GeoIpDataDao(final ClusterService clusterService, final PluginClient pluginClient, final URLDenyListChecker urlDenyListChecker) {
+    public GeoIpDataDao(final ClusterService clusterService, final Client pluginClient, final URLDenyListChecker urlDenyListChecker) {
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
         this.pluginClient = pluginClient;

@@ -49,10 +49,10 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
-import org.opensearch.geospatial.shared.PluginClient;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
+import org.opensearch.transport.client.Client;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -62,11 +62,11 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class DatasourceDao {
     private static final Integer MAX_SIZE = 1000;
-    private final PluginClient pluginClient;
+    private final Client pluginClient;
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
 
-    public DatasourceDao(final PluginClient pluginClient, final ClusterService clusterService) {
+    public DatasourceDao(final Client pluginClient, final ClusterService clusterService) {
         this.pluginClient = pluginClient;
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
