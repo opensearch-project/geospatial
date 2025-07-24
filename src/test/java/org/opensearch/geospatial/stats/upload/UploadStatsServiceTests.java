@@ -12,8 +12,10 @@ import static org.opensearch.geospatial.GeospatialTestHelper.removeStartAndEndOb
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
@@ -61,8 +63,16 @@ public class UploadStatsServiceTests extends OpenSearchTestCase {
         Map<String, UploadStats> randomMap = new HashMap<>();
         final List<UploadStats> uploadStats = List.of(UploadStatsBuilder.randomUploadStats(), UploadStatsBuilder.randomUploadStats());
 
+        Set<String> alreadySeen = new HashSet<>();
         for (UploadStats stats : uploadStats) {
-            randomMap.put(GeospatialTestHelper.randomLowerCaseString(), stats);
+            String rand = GeospatialTestHelper.randomLowerCaseString();
+            int attempts = 0;
+            while (alreadySeen.contains(rand) || attempts == 3) {
+                rand = GeospatialTestHelper.randomLowerCaseString();
+                attempts += 1;
+            }
+            alreadySeen.add(rand);
+            randomMap.put(rand, stats);
         }
         UploadStatsService service = new UploadStatsService(randomMap);
         final XContentBuilder serviceContentBuilder = jsonBuilder();
