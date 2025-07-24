@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-apply plugin: 'opensearch.build'
-apply plugin: 'io.freefair.lombok'
-apply plugin: "com.diffplug.spotless"
+plugins {
+    id "io.freefair.lombok" version "8.14"
+}
 
+apply plugin: 'opensearch.build'
+apply plugin: "com.diffplug.spotless"
 
 group = opensearch_group
 version = "${opensearch_build}"
