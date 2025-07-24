@@ -11,4 +11,5 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Infrastructure
 ### Documentation
 ### Maintenance
+- Upgrade gradle to 8.14.3 and run CI checks with JDK24 ([#776](https://github.com/opensearch-project/geospatial/pull/776))
 ### Refactoring
