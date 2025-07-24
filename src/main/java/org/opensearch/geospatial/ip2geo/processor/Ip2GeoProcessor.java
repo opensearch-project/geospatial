@@ -244,17 +244,15 @@ public final class Ip2GeoProcessor extends AbstractProcessor {
     public static final class Factory implements Processor.Factory {
         private static final ParameterValidator VALIDATOR = new ParameterValidator();
         private final IngestService ingestService;
-        private final DatasourceDao datasourceDao;
-        private final GeoIpDataDao geoIpDataDao;
-        private final Ip2GeoCachedDao ip2GeoCachedDao;
+        private DatasourceDao datasourceDao;
+        private GeoIpDataDao geoIpDataDao;
+        private Ip2GeoCachedDao ip2GeoCachedDao;
 
-        public Factory(
-            final IngestService ingestService,
-            final DatasourceDao datasourceDao,
-            final GeoIpDataDao geoIpDataDao,
-            final Ip2GeoCachedDao ip2GeoCachedDao
-        ) {
+        public Factory(final IngestService ingestService) {
             this.ingestService = ingestService;
+        }
+
+        public void initialize(final DatasourceDao datasourceDao, final GeoIpDataDao geoIpDataDao, final Ip2GeoCachedDao ip2GeoCachedDao) {
             this.datasourceDao = datasourceDao;
             this.geoIpDataDao = geoIpDataDao;
             this.ip2GeoCachedDao = ip2GeoCachedDao;

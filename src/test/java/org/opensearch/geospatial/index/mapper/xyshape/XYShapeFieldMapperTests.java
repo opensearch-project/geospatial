@@ -63,7 +63,7 @@ public class XYShapeFieldMapperTests extends FieldMapperTestCase2<XYShapeFieldMa
             mapper -> {
                 assertTrue("invalid mapper retrieved", mapper instanceof XYShapeFieldMapper);
                 XYShapeFieldMapper XYShapeFieldMapper = (XYShapeFieldMapper) mapper;
-                assertTrue("param [ ignore_malformed ] is not updated", XYShapeFieldMapper.ignoreMalformed().value());
+                assertTrue("param [ ignore_malformed ] is not updated", XYShapeFieldMapper.shouldIgnoreMalformed().value());
             }
         );
         parameterChecker.registerUpdateCheck(
@@ -134,7 +134,7 @@ public class XYShapeFieldMapperTests extends FieldMapperTestCase2<XYShapeFieldMa
             AbstractShapeGeometryFieldMapper.Defaults.ORIENTATION.value()
         );
         assertFalse("param [ docs_value ] default value should be false", XYShapeFieldMapper.fieldType().hasDocValues());
-        assertEquals("param [ ignore_malformed ] default value should be false", XYShapeFieldMapper.ignoreMalformed().value(), false);
+        assertEquals("param [ ignore_malformed ] default value should be false", XYShapeFieldMapper.shouldIgnoreMalformed().value(), false);
         assertEquals("param [ ignore_z_value ] default value should be true", XYShapeFieldMapper.ignoreZValue().value(), true);
         assertEquals("param [ coerce ] default value should be false", XYShapeFieldMapper.coerce().value(), false);
     }

@@ -49,7 +49,6 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.jobscheduler.Datasource;
 import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceExtension;
-import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.IndexNotFoundException;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
@@ -63,12 +62,12 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class DatasourceDao {
     private static final Integer MAX_SIZE = 1000;
-    private final Client client;
+    private final Client pluginClient;
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
 
-    public DatasourceDao(final Client client, final ClusterService clusterService) {
-        this.client = client;
+    public DatasourceDao(final Client pluginClient, final ClusterService clusterService) {
+        this.pluginClient = pluginClient;
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
     }
@@ -85,7 +84,7 @@ public class DatasourceDao {
         }
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(DatasourceExtension.JOB_INDEX_NAME).mapping(getIndexMapping())
             .settings(DatasourceExtension.INDEX_SETTING);
-        StashedThreadContext.run(client, () -> client.admin().indices().create(createIndexRequest, new ActionListener<>() {
+        pluginClient.admin().indices().create(createIndexRequest, new ActionListener<>() {
             @Override
             public void onResponse(final CreateIndexResponse createIndexResponse) {
                 stepListener.onResponse(null);
@@ -100,7 +99,7 @@ public class DatasourceDao {
                 }
                 stepListener.onFailure(e);
             }
-        }));
+        });
     }
 
     private String getIndexMapping() {
@@ -122,19 +121,17 @@ public class DatasourceDao {
      */
     public IndexResponse updateDatasource(final Datasource datasource) {
         datasource.setLastUpdateTime(Instant.now());
-        return StashedThreadContext.run(client, () -> {
-            try {
-                return client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
-                    .setId(datasource.getName())
-                    .setOpType(DocWriteRequest.OpType.INDEX)
-                    .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
-                    .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
-                    .execute()
-                    .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            return pluginClient.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
+                .setId(datasource.getName())
+                .setOpType(DocWriteRequest.OpType.INDEX)
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+                .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
+                .execute()
+                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -148,7 +145,7 @@ public class DatasourceDao {
             datasource.setLastUpdateTime(Instant.now());
             return datasource;
         }).map(this::toIndexRequest).forEach(indexRequest -> bulkRequest.add(indexRequest));
-        StashedThreadContext.run(client, () -> client.bulk(bulkRequest, listener));
+        pluginClient.bulk(bulkRequest, listener);
     }
 
     private IndexRequest toIndexRequest(Datasource datasource) {
@@ -173,18 +170,16 @@ public class DatasourceDao {
      */
     public void putDatasource(final Datasource datasource, final ActionListener listener) {
         datasource.setLastUpdateTime(Instant.now());
-        StashedThreadContext.run(client, () -> {
-            try {
-                client.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
-                    .setId(datasource.getName())
-                    .setOpType(DocWriteRequest.OpType.CREATE)
-                    .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
-                    .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
-                    .execute(listener);
-            } catch (IOException e) {
-                new RuntimeException(e);
-            }
-        });
+        try {
+            pluginClient.prepareIndex(DatasourceExtension.JOB_INDEX_NAME)
+                .setId(datasource.getName())
+                .setOpType(DocWriteRequest.OpType.CREATE)
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
+                .setSource(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS))
+                .execute(listener);
+        } catch (IOException e) {
+            new RuntimeException(e);
+        }
     }
 
     /**
@@ -194,7 +189,7 @@ public class DatasourceDao {
      *
      */
     public void deleteDatasource(final Datasource datasource) {
-        DeleteResponse response = client.prepareDelete()
+        DeleteResponse response = pluginClient.prepareDelete()
             .setIndex(DatasourceExtension.JOB_INDEX_NAME)
             .setId(datasource.getName())
             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
@@ -220,7 +215,7 @@ public class DatasourceDao {
         GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
         GetResponse response;
         try {
-            response = StashedThreadContext.run(client, () -> client.get(request).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT)));
+            response = pluginClient.get(request).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
             if (response.isExists() == false) {
                 log.error("Datasource[{}] does not exist in an index[{}]", name, DatasourceExtension.JOB_INDEX_NAME);
                 return null;
@@ -245,7 +240,7 @@ public class DatasourceDao {
      */
     public void getDatasource(final String name, final ActionListener<Datasource> actionListener) {
         GetRequest request = new GetRequest(DatasourceExtension.JOB_INDEX_NAME, name);
-        StashedThreadContext.run(client, () -> client.get(request, new ActionListener<>() {
+        pluginClient.get(request, new ActionListener<>() {
             @Override
             public void onResponse(final GetResponse response) {
                 if (response.isExists() == false) {
@@ -269,7 +264,7 @@ public class DatasourceDao {
             public void onFailure(final Exception e) {
                 actionListener.onFailure(e);
             }
-        }));
+        });
     }
 
     /**
@@ -278,12 +273,9 @@ public class DatasourceDao {
      * @param actionListener the action listener
      */
     public void getDatasources(final String[] names, final ActionListener<List<Datasource>> actionListener) {
-        StashedThreadContext.run(
-            client,
-            () -> client.prepareMultiGet()
-                .add(DatasourceExtension.JOB_INDEX_NAME, names)
-                .execute(createGetDataSourceQueryActionLister(MultiGetResponse.class, actionListener))
-        );
+        pluginClient.prepareMultiGet()
+            .add(DatasourceExtension.JOB_INDEX_NAME, names)
+            .execute(createGetDataSourceQueryActionLister(MultiGetResponse.class, actionListener));
     }
 
     /**
@@ -291,29 +283,23 @@ public class DatasourceDao {
      * @param actionListener the action listener
      */
     public void getAllDatasources(final ActionListener<List<Datasource>> actionListener) {
-        StashedThreadContext.run(
-            client,
-            () -> client.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
-                .setQuery(QueryBuilders.matchAllQuery())
-                .setPreference(Preference.PRIMARY.type())
-                .setSize(MAX_SIZE)
-                .execute(createGetDataSourceQueryActionLister(SearchResponse.class, actionListener))
-        );
+        pluginClient.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
+            .setQuery(QueryBuilders.matchAllQuery())
+            .setPreference(Preference.PRIMARY.type())
+            .setSize(MAX_SIZE)
+            .execute(createGetDataSourceQueryActionLister(SearchResponse.class, actionListener));
     }
 
     /**
      * Get all datasources up to {@code MAX_SIZE} from an index {@code DatasourceExtension.JOB_INDEX_NAME}
      */
     public List<Datasource> getAllDatasources() {
-        SearchResponse response = StashedThreadContext.run(
-            client,
-            () -> client.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
-                .setQuery(QueryBuilders.matchAllQuery())
-                .setPreference(Preference.PRIMARY.type())
-                .setSize(MAX_SIZE)
-                .execute()
-                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
-        );
+        SearchResponse response = pluginClient.prepareSearch(DatasourceExtension.JOB_INDEX_NAME)
+            .setQuery(QueryBuilders.matchAllQuery())
+            .setPreference(Preference.PRIMARY.type())
+            .setSize(MAX_SIZE)
+            .execute()
+            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
 
         List<BytesReference> bytesReferences = toBytesReferences(response);
         return bytesReferences.stream().map(bytesRef -> toDatasource(bytesRef)).collect(Collectors.toList());
