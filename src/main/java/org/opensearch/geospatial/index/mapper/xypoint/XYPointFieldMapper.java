@@ -187,4 +187,8 @@ public class XYPointFieldMapper extends AbstractPointGeometryFieldMapper<
             return queryProcessor.shapeQuery(geometry, fieldName, relation, context);
         }
     }
+
+    public Explicit<Boolean> shouldIgnoreMalformed() {
+        return ignoreMalformed;
+    }
 }
