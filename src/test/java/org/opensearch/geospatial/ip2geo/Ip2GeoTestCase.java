@@ -180,8 +180,18 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         return Paths.get(this.getClass().getClassLoader().getResource("ip2geo/manifest.json").toURI()).toUri().toURL().toExternalForm();
     }
 
+    @SneakyThrows
     @SuppressForbidden(reason = "unit test")
-    protected String sampleManifestUrlWithInvalidUrl() throws Exception {
+    protected String anotherSampleManifestUrl() {
+        return Paths.get(this.getClass().getClassLoader().getResource("ip2geo/another_manifest.json").toURI())
+            .toUri()
+            .toURL()
+            .toExternalForm();
+    }
+
+    @SneakyThrows
+    @SuppressForbidden(reason = "unit test")
+    protected String sampleManifestUrlWithInvalidUrl() {
         return Paths.get(this.getClass().getClassLoader().getResource("ip2geo/manifest_invalid_url.json").toURI())
             .toUri()
             .toURL()
@@ -222,7 +232,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         datasource.setState(randomState());
         datasource.setCurrentIndex(datasource.newIndexName(UUID.randomUUID().toString()));
         datasource.setIndices(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
-        datasource.setEndpoint(String.format(Locale.ROOT, "https://%s.com/manifest.json", GeospatialTestHelper.randomLowerCaseString()));
+        datasource.setEndpoint(sampleManifestUrl());
         datasource.getDatabase()
             .setFields(Arrays.asList(GeospatialTestHelper.randomLowerCaseString(), GeospatialTestHelper.randomLowerCaseString()));
         datasource.getDatabase().setProvider(GeospatialTestHelper.randomLowerCaseString());

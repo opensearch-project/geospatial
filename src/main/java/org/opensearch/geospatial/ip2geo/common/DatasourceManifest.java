@@ -8,6 +8,7 @@ package org.opensearch.geospatial.ip2geo.common;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.CharBuffer;
@@ -129,6 +130,9 @@ public class DatasourceManifest {
         @SuppressForbidden(reason = "Need to connect to http endpoint to read manifest file")
         protected static DatasourceManifest internalBuild(final URLConnection connection) throws IOException {
             connection.addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
+            if (connection instanceof HttpURLConnection) {
+                HttpRedirectValidator.validateNoRedirects((HttpURLConnection) connection);
+            }
             InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream());
             try (BufferedReader reader = new BufferedReader(inputStreamReader)) {
                 CharBuffer charBuffer = CharBuffer.allocate(MANIFEST_FILE_MAX_BYTES);

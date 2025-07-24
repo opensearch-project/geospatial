@@ -6,6 +6,8 @@
 package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidParameterException;
 import java.time.Instant;
@@ -80,6 +82,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
      */
     @Override
     protected void doExecute(final Task task, final UpdateDatasourceRequest request, final ActionListener<AcknowledgedResponse> listener) {
+        validateManifestFile(request);
         lockService.acquireLock(request.getName(), LOCK_DURATION_IN_SECONDS, ActionListener.wrap(lock -> {
             if (lock == null) {
                 listener.onFailure(
@@ -218,5 +221,36 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
      */
     private boolean isUpdateIntervalChanged(final UpdateDatasourceRequest request) {
         return request.getUpdateInterval() != null;
+    }
+
+    /**
+     * Conduct the following validation on url
+     * 1. can read the manifest file from the endpoint
+     * 2. the url in the manifest file complies with RFC-2396
+     *
+     * @param request the request to validate
+     */
+    private void validateManifestFile(final UpdateDatasourceRequest request) {
+        if (request.getEndpoint() == null) {
+            return;
+        }
+
+        DatasourceManifest manifest;
+        try {
+            URL url = new URL(request.getEndpoint());
+            manifest = DatasourceManifest.Builder.build(url);
+        } catch (Exception e) {
+            log.info("Error occurred while reading a file from {}", request.getEndpoint(), e);
+            throw new IllegalArgumentException(
+                String.format(Locale.ROOT, "Error occurred while reading a file from %s: %s", request.getEndpoint(), e.getMessage())
+            );
+        }
+
+        try {
+            new URL(manifest.getUrl()).toURI(); // Validate URL complies with RFC-2396
+        } catch (MalformedURLException | URISyntaxException e) {
+            log.info("Invalid URL[{}] is provided for url field in the manifest file", manifest.getUrl(), e);
+            throw new IllegalArgumentException("Invalid URL format is provided for url field in the manifest file");
+        }
     }
 }

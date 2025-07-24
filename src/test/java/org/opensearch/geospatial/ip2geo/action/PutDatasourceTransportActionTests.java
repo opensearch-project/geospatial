@@ -14,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
@@ -72,6 +73,8 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
         Task task = mock(Task.class);
         Datasource datasource = randomDatasource();
         PutDatasourceRequest request = new PutDatasourceRequest(datasource.getName());
+        request.setEndpoint(sampleManifestUrl());
+        request.setUpdateInterval(TimeValue.timeValueDays(1));
         ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
         if (after != null) {
             doThrow(after).when(datasourceDao).createIndexIfNotExists(any(StepListener.class));
@@ -104,6 +107,53 @@ public class PutDatasourceTransportActionTests extends Ip2GeoTestCase {
             // Verify
             verify(listener).onFailure(before);
         }
+    }
+
+    @SneakyThrows
+    public void testDoExecute_whenLargeUpdateInterval_thenFail() {
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        Task task = mock(Task.class);
+        PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
+        request.setEndpoint(sampleManifestUrl());
+        request.setUpdateInterval(TimeValue.timeValueDays(30));
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        Throwable throwable = expectThrows(IllegalArgumentException.class, () -> action.doExecute(task, request, listener));
+
+        // Verify
+        assertTrue(throwable.getMessage().contains("should be smaller"));
+    }
+
+    @SneakyThrows
+    public void testDoExecute_whenInvalidUrlInsideManifest_thenFail() {
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        Task task = mock(Task.class);
+        PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
+        request.setEndpoint(sampleManifestUrlWithInvalidUrl());
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        Throwable throwable = expectThrows(IllegalArgumentException.class, () -> action.doExecute(task, request, listener));
+
+        // Verify
+        assertTrue(throwable.getMessage().contains("Invalid URL format"));
+    }
+
+    @SneakyThrows
+    public void testDoExecute_whenInvalidManifestFile_thenFails() {
+        String domain = GeospatialTestHelper.randomLowerCaseString();
+        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
+        Task task = mock(Task.class);
+        PutDatasourceRequest request = new PutDatasourceRequest(datasourceName);
+        request.setEndpoint(String.format(Locale.ROOT, "https://%s.com", domain));
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        Throwable throwable = expectThrows(IllegalArgumentException.class, () -> action.doExecute(task, request, listener));
+
+        // Verify
+        assertTrue(throwable.getMessage().contains("Error occurred while reading a file"));
     }
 
     @SneakyThrows
