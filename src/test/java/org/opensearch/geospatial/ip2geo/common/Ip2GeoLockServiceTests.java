@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Before;
+import org.mockito.Mockito;
 import org.opensearch.action.DocWriteResponse;
 import org.opensearch.action.update.UpdateRequest;
 import org.opensearch.action.update.UpdateResponse;
@@ -21,43 +22,51 @@ import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.jobscheduler.spi.LockModel;
-import org.opensearch.jobscheduler.spi.utils.LockService;
 
 public class Ip2GeoLockServiceTests extends Ip2GeoTestCase {
     private Ip2GeoLockService ip2GeoLockService;
-    private Ip2GeoLockService noOpsLockService;
 
     @Before
     public void init() {
         ip2GeoLockService = new Ip2GeoLockService(clusterService);
-        noOpsLockService = new Ip2GeoLockService(clusterService);
         // TODO Remove direct instantiation and offer a TestLockService class to plugins
-        ip2GeoLockService.initialize(new LockService(verifyingClient, clusterService));
-        noOpsLockService.initialize(new LockService(client, clusterService));
-    }
-
-    public void testAcquireLock_whenValidInput_thenSucceed() {
-        // Cannot test because LockService is final class
-        // Simply calling method to increase coverage
-        noOpsLockService.acquireLock(GeospatialTestHelper.randomLowerCaseString(), randomPositiveLong(), mock(ActionListener.class));
+        ip2GeoLockService.initialize(lockService);
     }
 
     public void testAcquireLock_whenCalled_thenNotBlocked() {
         long expectedDurationInMillis = 1000;
+
+        Mockito.doAnswer(inv -> {
+            ActionListener<LockModel> listener = inv.getArgument(3);
+            listener.onResponse(null);          // or listener.onFailure(ex);
+            return null;                        // because the real method is void
+        })
+            .when(lockService)
+            .acquireLockWithId(
+                Mockito.any(), // jobIndexName you expect
+                Mockito.any(), // lockDurationSeconds you expect
+                Mockito.any(), // lockId you expect
+                Mockito.any()  // listener – generics erase to ActionListener
+            );
         Instant before = Instant.now();
         assertTrue(ip2GeoLockService.acquireLock(null, null).isEmpty());
         Instant after = Instant.now();
         assertTrue(after.toEpochMilli() - before.toEpochMilli() < expectedDurationInMillis);
     }
 
-    public void testReleaseLock_whenValidInput_thenSucceed() {
-        // Cannot test because LockService is final class
-        // Simply calling method to increase coverage
-        noOpsLockService.releaseLock(null);
-    }
-
     public void testRenewLock_whenCalled_thenNotBlocked() {
         long expectedDurationInMillis = 1000;
+
+        Mockito.doAnswer(inv -> {
+            ActionListener<LockModel> listener = inv.getArgument(1);
+            listener.onResponse(null);          // or listener.onFailure(ex);
+            return null;                        // because the real method is void
+        })
+            .when(lockService)
+            .renewLock(
+                Mockito.any(), // lockModel
+                Mockito.any()  // listener – generics erase to ActionListener
+            );
         Instant before = Instant.now();
         assertNull(ip2GeoLockService.renewLock(null));
         Instant after = Instant.now();
