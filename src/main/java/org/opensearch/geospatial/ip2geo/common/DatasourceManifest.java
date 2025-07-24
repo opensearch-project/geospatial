@@ -11,8 +11,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.CharBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import org.opensearch.SpecialPermission;
 import org.opensearch.common.SuppressForbidden;
@@ -24,6 +22,7 @@ import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.shared.Constants;
+import org.opensearch.secure_sm.AccessController;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -116,7 +115,7 @@ public class DatasourceManifest {
         @SuppressForbidden(reason = "Need to connect to http endpoint to read manifest file")
         public static DatasourceManifest build(final URL url) {
             SpecialPermission.check();
-            return AccessController.doPrivileged((PrivilegedAction<DatasourceManifest>) () -> {
+            return AccessController.doPrivileged(() -> {
                 try {
                     URLConnection connection = url.openConnection();
                     return internalBuild(connection);

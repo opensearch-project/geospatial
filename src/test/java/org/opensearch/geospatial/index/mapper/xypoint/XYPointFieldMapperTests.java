@@ -58,7 +58,7 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
             mapper -> {
                 assertTrue("invalid mapper retrieved", mapper instanceof XYPointFieldMapper);
                 XYPointFieldMapper xyPointFieldMapper = (XYPointFieldMapper) mapper;
-                assertTrue("param [ ignore_malformed ] is not updated", xyPointFieldMapper.ignoreMalformed().value());
+                assertTrue("param [ ignore_malformed ] is not updated", xyPointFieldMapper.shouldIgnoreMalformed().value());
             }
         );
         parameterChecker.registerUpdateCheck(
@@ -119,7 +119,7 @@ public class XYPointFieldMapperTests extends FieldMapperTestCase2<XYPointFieldMa
         XYPointFieldMapper xyPointFieldMapper = (XYPointFieldMapper) fieldMapper;
 
         assertTrue("param [ docs_value ] default value should be true", xyPointFieldMapper.fieldType().hasDocValues());
-        assertEquals("param [ ignore_malformed ] default value should be false", xyPointFieldMapper.ignoreMalformed().value(), false);
+        assertEquals("param [ ignore_malformed ] default value should be false", xyPointFieldMapper.shouldIgnoreMalformed().value(), false);
         assertEquals("param [ ignore_z_value ] default value should be true", xyPointFieldMapper.ignoreZValue().value(), true);
         assertNull("param [ null_value ] default value should be null", xyPointFieldMapper.nullValue());
 

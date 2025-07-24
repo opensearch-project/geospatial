@@ -164,4 +164,8 @@ public class XYShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geometr
 
     }
 
+    public Explicit<Boolean> shouldIgnoreMalformed() {
+        return ignoreMalformed;
+    }
+
 }

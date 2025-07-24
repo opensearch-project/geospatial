@@ -14,8 +14,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -58,8 +56,8 @@ import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.shared.Constants;
-import org.opensearch.geospatial.shared.StashedThreadContext;
 import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.secure_sm.AccessController;
 import org.opensearch.transport.client.Client;
 import org.opensearch.transport.client.Requests;
 
@@ -91,13 +89,13 @@ public class GeoIpDataDao {
     );
     private final ClusterService clusterService;
     private final ClusterSettings clusterSettings;
-    private final Client client;
+    private final Client pluginClient;
     private final URLDenyListChecker urlDenyListChecker;
 
-    public GeoIpDataDao(final ClusterService clusterService, final Client client, final URLDenyListChecker urlDenyListChecker) {
+    public GeoIpDataDao(final ClusterService clusterService, final Client pluginClient, final URLDenyListChecker urlDenyListChecker) {
         this.clusterService = clusterService;
         this.clusterSettings = clusterService.getClusterSettings();
-        this.client = client;
+        this.pluginClient = pluginClient;
         this.urlDenyListChecker = urlDenyListChecker;
     }
 
@@ -117,24 +115,19 @@ public class GeoIpDataDao {
         }
         final CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(INDEX_SETTING_TO_CREATE)
             .mapping(getIndexMapping());
-        StashedThreadContext.run(
-            client,
-            () -> client.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
-        );
+        pluginClient.admin().indices().create(createIndexRequest).actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
     }
 
     private void freezeIndex(final String indexName) {
         TimeValue timeout = clusterSettings.get(Ip2GeoSettings.TIMEOUT);
-        StashedThreadContext.run(client, () -> {
-            client.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
-            client.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
-            client.admin()
-                .indices()
-                .prepareUpdateSettings(indexName)
-                .setSettings(INDEX_SETTING_TO_FREEZE)
-                .execute()
-                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
-        });
+        pluginClient.admin().indices().prepareForceMerge(indexName).setMaxNumSegments(1).execute().actionGet(timeout);
+        pluginClient.admin().indices().prepareRefresh(indexName).execute().actionGet(timeout);
+        pluginClient.admin()
+            .indices()
+            .prepareUpdateSettings(indexName)
+            .setSettings(INDEX_SETTING_TO_FREEZE)
+            .execute()
+            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
     }
 
     /**
@@ -173,7 +166,7 @@ public class GeoIpDataDao {
     @SuppressForbidden(reason = "Need to connect to http endpoint to read GeoIP database file")
     public CSVParser getDatabaseReader(final DatasourceManifest manifest) {
         SpecialPermission.check();
-        return AccessController.doPrivileged((PrivilegedAction<CSVParser>) () -> {
+        return AccessController.doPrivileged(() -> {
             try {
                 URL zipUrl = urlDenyListChecker.toUrlIfNotInDenyList(manifest.getUrl());
                 return internalGetDatabaseReader(manifest, zipUrl.openConnection());
@@ -249,15 +242,12 @@ public class GeoIpDataDao {
      * @return geoIP data
      */
     public Map<String, Object> getGeoIpData(final String indexName, final String ip) {
-        SearchResponse response = StashedThreadContext.run(
-            client,
-            () -> client.prepareSearch(indexName)
-                .setSize(1)
-                .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
-                .setPreference(Preference.LOCAL.type())
-                .setRequestCache(true)
-                .get(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
-        );
+        SearchResponse response = pluginClient.prepareSearch(indexName)
+            .setSize(1)
+            .setQuery(QueryBuilders.termQuery(IP_RANGE_FIELD_NAME, ip))
+            .setPreference(Preference.LOCAL.type())
+            .setRequestCache(true)
+            .get(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
 
         if (response.getHits().getHits().length == 0) {
             return Collections.emptyMap();
@@ -297,7 +287,7 @@ public class GeoIpDataDao {
             indexRequest.id(record.get(0));
             bulkRequest.add(indexRequest);
             if (iterator.hasNext() == false || bulkRequest.requests().size() == batchSize) {
-                BulkResponse response = StashedThreadContext.run(client, () -> client.bulk(bulkRequest).actionGet(timeout));
+                BulkResponse response = pluginClient.bulk(bulkRequest).actionGet(timeout);
                 if (response.hasFailures()) {
                     throw new OpenSearchException(
                         "error occurred while ingesting GeoIP data in {} with an error {}",
@@ -334,15 +324,12 @@ public class GeoIpDataDao {
             );
         }
 
-        AcknowledgedResponse response = StashedThreadContext.run(
-            client,
-            () -> client.admin()
-                .indices()
-                .prepareDelete(indices.toArray(new String[0]))
-                .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN)
-                .execute()
-                .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT))
-        );
+        AcknowledgedResponse response = pluginClient.admin()
+            .indices()
+            .prepareDelete(indices.toArray(new String[0]))
+            .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN)
+            .execute()
+            .actionGet(clusterSettings.get(Ip2GeoSettings.TIMEOUT));
 
         if (response.isAcknowledged() == false) {
             throw new OpenSearchException("failed to delete data[{}] in datasource", String.join(",", indices));
