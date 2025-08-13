@@ -18,6 +18,7 @@ import java.security.InvalidParameterException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
@@ -26,6 +27,7 @@ import org.opensearch.ResourceNotFoundException;
 import org.opensearch.action.support.clustermanager.AcknowledgedResponse;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.action.ActionListener;
+import org.opensearch.geospatial.GeospatialTestHelper;
 import org.opensearch.geospatial.exceptions.IncompatibleDatasourceException;
 import org.opensearch.geospatial.ip2geo.Ip2GeoTestCase;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
@@ -92,7 +94,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         datasource.setTask(DatasourceTask.DELETE_UNUSED_INDICES);
         Instant originalStartTime = datasource.getSchedule().getStartTime();
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
-        request.setEndpoint(sampleManifestUrl());
+        request.setEndpoint(anotherSampleManifestUrl());
         request.setUpdateInterval(TimeValue.timeValueDays(datasource.getSchedule().getInterval()));
 
         Task task = mock(Task.class);
@@ -185,7 +187,6 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.CREATE_FAILED);
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
-        request.setEndpoint(datasource.getEndpoint());
 
         Task task = mock(Task.class);
         when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
@@ -215,7 +216,7 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         Datasource datasource = randomDatasource();
         datasource.setState(DatasourceState.AVAILABLE);
         UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
-        request.setEndpoint(sampleManifestUrl());
+        request.setEndpoint(anotherSampleManifestUrl());
 
         Task task = mock(Task.class);
         when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
@@ -301,5 +302,44 @@ public class UpdateDatasourceTransportActionTests extends Ip2GeoTestCase {
         assertEquals(IllegalArgumentException.class, exceptionCaptor.getValue().getClass());
         exceptionCaptor.getValue().getMessage().contains("will expire");
         verify(ip2GeoLockService).releaseLock(eq(lockModel));
+    }
+
+    @SneakyThrows
+    public void testDoExecute_whenInvalidUrlInsideManifest_thenFail() {
+        Datasource datasource = randomDatasource();
+        datasource.getUpdateStats().setLastSkippedAt(null);
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now().minus(datasource.getDatabase().getValidForInDays(), ChronoUnit.DAYS));
+        UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
+        request.setEndpoint(sampleManifestUrlWithInvalidUrl());
+
+        Task task = mock(Task.class);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        Throwable throwable = expectThrows(IllegalArgumentException.class, () -> action.doExecute(task, request, listener));
+
+        // Verify
+        assertTrue(throwable.getMessage().contains("Invalid URL format is provided for url field in the manifest file"));
+    }
+
+    @SneakyThrows
+    public void testDoExecute_whenInvalidManifestFile_thenFails() {
+        String domain = GeospatialTestHelper.randomLowerCaseString();
+        Datasource datasource = randomDatasource();
+        datasource.getUpdateStats().setLastSkippedAt(null);
+        datasource.getUpdateStats().setLastSucceededAt(Instant.now().minus(datasource.getDatabase().getValidForInDays(), ChronoUnit.DAYS));
+        UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasource.getName());
+        request.setEndpoint(String.format(Locale.ROOT, "https://%s.com", domain));
+
+        Task task = mock(Task.class);
+        when(datasourceDao.getDatasource(datasource.getName())).thenReturn(datasource);
+        ActionListener<AcknowledgedResponse> listener = mock(ActionListener.class);
+
+        // Run
+        Throwable throwable = expectThrows(RuntimeException.class, () -> action.doExecute(task, request, listener));
+
+        // Verify
+        assertTrue(throwable.getMessage().contains("Error occurred while reading a file from"));
     }
 }

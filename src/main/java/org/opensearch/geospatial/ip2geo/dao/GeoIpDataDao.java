@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -53,6 +54,7 @@ import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.constants.IndexSetting;
 import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
+import org.opensearch.geospatial.ip2geo.common.HttpRedirectValidator;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoSettings;
 import org.opensearch.geospatial.ip2geo.common.URLDenyListChecker;
 import org.opensearch.geospatial.shared.Constants;
@@ -169,7 +171,8 @@ public class GeoIpDataDao {
         return AccessController.doPrivileged(() -> {
             try {
                 URL zipUrl = urlDenyListChecker.toUrlIfNotInDenyList(manifest.getUrl());
-                return internalGetDatabaseReader(manifest, zipUrl.openConnection());
+                URLConnection connection = zipUrl.openConnection();
+                return internalGetDatabaseReader(manifest, connection);
             } catch (IOException e) {
                 throw new OpenSearchException("failed to read geoip data from {}", manifest.getUrl(), e);
             }
@@ -180,6 +183,9 @@ public class GeoIpDataDao {
     @SuppressForbidden(reason = "Need to connect to http endpoint to read GeoIP database file")
     protected CSVParser internalGetDatabaseReader(final DatasourceManifest manifest, final URLConnection connection) throws IOException {
         connection.addRequestProperty(Constants.USER_AGENT_KEY, Constants.USER_AGENT_VALUE);
+        if (connection instanceof HttpURLConnection) {
+            HttpRedirectValidator.validateNoRedirects((HttpURLConnection) connection);
+        }
         ZipInputStream zipIn = new ZipInputStream(connection.getInputStream());
         ZipEntry zipEntry = zipIn.getNextEntry();
         while (zipEntry != null) {

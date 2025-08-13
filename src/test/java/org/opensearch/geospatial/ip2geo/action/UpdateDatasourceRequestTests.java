@@ -44,20 +44,6 @@ public class UpdateDatasourceRequestTests extends Ip2GeoTestCase {
         assertEquals("Invalid URL format is provided", exception.validationErrors().get(0));
     }
 
-    public void testValidate_whenInvalidManifestFile_thenFails() {
-        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
-        String domain = GeospatialTestHelper.randomLowerCaseString();
-        UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasourceName);
-        request.setEndpoint(String.format(Locale.ROOT, "https://%s.com", domain));
-
-        // Run
-        ActionRequestValidationException exception = request.validate();
-
-        // Verify
-        assertEquals(1, exception.validationErrors().size());
-        assertTrue(exception.validationErrors().get(0).contains("Error occurred while reading a file"));
-    }
-
     @SneakyThrows
     public void testValidate_whenValidInput_thenSucceed() {
         String datasourceName = GeospatialTestHelper.randomLowerCaseString();
@@ -98,21 +84,6 @@ public class UpdateDatasourceRequestTests extends Ip2GeoTestCase {
             String.format(Locale.ROOT, "Update interval should be equal to or larger than 1 day"),
             exception.validationErrors().get(0)
         );
-    }
-
-    @SneakyThrows
-    public void testValidate_whenInvalidUrlInsideManifest_thenFail() {
-        String datasourceName = GeospatialTestHelper.randomLowerCaseString();
-        UpdateDatasourceRequest request = new UpdateDatasourceRequest(datasourceName);
-        request.setEndpoint(sampleManifestUrlWithInvalidUrl());
-        request.setUpdateInterval(TimeValue.timeValueDays(1));
-
-        // Run
-        ActionRequestValidationException exception = request.validate();
-
-        // Verify
-        assertEquals(1, exception.validationErrors().size());
-        assertTrue(exception.validationErrors().get(0).contains("Invalid URL format"));
     }
 
     @SneakyThrows
