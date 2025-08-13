@@ -7,7 +7,11 @@ package org.opensearch.geospatial.ip2geo.action;
 
 import static org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService.LOCK_DURATION_IN_SECONDS;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.opensearch.ResourceAlreadyExistsException;
@@ -20,6 +24,7 @@ import org.opensearch.common.inject.Inject;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.geospatial.annotation.VisibleForTesting;
 import org.opensearch.geospatial.exceptions.ConcurrentModificationException;
+import org.opensearch.geospatial.ip2geo.common.DatasourceManifest;
 import org.opensearch.geospatial.ip2geo.common.DatasourceState;
 import org.opensearch.geospatial.ip2geo.common.Ip2GeoLockService;
 import org.opensearch.geospatial.ip2geo.dao.DatasourceDao;
@@ -70,6 +75,7 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
 
     @Override
     protected void doExecute(final Task task, final PutDatasourceRequest request, final ActionListener<AcknowledgedResponse> listener) {
+        validateManifestFile(request);
         lockService.acquireLock(request.getName(), LOCK_DURATION_IN_SECONDS, ActionListener.wrap(lock -> {
             if (lock == null) {
                 listener.onFailure(
@@ -168,6 +174,45 @@ public class PutDatasourceTransportAction extends HandledTransportAction<PutData
             datasourceDao.updateDatasource(datasource);
         } catch (Exception e) {
             log.error("Failed to mark datasource state as CREATE_FAILED for {}", datasource.getName(), e);
+        }
+    }
+
+    /**
+     * Conduct the following validation on request
+     * 1. can read the manifest file from the endpoint
+     * 2. the url in the manifest file complies with RFC-2396
+     * 3. updateInterval is less than validForInDays value in the manifest file
+     *
+     * @param request the request to validate
+     */
+    private void validateManifestFile(final PutDatasourceRequest request) {
+        DatasourceManifest manifest;
+        try {
+            URL url = new URL(request.getEndpoint());
+            manifest = DatasourceManifest.Builder.build(url);
+        } catch (Exception e) {
+            log.info("Error occurred while reading a file from {}", request.getEndpoint(), e);
+            throw new IllegalArgumentException(
+                String.format(Locale.ROOT, "Error occurred while reading a file from %s: %s", request.getEndpoint(), e.getMessage())
+            );
+        }
+
+        try {
+            new URL(manifest.getUrl()).toURI(); // Validate URL complies with RFC-2396
+        } catch (MalformedURLException | URISyntaxException e) {
+            log.info("Invalid URL[{}] is provided for url field in the manifest file", manifest.getUrl(), e);
+            throw new IllegalArgumentException("Invalid URL format is provided for url field in the manifest file");
+        }
+
+        if (manifest.getValidForInDays() != null && request.getUpdateInterval().days() >= manifest.getValidForInDays()) {
+            throw new IllegalArgumentException(
+                String.format(
+                    Locale.ROOT,
+                    "updateInterval %d should be smaller than %d",
+                    request.getUpdateInterval().days(),
+                    manifest.getValidForInDays()
+                )
+            );
         }
     }
 }
