@@ -1,5 +1,5 @@
 {
-  "url": "https://raw.githubusercontent.com//opensearch-project/geospatial/main/src/test/resources/ip2geo/server/country/country.zip",
+  "url": "https://raw.githubusercontent.com/opensearch-project/geospatial/main/src/test/resources/ip2geo/server/country/country.zip",
   "db_name": "data.csv",
   "sha256_hash": "oDPgEv+4+kNov7bdQQiLrhr8jQeEPdLnuJ11Hz5npvk=",
   "valid_for_in_days": 30,
