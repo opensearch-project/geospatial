@@ -7,6 +7,7 @@ package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidParameterException;
@@ -194,7 +195,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         }
 
         long validForInDays = isEndpointChanged(request, datasource)
-            ? DatasourceManifest.Builder.build(new URL(request.getEndpoint())).getValidForInDays()
+            ? DatasourceManifest.Builder.build(URI.create(request.getEndpoint()).toURL()).getValidForInDays()
             : datasource.getDatabase().getValidForInDays();
 
         long updateInterval = isUpdateIntervalChanged(request)
@@ -237,7 +238,7 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
 
         DatasourceManifest manifest;
         try {
-            URL url = new URL(request.getEndpoint());
+            URL url = URI.create(request.getEndpoint()).toURL();
             manifest = DatasourceManifest.Builder.build(url);
         } catch (Exception e) {
             log.info("Error occurred while reading a file from {}", request.getEndpoint(), e);
@@ -247,8 +248,8 @@ public class UpdateDatasourceTransportAction extends HandledTransportAction<Upda
         }
 
         try {
-            new URL(manifest.getUrl()).toURI(); // Validate URL complies with RFC-2396
-        } catch (MalformedURLException | URISyntaxException e) {
+            URI.create(manifest.getUrl()).toURL().toURI(); // Validate URL complies with RFC-2396
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
             log.info("Invalid URL[{}] is provided for url field in the manifest file", manifest.getUrl(), e);
             throw new IllegalArgumentException("Invalid URL format is provided for url field in the manifest file");
         }

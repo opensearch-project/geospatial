@@ -6,6 +6,7 @@
 package org.opensearch.geospatial.ip2geo.jobscheduler;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
@@ -133,7 +134,7 @@ public class DatasourceUpdateService {
      * @return header fields of geo data
      */
     public List<String> getHeaderFields(String manifestUrl) throws IOException {
-        URL url = new URL(manifestUrl);
+        URL url = URI.create(manifestUrl).toURL();
         DatasourceManifest manifest = DatasourceManifest.Builder.build(url);
 
         try (CSVParser reader = geoIpDataDao.getDatabaseReader(manifest)) {

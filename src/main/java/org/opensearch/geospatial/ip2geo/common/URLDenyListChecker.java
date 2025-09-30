@@ -7,6 +7,7 @@ package org.opensearch.geospatial.ip2geo.common;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -48,7 +49,7 @@ public class URLDenyListChecker {
 
     @SuppressForbidden(reason = "Need to connect to http endpoint to read GeoIP database file")
     private URL toUrlIfNotInDenyList(final String url, final List<String> denyList) throws UnknownHostException, MalformedURLException {
-        URL urlToReturn = new URL(url);
+        URL urlToReturn = URI.create(url).toURL();
         if (isInDenyList(new IPAddressString(InetAddress.getByName(urlToReturn.getHost()).getHostAddress()), denyList)) {
             throw new IllegalArgumentException(
                 "given endpoint is blocked by deny list in cluster setting " + Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.getKey()

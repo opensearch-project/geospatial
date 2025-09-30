@@ -50,7 +50,7 @@ public class HttpRedirectValidatorTests extends OpenSearchTestCase {
             HttpURLConnection connection = mock(HttpURLConnection.class);
             when(connection.getResponseCode()).thenReturn(statusCode);
             when(connection.getHeaderField("Location")).thenReturn("http://redirect-target.com");
-            when(connection.getURL()).thenReturn(new java.net.URL("https://example.com/test"));
+            when(connection.getURL()).thenReturn(java.net.URI.create("https://example.com/test").toURL());
 
             IllegalArgumentException exception = expectThrows(
                 IllegalArgumentException.class,

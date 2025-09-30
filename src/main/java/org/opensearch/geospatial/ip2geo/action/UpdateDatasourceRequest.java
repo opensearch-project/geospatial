@@ -7,6 +7,7 @@ package org.opensearch.geospatial.ip2geo.action;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
@@ -120,9 +121,9 @@ public class UpdateDatasourceRequest extends ActionRequest {
         }
 
         try {
-            URL url = new URL(endpoint);
+            URL url = URI.create(endpoint).toURL();
             url.toURI(); // Validate URL complies with RFC-2396
-        } catch (MalformedURLException | URISyntaxException e) {
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
             log.info("Invalid URL[{}] is provided", endpoint, e);
             errors.addValidationError("Invalid URL format is provided");
         }
