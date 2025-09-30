@@ -11,4 +11,5 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Infrastructure
 ### Documentation
 ### Maintenance
+*Remove deprecated URL(String) usage ([#795](https://github.com/opensearch-project/geospatial/pull/795))
 ### Refactoring

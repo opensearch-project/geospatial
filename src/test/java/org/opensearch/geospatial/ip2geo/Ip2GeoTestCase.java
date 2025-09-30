@@ -10,7 +10,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -120,7 +120,7 @@ public abstract class Ip2GeoTestCase extends RestActionTestCase {
         verifyingClient = spy(new VerifyingClient(this.getTestName()));
         clusterSettings = new ClusterSettings(settings, new HashSet<>(Ip2GeoSettings.settings()));
         ingestMetadata = new IngestMetadata(Collections.emptyMap());
-        when(urlDenyListChecker.toUrlIfNotInDenyList(anyString())).thenAnswer(i -> new URL(i.getArgument(0)));
+        when(urlDenyListChecker.toUrlIfNotInDenyList(anyString())).thenAnswer(i -> URI.create(i.getArgument(0)).toURL());
         when(metadata.custom(IngestMetadata.TYPE)).thenReturn(ingestMetadata);
         when(clusterService.getSettings()).thenReturn(Settings.EMPTY);
         when(clusterService.getClusterSettings()).thenReturn(clusterSettings);

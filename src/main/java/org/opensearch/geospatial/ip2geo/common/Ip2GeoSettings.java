@@ -6,8 +6,8 @@
 package org.opensearch.geospatial.ip2geo.common;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -125,8 +125,8 @@ public class Ip2GeoSettings {
         @Override
         public void validate(final String value) {
             try {
-                new URL(value).toURI();
-            } catch (MalformedURLException | URISyntaxException e) {
+                URI.create(value).toURL().toURI();
+            } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid URL format is provided");
             }
         }
