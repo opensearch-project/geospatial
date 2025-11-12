@@ -48,7 +48,7 @@ buildscript {
 }
 
 plugins {
-    id "io.freefair.lombok" version "8.14"
+    id "io.freefair.lombok" version "9.1.0"
 }
 
 apply plugin: 'java'
@@ -98,8 +98,10 @@ ext {
 allprojects {
     group = opensearch_group
     version = "${opensearch_build}"
-    targetCompatibility = JavaVersion.VERSION_21
-    sourceCompatibility = JavaVersion.VERSION_21
+    java {
+        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_21
+    }
 }
 
 repositories {
