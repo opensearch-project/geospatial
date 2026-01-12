@@ -193,7 +193,7 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
 
     @Override
     public void postIndex(ShardId shardId, Engine.Index index, Exception ex) {
-        log.error("Skipped updating datasource metadata for datasource {} due to an indexing exception.", index.id(), ex);
+        log.error("Skipped updating datasource metadata for datasource {} due to an indexing exception: {}", index.id(), ex);
         clearMetadata();
     }
 
@@ -201,7 +201,7 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
     public void postIndex(ShardId shardId, Engine.Index index, Engine.IndexResult result) {
         if (Engine.Result.Type.FAILURE.equals(result.getResultType())) {
             log.error(
-                "Skipped updating datasource metadata for datasource {} because the indexing result was a failure.",
+                "Skipped updating datasource metadata for datasource {} because the indexing result was a failure: {}",
                 index.id(),
                 result.getFailure()
             );
@@ -217,14 +217,14 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
             put(datasource);
             log.info("Updated datasource metadata for datasource {} successfully.", index.id());
         } catch (IOException e) {
-            log.error("IOException occurred updating datasource metadata for datasource {} ", index.id(), e);
+            log.error("IOException occurred updating datasource metadata for datasource {}: {}", index.id(), e);
             clearMetadata();
         }
     }
 
     @Override
     public void postDelete(ShardId shardId, Engine.Delete delete, Exception ex) {
-        log.error("Skipped updating datasource metadata for datasource {} due to an exception.", delete.id(), ex);
+        log.error("Skipped updating datasource metadata for datasource {} due to an exception: {}", delete.id(), ex);
         clearMetadata();
     }
 
@@ -232,7 +232,7 @@ public class Ip2GeoCachedDao implements IndexingOperationListener {
     public void postDelete(ShardId shardId, Engine.Delete delete, Engine.DeleteResult result) {
         if (result.getResultType().equals(Engine.Result.Type.FAILURE)) {
             log.error(
-                "Skipped updating datasource metadata for datasource {} because the delete result was a failure.",
+                "Skipped updating datasource metadata for datasource {} because the delete result was a failure: {}",
                 delete.id(),
                 result.getFailure()
             );
