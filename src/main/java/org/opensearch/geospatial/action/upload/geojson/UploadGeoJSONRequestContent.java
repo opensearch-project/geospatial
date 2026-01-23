@@ -15,6 +15,7 @@ import java.util.Objects;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.Strings;
 import org.opensearch.geospatial.GeospatialParser;
+import org.opensearch.geospatial.geojson.Feature;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -34,6 +35,10 @@ public final class UploadGeoJSONRequestContent {
     // Custom Vector Map can support fetching up to 10K Features. Hence, we chose same value as limit
     // for upload as well.
     public static final int MAX_SUPPORTED_GEOJSON_FEATURE_COUNT = 10_000;
+    
+    // Geometric complexity limits
+    private static final int MAX_COORDINATES_PER_GEOMETRY = 10_000;
+    private static final int MAX_HOLES_PER_POLYGON = 1_000;
     private final String indexName;
     private final String fieldName;
     private final String fieldType;
@@ -67,6 +72,7 @@ public final class UploadGeoJSONRequestContent {
             );
         }
         validateFeatureCount(geoJSONData);
+        validateGeometricComplexity(geoJSONData);
         return new UploadGeoJSONRequestContent(index, fieldName, fieldType, (List<Object>) geoJSONData);
     }
 
@@ -90,6 +96,63 @@ public final class UploadGeoJSONRequestContent {
             .map(GeospatialParser::getFeatures)
             .flatMap(List::stream)
             .count();
+    }
+
+    /**
+     * Validates reasonable limits for polygonal border complexity and number of holes
+     * @param geoJSONData input data
+     */
+    private static void validateGeometricComplexity(Object geoJSONData) {
+        List<Object> dataList = (List<Object>) geoJSONData;
+        
+        for (Object item : dataList) {
+            Map<String, Object> geoJSON = GeospatialParser.toStringObjectMap(item);
+            List<Map<String, Object>> features = GeospatialParser.getFeatures(geoJSON);
+            
+            for (Map<String, Object> feature : features) {
+                Object geometryObj = feature.get(Feature.GEOMETRY_KEY);
+                if (geometryObj == null) continue;
+                
+                Map<String, Object> geometry = GeospatialParser.toStringObjectMap(geometryObj);
+                Object coordinates = geometry.get("coordinates");
+                String type = GeospatialParser.extractValueAsString(geometry, "type");
+                
+                if (coordinates instanceof List && type != null) {
+                    List<?> coordList = (List<?>) coordinates;
+                    
+                    if ("LineString".equalsIgnoreCase(type)) {
+                        if (coordList.size() > MAX_COORDINATES_PER_GEOMETRY) {
+                            throw new IllegalArgumentException(
+                                String.format(Locale.ROOT,
+                                    "LineString has %d coordinates, exceeds limit of %d", 
+                                    coordList.size(), MAX_COORDINATES_PER_GEOMETRY)
+                            );
+                        }
+                    }
+                    
+                    if ("Polygon".equalsIgnoreCase(type)) {
+                        int holes = coordList.size() - 1;
+                        if (holes > MAX_HOLES_PER_POLYGON) {
+                            throw new IllegalArgumentException(
+                                String.format(Locale.ROOT,
+                                    "Polygon has %d holes, exceeds limit of %d", 
+                                    holes, MAX_HOLES_PER_POLYGON)
+                            );
+                        }
+                        if (!coordList.isEmpty() && coordList.get(0) instanceof List) {
+                            List<?> outerRing = (List<?>) coordList.get(0);
+                            if (outerRing.size() > MAX_COORDINATES_PER_GEOMETRY) {
+                                throw new IllegalArgumentException(
+                                    String.format(Locale.ROOT,
+                                        "Polygon has %d coordinates in outer ring, exceeds limit of %d", 
+                                        outerRing.size(), MAX_COORDINATES_PER_GEOMETRY)
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static String validateIndexName(Map<String, Object> input) {

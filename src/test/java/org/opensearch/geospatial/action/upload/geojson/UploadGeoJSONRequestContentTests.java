@@ -89,4 +89,136 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
         );
         assertTrue(invalidIndexName.getMessage().contains("[ type ] cannot be empty"));
     }
+
+    public void testValidLineString() {
+        // Simple LineString with 100 coordinates - should work fine
+        JSONArray coordinates = new JSONArray();
+        for (int i = 0; i < 100; i++) {
+            coordinates.put(new JSONArray().put(i * 0.1).put(45.0));
+        }
+        
+        JSONObject feature = new JSONObject()
+            .put("type", "Feature")
+            .put("geometry", new JSONObject()
+                .put("type", "LineString")
+                .put("coordinates", coordinates))
+            .put("properties", new JSONObject());
+        
+        JSONObject request = new JSONObject()
+            .put("index", indexName)
+            .put("field", fieldName)
+            .put("type", "geo_shape")
+            .put("data", new JSONArray().put(feature));
+        
+        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(request.toMap());
+        assertNotNull(content);
+    }
+
+    public void testLineStringWithTooManyCoordinates() {
+        // LineString with 10,001 coordinates - should fail
+        JSONArray coordinates = new JSONArray();
+        for (int i = 0; i <= 10000; i++) {
+            coordinates.put(new JSONArray().put(i * 0.01).put(45.0));
+        }
+        
+        JSONObject feature = new JSONObject()
+            .put("type", "Feature")
+            .put("geometry", new JSONObject()
+                .put("type", "LineString")
+                .put("coordinates", coordinates))
+            .put("properties", new JSONObject());
+        
+        JSONObject request = new JSONObject()
+            .put("index", indexName)
+            .put("field", fieldName)
+            .put("type", "geo_shape")
+            .put("data", new JSONArray().put(feature));
+        
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> UploadGeoJSONRequestContent.create(request.toMap())
+        );
+        assertTrue(exception.getMessage().contains("exceeds limit of 10000"));
+    }
+
+    public void testValidPolygonWithHoles() {
+        // Simple polygon with 10 holes - should work fine
+        JSONArray outerRing = new JSONArray()
+            .put(new JSONArray().put(-10.0).put(-10.0))
+            .put(new JSONArray().put(10.0).put(-10.0))
+            .put(new JSONArray().put(10.0).put(10.0))
+            .put(new JSONArray().put(-10.0).put(10.0))
+            .put(new JSONArray().put(-10.0).put(-10.0));
+        
+        JSONArray rings = new JSONArray().put(outerRing);
+        
+        // Add 10 holes
+        for (int i = 0; i < 10; i++) {
+            JSONArray hole = new JSONArray()
+                .put(new JSONArray().put(i * 0.5).put(0.0))
+                .put(new JSONArray().put(i * 0.5 + 0.2).put(0.0))
+                .put(new JSONArray().put(i * 0.5 + 0.2).put(0.2))
+                .put(new JSONArray().put(i * 0.5).put(0.2))
+                .put(new JSONArray().put(i * 0.5).put(0.0));
+            rings.put(hole);
+        }
+        
+        JSONObject feature = new JSONObject()
+            .put("type", "Feature")
+            .put("geometry", new JSONObject()
+                .put("type", "Polygon")
+                .put("coordinates", rings))
+            .put("properties", new JSONObject());
+        
+        JSONObject request = new JSONObject()
+            .put("index", indexName)
+            .put("field", fieldName)
+            .put("type", "geo_shape")
+            .put("data", new JSONArray().put(feature));
+        
+        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(request.toMap());
+        assertNotNull(content);
+    }
+
+    public void testPolygonWithTooManyHoles() {
+        // Polygon with 1,001 holes - should fail
+        JSONArray outerRing = new JSONArray()
+            .put(new JSONArray().put(-50.0).put(-50.0))
+            .put(new JSONArray().put(50.0).put(-50.0))
+            .put(new JSONArray().put(50.0).put(50.0))
+            .put(new JSONArray().put(-50.0).put(50.0))
+            .put(new JSONArray().put(-50.0).put(-50.0));
+        
+        JSONArray rings = new JSONArray().put(outerRing);
+        
+        // Add 1,001 holes
+        for (int i = 0; i <= 1000; i++) {
+            JSONArray hole = new JSONArray()
+                .put(new JSONArray().put(0.0).put(i * 0.01))
+                .put(new JSONArray().put(0.1).put(i * 0.01))
+                .put(new JSONArray().put(0.1).put(i * 0.01 + 0.1))
+                .put(new JSONArray().put(0.0).put(i * 0.01 + 0.1))
+                .put(new JSONArray().put(0.0).put(i * 0.01));
+            rings.put(hole);
+        }
+        
+        JSONObject feature = new JSONObject()
+            .put("type", "Feature")
+            .put("geometry", new JSONObject()
+                .put("type", "Polygon")
+                .put("coordinates", rings))
+            .put("properties", new JSONObject());
+        
+        JSONObject request = new JSONObject()
+            .put("index", indexName)
+            .put("field", fieldName)
+            .put("type", "geo_shape")
+            .put("data", new JSONArray().put(feature));
+        
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> UploadGeoJSONRequestContent.create(request.toMap())
+        );
+        assertTrue(exception.getMessage().contains("exceeds limit of 1000"));
+    }
 }
