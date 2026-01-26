@@ -60,6 +60,7 @@ public class UploaderTests extends OpenSearchTestCase {
         mockBulkRequestBuilder = mock(BulkRequestBuilder.class);
 
         uploader = new Uploader(mockIndexManager, mockPipelineManager, mockContentBuilder);
+        GeospatialTestHelper.initializeGeoJSONRequestContentSettings();
         Map<String, Object> contentMap = GeospatialTestHelper.buildRequestContent(3);
         content = UploadGeoJSONRequestContent.create(contentMap);
     }

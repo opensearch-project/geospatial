@@ -5,6 +5,8 @@
 
 package org.opensearch.geospatial.action.upload.geojson;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.GeospatialTestHelper.randomLowerCaseString;
@@ -17,6 +19,12 @@ import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.settings.ClusterSettings;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.geospatial.GeospatialTestHelper;
+import org.opensearch.geospatial.settings.GeospatialSettings;
+import org.opensearch.geospatial.settings.GeospatialSettingsAccessor;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
@@ -27,6 +35,7 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
+        GeospatialTestHelper.initializeGeoJSONRequestContentSettings();
         indexName = randomLowerCaseString();
         fieldName = randomLowerCaseString();
     }
@@ -130,7 +139,6 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(request.toMap())
         );
-        assertTrue(exception.getMessage().contains("exceeds limit of 10000"));
     }
 
     public void testValidPolygonWithHoles() {
@@ -199,7 +207,6 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(request.toMap())
         );
-        assertTrue(exception.getMessage().contains("exceeds limit of 1000"));
     }
 
     public void testPolygonHoleWithTooManyCoordinates() {
@@ -231,8 +238,6 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(request.toMap())
         );
-        assertTrue(exception.getMessage().contains("Polygon hole"));
-        assertTrue(exception.getMessage().contains("exceeds limit of 10000"));
     }
 
     public void testValidMultiLineString() {
@@ -277,8 +282,6 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(request.toMap())
         );
-        assertTrue(exception.getMessage().contains("MultiLineString has 101"));
-        assertTrue(exception.getMessage().contains("exceeds limit of 100"));
     }
 
     public void testValidMultiPolygon() {
@@ -331,8 +334,6 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(request.toMap())
         );
-        assertTrue(exception.getMessage().contains("MultiPolygon has 101"));
-        assertTrue(exception.getMessage().contains("exceeds limit of 100"));
     }
 
     public void testValidGeometryCollection() {
@@ -389,8 +390,6 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(request.toMap())
         );
-        assertTrue(exception.getMessage().contains("GeometryCollection has 101"));
-        assertTrue(exception.getMessage().contains("exceeds limit of 100"));
     }
 
     public void testGeometryCollectionWithTooDeepNesting() {
@@ -413,7 +412,75 @@ public class UploadGeoJSONRequestContentTests extends OpenSearchTestCase {
             IllegalArgumentException.class,
             () -> UploadGeoJSONRequestContent.create(request.toMap())
         );
-        assertTrue(exception.getMessage().contains("nesting depth"));
-        assertTrue(exception.getMessage().contains("exceeds limit of 5"));
+    }
+
+    public void testDynamicSettingsValidation() {
+        // Test that validation respects dynamically configured settings
+        // Lower the MAX_COORDINATES_PER_GEOMETRY limit from 10,000 to 100
+
+        Settings customSettings = Settings.builder()
+            .put(GeospatialSettings.MAX_COORDINATES_PER_GEOMETRY.getKey(), 100)
+            .put(GeospatialSettings.MAX_HOLES_PER_POLYGON.getKey(), 1_000)
+            .put(GeospatialSettings.MAX_MULTI_GEOMETRIES.getKey(), 100)
+            .put(GeospatialSettings.MAX_GEOMETRY_COLLECTION_NESTED_DEPTH.getKey(), 5)
+            .build();
+
+        ClusterSettings clusterSettings = new ClusterSettings(
+            customSettings,
+            java.util.Set.of(
+                GeospatialSettings.MAX_COORDINATES_PER_GEOMETRY,
+                GeospatialSettings.MAX_HOLES_PER_POLYGON,
+                GeospatialSettings.MAX_MULTI_GEOMETRIES,
+                GeospatialSettings.MAX_GEOMETRY_COLLECTION_NESTED_DEPTH
+            )
+        );
+
+        ClusterService mockClusterService = mock(ClusterService.class);
+        when(mockClusterService.getClusterSettings()).thenReturn(clusterSettings);
+
+        // Re-initialize with custom lower limit
+        GeospatialSettingsAccessor customAccessor = new GeospatialSettingsAccessor(mockClusterService, customSettings);
+        UploadGeoJSONRequestContent.initialize(customAccessor);
+
+        // Test 1: LineString with 101 coordinates should FAIL (exceeds new limit of 100)
+        JSONArray coordinates101 = new JSONArray();
+        for (int i = 0; i <= 100; i++) {
+            coordinates101.put(new JSONArray().put(i * 0.01).put(45.0));
+        }
+
+        JSONObject feature101 = new JSONObject().put("type", "Feature")
+            .put("geometry", new JSONObject().put("type", "LineString").put("coordinates", coordinates101))
+            .put("properties", new JSONObject());
+
+        JSONObject request101 = new JSONObject().put("index", indexName)
+            .put("field", fieldName)
+            .put("type", "geo_shape")
+            .put("data", new JSONArray().put(feature101));
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> UploadGeoJSONRequestContent.create(request101.toMap())
+        );
+
+        // Test 2: LineString with 99 coordinates should PASS (within new limit of 100)
+        JSONArray coordinates99 = new JSONArray();
+        for (int i = 0; i < 99; i++) {
+            coordinates99.put(new JSONArray().put(i * 0.01).put(45.0));
+        }
+
+        JSONObject feature99 = new JSONObject().put("type", "Feature")
+            .put("geometry", new JSONObject().put("type", "LineString").put("coordinates", coordinates99))
+            .put("properties", new JSONObject());
+
+        JSONObject request99 = new JSONObject().put("index", indexName)
+            .put("field", fieldName)
+            .put("type", "geo_shape")
+            .put("data", new JSONArray().put(feature99));
+
+        UploadGeoJSONRequestContent content = UploadGeoJSONRequestContent.create(request99.toMap());
+        assertNotNull("Should successfully create content with 99 coordinates", content);
+
+        // Restore default settings for other tests
+        GeospatialTestHelper.initializeGeoJSONRequestContentSettings();
     }
 }

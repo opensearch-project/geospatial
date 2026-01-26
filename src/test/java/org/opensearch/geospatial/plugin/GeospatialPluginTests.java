@@ -48,6 +48,7 @@ import org.opensearch.geospatial.ip2geo.jobscheduler.DatasourceUpdateService;
 import org.opensearch.geospatial.ip2geo.listener.Ip2GeoListener;
 import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
+import org.opensearch.geospatial.settings.GeospatialSettings;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
 import org.opensearch.indices.SystemIndexDescriptor;
@@ -64,7 +65,15 @@ import org.opensearch.transport.client.Client;
 import org.opensearch.watcher.ResourceWatcherService;
 
 public class GeospatialPluginTests extends OpenSearchTestCase {
-    private final ClusterSettings clusterSettings = new ClusterSettings(Settings.EMPTY, new HashSet(Ip2GeoSettings.settings()));
+    private final ClusterSettings clusterSettings = new ClusterSettings(Settings.EMPTY, new HashSet() {
+        {
+            addAll(Ip2GeoSettings.settings());
+            add(GeospatialSettings.MAX_COORDINATES_PER_GEOMETRY);
+            add(GeospatialSettings.MAX_HOLES_PER_POLYGON);
+            add(GeospatialSettings.MAX_MULTI_GEOMETRIES);
+            add(GeospatialSettings.MAX_GEOMETRY_COLLECTION_NESTED_DEPTH);
+        }
+    });
     private final URLDenyListChecker urlDenyListChecker = new URLDenyListChecker(clusterSettings);
     private final List<RestHandler> SUPPORTED_REST_HANDLERS = List.of(
         new RestUploadGeoJSONAction(),
@@ -121,6 +130,7 @@ public class GeospatialPluginTests extends OpenSearchTestCase {
         when(client.settings()).thenReturn(settings);
         when(clusterService.getClusterSettings()).thenReturn(clusterSettings);
         when(clusterService.getSettings()).thenReturn(settings);
+        when(environment.settings()).thenReturn(settings);
         when(ingestService.getClusterService()).thenReturn(clusterService);
         nodeEnvironment = null;
         plugin = new GeospatialPlugin();

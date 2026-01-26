@@ -35,6 +35,7 @@ import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.geospatial.action.IpEnrichmentAction;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONAction;
+import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONTransportAction;
 import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldMapper;
 import org.opensearch.geospatial.index.mapper.xypoint.XYPointFieldTypeParser;
@@ -70,6 +71,8 @@ import org.opensearch.geospatial.processor.FeatureProcessor;
 import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAction;
 import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGrid;
 import org.opensearch.geospatial.search.aggregations.bucket.geogrid.GeoHexGridAggregationBuilder;
+import org.opensearch.geospatial.settings.GeospatialSettings;
+import org.opensearch.geospatial.settings.GeospatialSettingsAccessor;
 import org.opensearch.geospatial.shared.PluginClient;
 import org.opensearch.geospatial.stats.upload.RestUploadStatsAction;
 import org.opensearch.geospatial.stats.upload.UploadStats;
@@ -124,6 +127,7 @@ public class GeospatialPlugin extends Plugin
     private Ip2GeoExecutor ip2GeoExecutor;
     private DatasourceUpdateService datasourceUpdateService;
     private PluginClient pluginClient;
+    private GeospatialSettingsAccessor settingsAccessor;
 
     @Override
     public Collection<SystemIndexDescriptor> getSystemIndexDescriptors(Settings settings) {
@@ -167,7 +171,16 @@ public class GeospatialPlugin extends Plugin
 
     @Override
     public List<Setting<?>> getSettings() {
-        return Ip2GeoSettings.settings();
+        List<Setting<?>> settings = new ArrayList<>(
+            List.of(
+                GeospatialSettings.MAX_COORDINATES_PER_GEOMETRY,
+                GeospatialSettings.MAX_HOLES_PER_POLYGON,
+                GeospatialSettings.MAX_MULTI_GEOMETRIES,
+                GeospatialSettings.MAX_GEOMETRY_COLLECTION_NESTED_DEPTH
+            )
+        );
+        settings.addAll(Ip2GeoSettings.settings());
+        return settings;
     }
 
     @Override
@@ -196,6 +209,8 @@ public class GeospatialPlugin extends Plugin
         this.datasourceUpdateService = new DatasourceUpdateService(clusterService, datasourceDao, geoIpDataDao, urlDenyListChecker);
         this.ip2GeoExecutor = new Ip2GeoExecutor(threadPool);
         this.ip2GeoLockService = new Ip2GeoLockService(clusterService);
+        this.settingsAccessor = new GeospatialSettingsAccessor(clusterService, environment.settings());
+        UploadGeoJSONRequestContent.initialize(settingsAccessor);
 
         return List.of(
             UploadStats.getInstance(),

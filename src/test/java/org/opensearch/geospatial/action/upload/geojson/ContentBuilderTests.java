@@ -38,6 +38,7 @@ public class ContentBuilderTests extends OpenSearchTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
+        GeospatialTestHelper.initializeGeoJSONRequestContentSettings();
         noOpClient = new NoOpClient(getTestName());
         mockClient = mock(Client.class);
         contentBuilder = new ContentBuilder(mockClient);

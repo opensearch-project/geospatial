@@ -16,6 +16,7 @@ import org.opensearch.core.ParseField;
 import org.opensearch.core.common.Strings;
 import org.opensearch.geospatial.GeospatialParser;
 import org.opensearch.geospatial.geojson.Feature;
+import org.opensearch.geospatial.settings.GeospatialSettingsAccessor;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -36,11 +37,17 @@ public final class UploadGeoJSONRequestContent {
     // for upload as well.
     public static final int MAX_SUPPORTED_GEOJSON_FEATURE_COUNT = 10_000;
 
-    // Geometric complexity limits for resource management
-    private static final int MAX_COORDINATES_PER_GEOMETRY = 10_000;
-    private static final int MAX_HOLES_PER_POLYGON = 1_000;
-    private static final int MAX_MULTI_GEOMETRIES = 100;
-    private static final int MAX_GEOMETRY_COLLECTION_DEPTH = 5;
+    // Static reference to settings accessor for dynamic geometric complexity limits
+    private static volatile GeospatialSettingsAccessor settingsAccessor;
+
+    /**
+     * Initialize with settings accessor from plugin
+     * Should be called once during plugin initialization
+     * @param accessor the GeospatialSettingsAccessor instance
+     */
+    public static void initialize(GeospatialSettingsAccessor accessor) {
+        settingsAccessor = accessor;
+    }
 
     // GeoJSON geometry type constants
     private static final String GEOMETRY_TYPE_LINESTRING = "LineString";
@@ -81,7 +88,7 @@ public final class UploadGeoJSONRequestContent {
             );
         }
         validateFeatureCount(geoJSONData);
-        // validateGeometricComplexity(geoJSONData);
+        validateGeometricComplexity(geoJSONData);
         return new UploadGeoJSONRequestContent(index, fieldName, fieldType, (List<Object>) geoJSONData);
     }
 
@@ -134,9 +141,14 @@ public final class UploadGeoJSONRequestContent {
      * @param depth current nesting depth for GeometryCollection
      */
     private static void validateGeometry(Map<String, Object> geometry, int depth) {
-        if (depth > MAX_GEOMETRY_COLLECTION_DEPTH) {
+        if (depth > settingsAccessor.getMaxGeometryCollectionNestedDepth()) {
             throw new IllegalArgumentException(
-                String.format(Locale.ROOT, "GeometryCollection nesting depth %d exceeds limit of %d", depth, MAX_GEOMETRY_COLLECTION_DEPTH)
+                String.format(
+                    Locale.ROOT,
+                    "GeometryCollection nesting depth %d exceeds limit of %d",
+                    depth,
+                    settingsAccessor.getMaxGeometryCollectionNestedDepth()
+                )
             );
         }
 
@@ -181,13 +193,13 @@ public final class UploadGeoJSONRequestContent {
      * Validates LineString coordinate count
      */
     private static void validateLineString(List<?> coordinates) {
-        if (coordinates.size() > MAX_COORDINATES_PER_GEOMETRY) {
+        if (coordinates.size() > settingsAccessor.getMaxCoordinatesPerGeometry()) {
             throw new IllegalArgumentException(
                 String.format(
                     Locale.ROOT,
                     "LineString has %d coordinates, exceeds limit of %d",
                     coordinates.size(),
-                    MAX_COORDINATES_PER_GEOMETRY
+                    settingsAccessor.getMaxCoordinatesPerGeometry()
                 )
             );
         }
@@ -198,22 +210,22 @@ public final class UploadGeoJSONRequestContent {
      */
     private static void validatePolygon(List<?> rings) {
         int holes = rings.size() - 1;
-        if (holes > MAX_HOLES_PER_POLYGON) {
+        if (holes > settingsAccessor.getMaxHolesPerPolygon()) {
             throw new IllegalArgumentException(
-                String.format(Locale.ROOT, "Polygon has %d holes, exceeds limit of %d", holes, MAX_HOLES_PER_POLYGON)
+                String.format(Locale.ROOT, "Polygon has %d holes, exceeds limit of %d", holes, settingsAccessor.getMaxHolesPerPolygon())
             );
         }
 
         // Validate outer ring
         if (!rings.isEmpty() && rings.get(0) instanceof List) {
             List<?> outerRing = (List<?>) rings.get(0);
-            if (outerRing.size() > MAX_COORDINATES_PER_GEOMETRY) {
+            if (outerRing.size() > settingsAccessor.getMaxCoordinatesPerGeometry()) {
                 throw new IllegalArgumentException(
                     String.format(
                         Locale.ROOT,
                         "Polygon outer ring has %d coordinates, exceeds limit of %d",
                         outerRing.size(),
-                        MAX_COORDINATES_PER_GEOMETRY
+                        settingsAccessor.getMaxCoordinatesPerGeometry()
                     )
                 );
             }
@@ -223,14 +235,14 @@ public final class UploadGeoJSONRequestContent {
         for (int i = 1; i < rings.size(); i++) {
             if (rings.get(i) instanceof List) {
                 List<?> hole = (List<?>) rings.get(i);
-                if (hole.size() > MAX_COORDINATES_PER_GEOMETRY) {
+                if (hole.size() > settingsAccessor.getMaxCoordinatesPerGeometry()) {
                     throw new IllegalArgumentException(
                         String.format(
                             Locale.ROOT,
                             "Polygon hole %d has %d coordinates, exceeds limit of %d",
                             i,
                             hole.size(),
-                            MAX_COORDINATES_PER_GEOMETRY
+                            settingsAccessor.getMaxCoordinatesPerGeometry()
                         )
                     );
                 }
@@ -242,13 +254,13 @@ public final class UploadGeoJSONRequestContent {
      * Validates MultiLineString collection
      */
     private static void validateMultiLineString(List<?> lineStrings) {
-        if (lineStrings.size() > MAX_MULTI_GEOMETRIES) {
+        if (lineStrings.size() > settingsAccessor.getMaxMultiGeometries()) {
             throw new IllegalArgumentException(
                 String.format(
                     Locale.ROOT,
                     "MultiLineString has %d LineStrings, exceeds limit of %d",
                     lineStrings.size(),
-                    MAX_MULTI_GEOMETRIES
+                    settingsAccessor.getMaxMultiGeometries()
                 )
             );
         }
@@ -264,9 +276,14 @@ public final class UploadGeoJSONRequestContent {
      * Validates MultiPolygon collection
      */
     private static void validateMultiPolygon(List<?> polygons) {
-        if (polygons.size() > MAX_MULTI_GEOMETRIES) {
+        if (polygons.size() > settingsAccessor.getMaxMultiGeometries()) {
             throw new IllegalArgumentException(
-                String.format(Locale.ROOT, "MultiPolygon has %d Polygons, exceeds limit of %d", polygons.size(), MAX_MULTI_GEOMETRIES)
+                String.format(
+                    Locale.ROOT,
+                    "MultiPolygon has %d Polygons, exceeds limit of %d",
+                    polygons.size(),
+                    settingsAccessor.getMaxMultiGeometries()
+                )
             );
         }
 
@@ -281,13 +298,13 @@ public final class UploadGeoJSONRequestContent {
      * Validates GeometryCollection recursively
      */
     private static void validateGeometryCollection(List<?> geometries, int depth) {
-        if (geometries.size() > MAX_MULTI_GEOMETRIES) {
+        if (geometries.size() > settingsAccessor.getMaxMultiGeometries()) {
             throw new IllegalArgumentException(
                 String.format(
                     Locale.ROOT,
                     "GeometryCollection has %d geometries, exceeds limit of %d",
                     geometries.size(),
-                    MAX_MULTI_GEOMETRIES
+                    settingsAccessor.getMaxMultiGeometries()
                 )
             );
         }
