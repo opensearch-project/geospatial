@@ -7,10 +7,12 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import static org.opensearch.geospatial.GeospatialParser.extractValueAsString;
 
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.Strings;
@@ -115,7 +117,7 @@ public final class UploadGeoJSONRequestContent {
     }
 
     /**
-     * Validates geometric complexity limits
+     * Validates geometric complexity limits using iterative approach
      * @param geoJSONData input data containing features
      */
     private static void validateGeometricComplexity(Object geoJSONData) {
@@ -130,62 +132,103 @@ public final class UploadGeoJSONRequestContent {
                 if (geometryObj == null) continue;
 
                 Map<String, Object> geometry = GeospatialParser.toStringObjectMap(geometryObj);
-                validateGeometry(geometry, 0);
+                validateGeometryIterative(geometry);
             }
         }
     }
 
     /**
-     * Recursively validates a geometry object
-     * @param geometry the geometry to validate
-     * @param depth current nesting depth for GeometryCollection
+     * Helper class to track geometries in validation queue
      */
-    private static void validateGeometry(Map<String, Object> geometry, int depth) {
-        if (depth > settingsAccessor.getMaxGeometryCollectionNestedDepth()) {
-            throw new IllegalArgumentException(
-                String.format(
-                    Locale.ROOT,
-                    "GeometryCollection nesting depth %d exceeds limit of %d",
-                    depth,
-                    settingsAccessor.getMaxGeometryCollectionNestedDepth()
-                )
-            );
+    private static class GeometryDepthPair {
+        final Map<String, Object> geometry;
+        final int depth;
+
+        GeometryDepthPair(Map<String, Object> geometry, int depth) {
+            this.geometry = geometry;
+            this.depth = depth;
         }
+    }
 
-        String type = GeospatialParser.extractValueAsString(geometry, "type");
-        if (type == null) return;
+    /**
+     * Iteratively validates a geometry object using a queue to avoid stack overflow
+     * @param rootGeometry the root geometry to validate
+     */
+    private static void validateGeometryIterative(Map<String, Object> rootGeometry) {
+        Queue<GeometryDepthPair> queue = new ArrayDeque<>();
+        queue.add(new GeometryDepthPair(rootGeometry, 0));
 
-        // Handle GeometryCollection separately (uses "geometries" not "coordinates")
-        if (GEOMETRY_TYPE_GEOMETRYCOLLECTION.equals(type)) {
-            Object geometries = geometry.get("geometries");
-            if (!(geometries instanceof List)) return;
-            validateGeometryCollection((List<?>) geometries, depth);
-            return;
-        }
+        while (!queue.isEmpty()) {
+            GeometryDepthPair current = queue.poll();
 
-        // All other geometry types use "coordinates" - validate early
-        Object coordinates = geometry.get("coordinates");
-        if (!(coordinates instanceof List)) return;
+            // Check depth limit
+            if (current.depth > settingsAccessor.getMaxGeometryCollectionNestedDepth()) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        Locale.ROOT,
+                        "GeometryCollection nesting depth %d exceeds limit of %d",
+                        current.depth,
+                        settingsAccessor.getMaxGeometryCollectionNestedDepth()
+                    )
+                );
+            }
 
-        List<?> coordList = (List<?>) coordinates;
+            String type = GeospatialParser.extractValueAsString(current.geometry, "type");
+            if (type == null) continue;
 
-        // Validate based on geometry type
-        switch (type) {
-            case GEOMETRY_TYPE_LINESTRING:
-                validateLineString(coordList);
-                break;
-            case GEOMETRY_TYPE_POLYGON:
-                validatePolygon(coordList);
-                break;
-            case GEOMETRY_TYPE_MULTILINESTRING:
-                validateMultiLineString(coordList);
-                break;
-            case GEOMETRY_TYPE_MULTIPOLYGON:
-                validateMultiPolygon(coordList);
-                break;
-            default:
-                // Unknown geometry type, skip validation
-                break;
+            // Handle GeometryCollection separately (uses "geometries" not "coordinates")
+            if (GEOMETRY_TYPE_GEOMETRYCOLLECTION.equals(type)) {
+                Object geometries = current.geometry.get("geometries");
+                if (!(geometries instanceof List)) continue;
+
+                List<?> geometryList = (List<?>) geometries;
+
+                // Validate collection size
+                if (geometryList.size() > settingsAccessor.getMaxMultiGeometries()) {
+                    throw new IllegalArgumentException(
+                        String.format(
+                            Locale.ROOT,
+                            "GeometryCollection has %d geometries, exceeds limit of %d",
+                            geometryList.size(),
+                            settingsAccessor.getMaxMultiGeometries()
+                        )
+                    );
+                }
+
+                // Add child geometries to queue with incremented depth
+                for (Object geomObj : geometryList) {
+                    if (geomObj instanceof Map) {
+                        Map<String, Object> childGeometry = (Map<String, Object>) geomObj;
+                        queue.add(new GeometryDepthPair(childGeometry, current.depth + 1));
+                    }
+                }
+                continue;
+            }
+
+            // All other geometry types use "coordinates" - validate early
+            Object coordinates = current.geometry.get("coordinates");
+            if (!(coordinates instanceof List)) continue;
+
+            List<?> coordList = (List<?>) coordinates;
+
+            // Validate based on geometry type
+            switch (type) {
+                case GEOMETRY_TYPE_LINESTRING:
+                    validateLineString(coordList);
+                    break;
+                case GEOMETRY_TYPE_POLYGON:
+                    validatePolygon(coordList);
+                    break;
+                case GEOMETRY_TYPE_MULTILINESTRING:
+                    validateMultiLineString(coordList);
+                    break;
+                case GEOMETRY_TYPE_MULTIPOLYGON:
+                    validateMultiPolygon(coordList);
+                    break;
+                default:
+                    // Unknown geometry type, skip validation
+                    break;
+            }
         }
     }
 
@@ -290,29 +333,6 @@ public final class UploadGeoJSONRequestContent {
         for (Object polyObj : polygons) {
             if (polyObj instanceof List) {
                 validatePolygon((List<?>) polyObj);
-            }
-        }
-    }
-
-    /**
-     * Validates GeometryCollection recursively
-     */
-    private static void validateGeometryCollection(List<?> geometries, int depth) {
-        if (geometries.size() > settingsAccessor.getMaxMultiGeometries()) {
-            throw new IllegalArgumentException(
-                String.format(
-                    Locale.ROOT,
-                    "GeometryCollection has %d geometries, exceeds limit of %d",
-                    geometries.size(),
-                    settingsAccessor.getMaxMultiGeometries()
-                )
-            );
-        }
-
-        for (Object geomObj : geometries) {
-            if (geomObj instanceof Map) {
-                Map<String, Object> geom = (Map<String, Object>) geomObj;
-                validateGeometry(geom, depth + 1);
             }
         }
     }

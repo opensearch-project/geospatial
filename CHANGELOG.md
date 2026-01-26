@@ -7,6 +7,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ## [Unreleased 3.x](https://github.com/opensearch-project/geospatial/compare/main...HEAD)
 ### Features
 ### Enhancements
+- Add limits and cluster settings for validating geometric complexity of uploaded GeoJSON 
 ### Bug Fixes
 ### Infrastructure
 ### Documentation
