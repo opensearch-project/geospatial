@@ -55,6 +55,12 @@ import org.opensearch.geospatial.rest.action.upload.geojson.RestUploadGeoJSONAct
 import org.opensearch.ingest.Pipeline;
 
 public abstract class GeospatialRestTestCase extends OpenSearchSecureRestTestCase {
+
+    static {
+        // Initialize settings for any tests that might call UploadGeoJSONRequestContent.create() directly
+        GeospatialTestHelper.initializeGeoJSONRequestContentSettings();
+    }
+
     public static final String SOURCE = "_source";
     public static final String DOC = "_doc";
     public static final String URL_DELIMITER = "/";

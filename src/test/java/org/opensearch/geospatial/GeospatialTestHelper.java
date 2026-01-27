@@ -14,6 +14,8 @@ package org.opensearch.geospatial;
 import static org.apache.lucene.tests.util.LuceneTestCase.random;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.buildProperties;
 import static org.opensearch.geospatial.GeospatialObjectBuilder.randomGeoJSONFeature;
 import static org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent.FIELD_DATA;
@@ -36,13 +38,18 @@ import org.opensearch.action.bulk.BulkItemResponse;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.support.replication.ReplicationResponse;
+import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.Randomness;
 import org.opensearch.common.UUIDs;
 import org.opensearch.common.collect.Tuple;
+import org.opensearch.common.settings.ClusterSettings;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.core.index.shard.ShardId;
 import org.opensearch.geospatial.action.upload.geojson.ContentBuilder;
 import org.opensearch.geospatial.action.upload.geojson.UploadGeoJSONRequestContent;
 import org.opensearch.geospatial.h3.H3;
+import org.opensearch.geospatial.settings.GeospatialSettings;
+import org.opensearch.geospatial.settings.GeospatialSettingsAccessor;
 import org.opensearch.geospatial.stats.upload.UploadMetric;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.test.RandomObjects;
@@ -59,6 +66,36 @@ public class GeospatialTestHelper {
 
     public static final int RANDOM_STRING_MIN_LENGTH = 2;
     public static final int RANDOM_STRING_MAX_LENGTH = 16;
+
+    /**
+     * Initialize UploadGeoJSONRequestContent with test settings accessor.
+     * Should be called in test setup (e.g., @BeforeClass or @Before) before using
+     * UploadGeoJSONRequestContent.create()
+     */
+    public static void initializeGeoJSONRequestContentSettings() {
+        Settings settings = Settings.builder()
+            .put(GeospatialSettings.MAX_COORDINATES_PER_GEOMETRY.getKey(), 10_000)
+            .put(GeospatialSettings.MAX_HOLES_PER_POLYGON.getKey(), 1_000)
+            .put(GeospatialSettings.MAX_MULTI_GEOMETRIES.getKey(), 100)
+            .put(GeospatialSettings.MAX_GEOMETRY_COLLECTION_NESTED_DEPTH.getKey(), 5)
+            .build();
+
+        ClusterSettings clusterSettings = new ClusterSettings(
+            settings,
+            java.util.Set.of(
+                GeospatialSettings.MAX_COORDINATES_PER_GEOMETRY,
+                GeospatialSettings.MAX_HOLES_PER_POLYGON,
+                GeospatialSettings.MAX_MULTI_GEOMETRIES,
+                GeospatialSettings.MAX_GEOMETRY_COLLECTION_NESTED_DEPTH
+            )
+        );
+
+        ClusterService mockClusterService = mock(ClusterService.class);
+        when(mockClusterService.getClusterSettings()).thenReturn(clusterSettings);
+
+        GeospatialSettingsAccessor accessor = new GeospatialSettingsAccessor(mockClusterService, settings);
+        UploadGeoJSONRequestContent.initialize(accessor);
+    }
 
     public static Map<String, Object> buildRequestContent(int featureCount) {
         JSONObject contents = new JSONObject();

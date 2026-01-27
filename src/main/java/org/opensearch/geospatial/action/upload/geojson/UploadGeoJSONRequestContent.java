@@ -7,14 +7,18 @@ package org.opensearch.geospatial.action.upload.geojson;
 
 import static org.opensearch.geospatial.GeospatialParser.extractValueAsString;
 
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.Strings;
 import org.opensearch.geospatial.GeospatialParser;
+import org.opensearch.geospatial.geojson.Feature;
+import org.opensearch.geospatial.settings.GeospatialSettingsAccessor;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -34,6 +38,25 @@ public final class UploadGeoJSONRequestContent {
     // Custom Vector Map can support fetching up to 10K Features. Hence, we chose same value as limit
     // for upload as well.
     public static final int MAX_SUPPORTED_GEOJSON_FEATURE_COUNT = 10_000;
+
+    // Static reference to settings accessor for dynamic geometric complexity limits
+    private static volatile GeospatialSettingsAccessor settingsAccessor;
+
+    /**
+     * Initialize with settings accessor from plugin
+     * Should be called once during plugin initialization
+     * @param accessor the GeospatialSettingsAccessor instance
+     */
+    public static void initialize(GeospatialSettingsAccessor accessor) {
+        settingsAccessor = accessor;
+    }
+
+    // GeoJSON geometry type constants
+    private static final String GEOMETRY_TYPE_LINESTRING = "LineString";
+    private static final String GEOMETRY_TYPE_POLYGON = "Polygon";
+    private static final String GEOMETRY_TYPE_MULTILINESTRING = "MultiLineString";
+    private static final String GEOMETRY_TYPE_MULTIPOLYGON = "MultiPolygon";
+    private static final String GEOMETRY_TYPE_GEOMETRYCOLLECTION = "GeometryCollection";
     private final String indexName;
     private final String fieldName;
     private final String fieldType;
@@ -67,6 +90,7 @@ public final class UploadGeoJSONRequestContent {
             );
         }
         validateFeatureCount(geoJSONData);
+        validateGeometricComplexity(geoJSONData);
         return new UploadGeoJSONRequestContent(index, fieldName, fieldType, (List<Object>) geoJSONData);
     }
 
@@ -90,6 +114,227 @@ public final class UploadGeoJSONRequestContent {
             .map(GeospatialParser::getFeatures)
             .flatMap(List::stream)
             .count();
+    }
+
+    /**
+     * Validates geometric complexity limits using iterative approach
+     * @param geoJSONData input data containing features
+     */
+    private static void validateGeometricComplexity(Object geoJSONData) {
+        List<Object> dataList = (List<Object>) geoJSONData;
+
+        for (Object item : dataList) {
+            Map<String, Object> geoJSON = GeospatialParser.toStringObjectMap(item);
+            List<Map<String, Object>> features = GeospatialParser.getFeatures(geoJSON);
+
+            for (Map<String, Object> feature : features) {
+                Object geometryObj = feature.get(Feature.GEOMETRY_KEY);
+                if (geometryObj == null) continue;
+
+                Map<String, Object> geometry = GeospatialParser.toStringObjectMap(geometryObj);
+                validateGeometryIterative(geometry);
+            }
+        }
+    }
+
+    /**
+     * Helper class to track geometries in validation queue
+     */
+    private static class GeometryDepthPair {
+        final Map<String, Object> geometry;
+        final int depth;
+
+        GeometryDepthPair(Map<String, Object> geometry, int depth) {
+            this.geometry = geometry;
+            this.depth = depth;
+        }
+    }
+
+    /**
+     * Iteratively validates a geometry object using a queue to avoid stack overflow
+     * @param rootGeometry the root geometry to validate
+     */
+    private static void validateGeometryIterative(Map<String, Object> rootGeometry) {
+        Queue<GeometryDepthPair> queue = new ArrayDeque<>();
+        queue.add(new GeometryDepthPair(rootGeometry, 0));
+
+        while (!queue.isEmpty()) {
+            GeometryDepthPair current = queue.poll();
+
+            // Check depth limit
+            if (current.depth > settingsAccessor.getMaxGeometryCollectionNestedDepth()) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        Locale.ROOT,
+                        "GeometryCollection nesting depth %d exceeds limit of %d",
+                        current.depth,
+                        settingsAccessor.getMaxGeometryCollectionNestedDepth()
+                    )
+                );
+            }
+
+            String type = GeospatialParser.extractValueAsString(current.geometry, "type");
+            if (type == null) continue;
+
+            // Handle GeometryCollection separately (uses "geometries" not "coordinates")
+            if (GEOMETRY_TYPE_GEOMETRYCOLLECTION.equals(type)) {
+                Object geometries = current.geometry.get("geometries");
+                if (!(geometries instanceof List)) continue;
+
+                List<?> geometryList = (List<?>) geometries;
+
+                // Validate collection size
+                if (geometryList.size() > settingsAccessor.getMaxMultiGeometries()) {
+                    throw new IllegalArgumentException(
+                        String.format(
+                            Locale.ROOT,
+                            "GeometryCollection has %d geometries, exceeds limit of %d",
+                            geometryList.size(),
+                            settingsAccessor.getMaxMultiGeometries()
+                        )
+                    );
+                }
+
+                // Add child geometries to queue with incremented depth
+                for (Object geomObj : geometryList) {
+                    if (geomObj instanceof Map) {
+                        Map<String, Object> childGeometry = (Map<String, Object>) geomObj;
+                        queue.add(new GeometryDepthPair(childGeometry, current.depth + 1));
+                    }
+                }
+                continue;
+            }
+
+            // All other geometry types use "coordinates" - validate early
+            Object coordinates = current.geometry.get("coordinates");
+            if (!(coordinates instanceof List)) continue;
+
+            List<?> coordList = (List<?>) coordinates;
+
+            // Validate based on geometry type
+            switch (type) {
+                case GEOMETRY_TYPE_LINESTRING:
+                    validateLineString(coordList);
+                    break;
+                case GEOMETRY_TYPE_POLYGON:
+                    validatePolygon(coordList);
+                    break;
+                case GEOMETRY_TYPE_MULTILINESTRING:
+                    validateMultiLineString(coordList);
+                    break;
+                case GEOMETRY_TYPE_MULTIPOLYGON:
+                    validateMultiPolygon(coordList);
+                    break;
+                default:
+                    // Unknown geometry type, skip validation
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Validates LineString coordinate count
+     */
+    private static void validateLineString(List<?> coordinates) {
+        if (coordinates.size() > settingsAccessor.getMaxCoordinatesPerGeometry()) {
+            throw new IllegalArgumentException(
+                String.format(
+                    Locale.ROOT,
+                    "LineString has %d coordinates, exceeds limit of %d",
+                    coordinates.size(),
+                    settingsAccessor.getMaxCoordinatesPerGeometry()
+                )
+            );
+        }
+    }
+
+    /**
+     * Validates Polygon rings (outer ring and holes)
+     */
+    private static void validatePolygon(List<?> rings) {
+        int holes = rings.size() - 1;
+        if (holes > settingsAccessor.getMaxHolesPerPolygon()) {
+            throw new IllegalArgumentException(
+                String.format(Locale.ROOT, "Polygon has %d holes, exceeds limit of %d", holes, settingsAccessor.getMaxHolesPerPolygon())
+            );
+        }
+
+        // Validate outer ring
+        if (!rings.isEmpty() && rings.get(0) instanceof List) {
+            List<?> outerRing = (List<?>) rings.get(0);
+            if (outerRing.size() > settingsAccessor.getMaxCoordinatesPerGeometry()) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        Locale.ROOT,
+                        "Polygon outer ring has %d coordinates, exceeds limit of %d",
+                        outerRing.size(),
+                        settingsAccessor.getMaxCoordinatesPerGeometry()
+                    )
+                );
+            }
+        }
+
+        // Validate each hole (inner ring)
+        for (int i = 1; i < rings.size(); i++) {
+            if (rings.get(i) instanceof List) {
+                List<?> hole = (List<?>) rings.get(i);
+                if (hole.size() > settingsAccessor.getMaxCoordinatesPerGeometry()) {
+                    throw new IllegalArgumentException(
+                        String.format(
+                            Locale.ROOT,
+                            "Polygon hole %d has %d coordinates, exceeds limit of %d",
+                            i,
+                            hole.size(),
+                            settingsAccessor.getMaxCoordinatesPerGeometry()
+                        )
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Validates MultiLineString collection
+     */
+    private static void validateMultiLineString(List<?> lineStrings) {
+        if (lineStrings.size() > settingsAccessor.getMaxMultiGeometries()) {
+            throw new IllegalArgumentException(
+                String.format(
+                    Locale.ROOT,
+                    "MultiLineString has %d LineStrings, exceeds limit of %d",
+                    lineStrings.size(),
+                    settingsAccessor.getMaxMultiGeometries()
+                )
+            );
+        }
+
+        for (Object lineObj : lineStrings) {
+            if (lineObj instanceof List) {
+                validateLineString((List<?>) lineObj);
+            }
+        }
+    }
+
+    /**
+     * Validates MultiPolygon collection
+     */
+    private static void validateMultiPolygon(List<?> polygons) {
+        if (polygons.size() > settingsAccessor.getMaxMultiGeometries()) {
+            throw new IllegalArgumentException(
+                String.format(
+                    Locale.ROOT,
+                    "MultiPolygon has %d Polygons, exceeds limit of %d",
+                    polygons.size(),
+                    settingsAccessor.getMaxMultiGeometries()
+                )
+            );
+        }
+
+        for (Object polyObj : polygons) {
+            if (polyObj instanceof List) {
+                validatePolygon((List<?>) polyObj);
+            }
+        }
     }
 
     private static String validateIndexName(Map<String, Object> input) {
