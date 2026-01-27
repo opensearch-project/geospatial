@@ -157,6 +157,12 @@ configurations {
     zipArchive
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("com.google.errorprone:error_prone_annotations:${versions.error_prone_annotations}")
+    }
+}
+
 //****************************************************************************/
 // Dependencies
 //****************************************************************************/
