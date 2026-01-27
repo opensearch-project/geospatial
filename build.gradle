@@ -48,7 +48,7 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch.version", "2.19.4-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "2.19.5-SNAPSHOT")
         buildVersionQualifier = System.getProperty("build.version_qualifier", "")
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         // 2.2.0-SNAPSHOT -> 2.2.0.0-SNAPSHOT
@@ -155,6 +155,12 @@ publishing {
 
 configurations {
     zipArchive
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("com.google.errorprone:error_prone_annotations:${versions.error_prone_annotations}")
+    }
 }
 
 //****************************************************************************/
