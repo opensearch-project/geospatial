@@ -26,7 +26,7 @@ public final class GeospatialSettings {
 
     // Max number of multi geometries allowed while parsing uploaded GeoJSON
     public static final Setting<Integer> MAX_MULTI_GEOMETRIES = Setting.intSetting(
-        "plugins.geospatial.geojson.max_multi_gemoetries",
+        "plugins.geospatial.geojson.max_multi_geometries",
         100,
         Setting.Property.NodeScope,
         Setting.Property.Dynamic
