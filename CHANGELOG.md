@@ -8,9 +8,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Features
 ### Enhancements
 ### Bug Fixes
-- Fix typo in `plugins.geospatial.geojson.max_multi_gemoetries` setting to `plugins.geospatial.geojson.max_multi_gemoetries` ([#837](https://github.com/opensearch-project/geospatial/pull/837))
 ### Infrastructure
 ### Documentation
 ### Maintenance
-
 ### Refactoring
