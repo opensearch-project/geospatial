@@ -8,5 +8,4 @@ Compatible with OpenSearch and OpenSearch Dashboards version 3.6.0
 
 ### Maintenance
 
-* Add release notes for 3.5.0 ([#833](https://github.com/opensearch-project/geospatial/pull/833))
 * Update changelog and add release notes for 3.6.0 ([#847](https://github.com/opensearch-project/geospatial/pull/847))
