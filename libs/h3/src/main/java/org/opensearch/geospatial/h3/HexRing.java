@@ -616,7 +616,7 @@ final class HexRing {
      * @param rotations Number of ccw rotations to perform to reorient the
      *                  translation vector. Will be modified to the new number of
      *                  rotations to perform (such as when crossing a face edge.)
-     * @param out H3Index of the specified neighbor if succesful
+     * @param out H3Index of the specified neighbor if successful
      * @return E_SUCCESS on success
      */
     private static int h3NeighborRotations(long origin, int dir, int[] rotations, long[] out) {
