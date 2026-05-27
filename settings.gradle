@@ -7,6 +7,14 @@
  * in the user manual at https://docs.gradle.org/6.5.1/userguide/multi_project_builds.html
  */
 
+pluginManagement {
+    repositories {
+        maven { url "https://ci.opensearch.org/maven2/" }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'geospatial'
 
 include ":libs"
