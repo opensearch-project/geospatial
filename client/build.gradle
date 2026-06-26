@@ -19,6 +19,7 @@ project.forbiddenApisTest.enabled = false
 repositories {
     mavenLocal()
     maven { url "https://ci.opensearch.org/ci/dbc/snapshots/maven/" }
+    maven { url "https://ci.opensearch.org/maven2/" }
     mavenCentral()
     maven { url "https://plugins.gradle.org/m2/" }
 }
