@@ -344,7 +344,7 @@ spotless {
     java {
         removeUnusedImports()
         importOrder 'java', 'javax', 'org', 'com'
-        eclipse().configFile rootProject.file('formatterConfig.xml')
+        eclipse().withP2Mirrors(Map.of("https://download.eclipse.org/", "https://ci.opensearch.org/")).configFile rootProject.file('formatterConfig.xml')
         trimTrailingWhitespace()
         endWithNewline()
     }
