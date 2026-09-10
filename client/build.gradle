@@ -5,7 +5,6 @@
 
 apply plugin: 'opensearch.build'
 apply plugin: 'io.freefair.lombok'
-apply plugin: "com.diffplug.spotless"
 
 
 group = opensearch_group
@@ -45,14 +44,29 @@ dependencies {
 licenseFile = "LICENSE.txt"
 noticeFile = "NOTICE.txt"
 
+// Spotless 8.10.x (the pinned Eclipse-JDT toolchain) requires a Java 17+ runtime to even
+// resolve/apply its Gradle plugin. Skip it on older JDKs (e.g. a Java 11 build) so non-spotless
+// builds don't fail at configuration time. Formatting still runs on Java 17+.
+if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+apply plugin: "com.diffplug.spotless"
+
+// Only wire the Eclipse JDT step when a spotless task is actually being run.
+def runningSpotlessTask = gradle.startParameter.taskNames.any { it.toLowerCase(Locale.ROOT).contains('spotless') }
+
 spotless {
     java {
         removeUnusedImports()
         importOrder 'java', 'javax', 'org', 'com'
-        eclipse().withP2Mirrors(Map.of("https://download.eclipse.org/", "https://ci.opensearch.org/")).configFile rootProject.file('formatterConfig.xml')
+        // Pin 4.29 explicitly: spotless 8.10.0+ ships an embedded lockfile for it so the
+        // formatter resolves from Maven Central instead of a P2 update site. 4.29 keeps
+        // formatting identical to the eclipse() default of the previous spotless 6.25.0.
+        if (runningSpotlessTask) {
+            eclipse('4.29').withP2Mirrors(Map.of("https://download.eclipse.org/", "https://ci.opensearch.org/")).configFile rootProject.file('formatterConfig.xml')
+        }
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
 }
 
 publishing {

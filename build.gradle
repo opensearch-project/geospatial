@@ -75,7 +75,12 @@ buildscript {
 
     dependencies {
         classpath "${opensearch_group}.gradle:build-tools:${opensearch_version}"
-        classpath "com.diffplug.spotless:spotless-plugin-gradle:6.25.0"
+        // Spotless 8.10.x requires a Java 17+ runtime to resolve its plugin. Only put it on the
+        // buildscript classpath on Java 17+ so a Java 11 build doesn't fail resolving it.
+        // The plugin is applied (also gated to Java 17+) further below only when available.
+        if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+            classpath "com.diffplug.spotless:spotless-plugin-gradle:8.10.1"
+        }
         classpath "io.freefair.gradle:lombok-plugin:8.4"
 
         configurations.all {
@@ -86,7 +91,6 @@ buildscript {
         }
     }
 }
-apply plugin: "com.diffplug.spotless"
 
 ext {
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
@@ -319,14 +323,31 @@ task integTestRemote(type: RestIntegTestTask) {
     }
 }
 
+// Spotless 8.10.x (the pinned Eclipse-JDT toolchain) requires a Java 17+ runtime to even
+// resolve/apply its Gradle plugin. Skip it on older JDKs (e.g. a Java 11 build) so non-spotless
+// builds don't fail at configuration time. Formatting still runs on Java 17+.
+if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+apply plugin: "com.diffplug.spotless"
+
+// Only wire the Eclipse JDT step when a spotless task is actually being run, so non-spotless
+// Gradle invocations (test, assemble) don't provision the formatter at configuration time.
+def runningSpotlessTask = gradle.startParameter.taskNames.any { it.toLowerCase(Locale.ROOT).contains('spotless') }
+
 spotless {
     java {
         removeUnusedImports()
         importOrder 'java', 'javax', 'org', 'com'
-        eclipse().withP2Mirrors(Map.of("https://download.eclipse.org/", "https://ci.opensearch.org/")).configFile rootProject.file('formatterConfig.xml')
+        // Pin 4.29 explicitly: spotless 8.10.0+ ships an embedded lockfile for it, so the
+        // formatter resolves from Maven Central through the mirror below instead of querying a
+        // P2 update site at configuration time. 4.29 keeps the formatting identical to the
+        // eclipse() default of the previous spotless 6.25.0 this branch used.
+        if (runningSpotlessTask) {
+            eclipse('4.29').withP2Mirrors(Map.of("https://download.eclipse.org/", "https://ci.opensearch.org/")).configFile rootProject.file('formatterConfig.xml')
+        }
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
 }
 
 jacocoTestReport {
