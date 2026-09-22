@@ -183,6 +183,9 @@ configurations {
 configurations.all {
     resolutionStrategy {
         force("com.google.errorprone:error_prone_annotations:${versions.error_prone_annotations}")
+        // log4j-core 2.25.5 pins jspecify 1.0.0 while the OpenSearch core dependencies bring 1.0.1,
+        // which Gradle's strict conflict resolution rejects. Pin to 1.0.1 (matches the sql plugin).
+        force("org.jspecify:jspecify:1.0.1")
     }
 }
 
