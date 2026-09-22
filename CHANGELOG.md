@@ -11,4 +11,5 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Infrastructure
 ### Documentation
 ### Maintenance
+- Increment version to 3.10.0-SNAPSHOT ([#908](https://github.com/opensearch-project/geospatial/pull/908))
 ### Refactoring
