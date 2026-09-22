@@ -9,7 +9,7 @@ import java.util.concurrent.Callable
 
 buildscript {
     ext {
-        opensearch_version = System.getProperty("opensearch.version", "3.9.0-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "3.10.0-SNAPSHOT")
         buildVersionQualifier = System.getProperty("build.version_qualifier", "")
         isSnapshot = "true" == System.getProperty("build.snapshot", "true")
         // 2.2.0-SNAPSHOT -> 2.2.0.0-SNAPSHOT
@@ -183,6 +183,9 @@ configurations {
 configurations.all {
     resolutionStrategy {
         force("com.google.errorprone:error_prone_annotations:${versions.error_prone_annotations}")
+        // log4j-core 2.25.5 pins jspecify 1.0.0 while the OpenSearch core dependencies bring 1.0.1,
+        // which Gradle's strict conflict resolution rejects. Pin to 1.0.1 (matches the sql plugin).
+        force("org.jspecify:jspecify:1.0.1")
     }
 }
 
