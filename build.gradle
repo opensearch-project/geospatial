@@ -257,6 +257,7 @@ integTest {
 
 testClusters.integTest {
     testDistribution = "ARCHIVE"
+    setting 'path.repo', "${buildDir}/testclusters/repo"
 
     // Cluster shrink exception thrown if we try to set numberOfNodes to 1, so only apply if > 1
     if (_numNodes > 1) numberOfNodes = _numNodes

@@ -346,6 +346,8 @@ public class DatasourceDaoTests extends Ip2GeoTestCase {
             assertTrue(actionRequest instanceof BulkRequest);
             BulkRequest bulkRequest = (BulkRequest) actionRequest;
             assertEquals(2, bulkRequest.requests().size());
+            assertEquals(WriteRequest.RefreshPolicy.IMMEDIATE, bulkRequest.getRefreshPolicy());
+            assertNull(bulkRequest.validate());
             for (int i = 0; i < bulkRequest.requests().size(); i++) {
                 IndexRequest request = (IndexRequest) bulkRequest.requests().get(i);
                 assertEquals(DatasourceExtension.JOB_INDEX_NAME, request.index());
