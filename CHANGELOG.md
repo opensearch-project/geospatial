@@ -8,6 +8,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Features
 ### Enhancements
 ### Bug Fixes
+- Fix ip2geo datasource refresh after snapshot restore ([#909](https://github.com/opensearch-project/geospatial/pull/909))
 ### Infrastructure
 ### Documentation
 ### Maintenance
