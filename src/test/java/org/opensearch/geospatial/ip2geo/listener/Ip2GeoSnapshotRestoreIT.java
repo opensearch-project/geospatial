@@ -62,6 +62,9 @@ public class Ip2GeoSnapshotRestoreIT extends GeospatialRestTestCase {
 
     @SneakyThrows
     public void testSnapshotRestore_whenJobAndDataIndicesRestored_thenDatasourceIsRefreshed() {
+        // Needs path.repo on the cluster and permission to delete and restore ip2geo system indices,
+        // which the security-enabled test cluster does not provide
+        assumeFalse("snapshot restore test is not supported on security enabled cluster", Boolean.getBoolean("https"));
         updateClusterSetting(Map.of(Ip2GeoSettings.DATASOURCE_ENDPOINT_DENYLIST.getKey(), Collections.emptyList()));
         String datasourceName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
         String pipelineName = PREFIX + GeospatialTestHelper.randomLowerCaseString();
