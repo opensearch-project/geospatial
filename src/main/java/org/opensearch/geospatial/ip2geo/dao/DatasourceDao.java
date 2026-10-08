@@ -140,7 +140,7 @@ public class DatasourceDao {
      * @param listener action listener
      */
     public void updateDatasource(final List<Datasource> datasources, final ActionListener<BulkResponse> listener) {
-        BulkRequest bulkRequest = new BulkRequest();
+        BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         datasources.stream().map(datasource -> {
             datasource.setLastUpdateTime(Instant.now());
             return datasource;
@@ -154,7 +154,6 @@ public class DatasourceDao {
             indexRequest.index(DatasourceExtension.JOB_INDEX_NAME);
             indexRequest.id(datasource.getName());
             indexRequest.opType(DocWriteRequest.OpType.INDEX);
-            indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             indexRequest.source(datasource.toXContent(XContentFactory.jsonBuilder(), ToXContent.EMPTY_PARAMS));
             return indexRequest;
         } catch (IOException e) {
