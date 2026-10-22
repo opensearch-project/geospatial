@@ -10,6 +10,7 @@ See the [CONTRIBUTING guide](./CONTRIBUTING.md#Changelog) for instructions on ho
 ### Bug Fixes
 - Fix ip2geo datasource refresh after snapshot restore ([#909](https://github.com/opensearch-project/geospatial/pull/909))
 ### Infrastructure
+- Add SPDX license header checker and missing headers ([#894](https://github.com/opensearch-project/geospatial/pull/894))
 ### Documentation
 ### Maintenance
 - Increment version to 3.10.0-SNAPSHOT ([#908](https://github.com/opensearch-project/geospatial/pull/908))
